@@ -3,6 +3,7 @@ library(dagitty)
 library(base64enc)
 library(readr)
 library(DataCombine)
+library(here)
 
 rm(list = ls())
 wd <- "~/Library/CloudStorage/OneDrive-DalhousieUniversity/Documents/Manuscripts/French Polynesia Reef Sharks/DAG consistency checks"
@@ -123,12 +124,12 @@ names(DAG)
 
 ###### IMPORT DATA ######
 
-dat <- read.csv(paste(wd, "/ReefWideBRUVUVC.csv", sep = ""))
+dat <- read.csv(here("NFF_data", "/ReefWideBRUVUVC.csv"))
 str(dat)
 
-wd <- "/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/Nat resources/"
-setwd(wd)
-name_match <- read.csv(paste(wd, "/FPDAG_match_table.csv", sep = ""))
+# Nat resourceswd <- "/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/Nat resources/"
+# setwd(wd)
+name_match <- read.csv(here("Nat_resources", "FPDAG_match_table.csv"))
 str(name_match)
 
 
@@ -307,7 +308,7 @@ test <- dagitty::localTests(x = DAG,
                             data = ddat,
                             abbreviate.names = FALSE)
 write.csv(x = test,
-          file = "/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/Nat resources/dag_inconsistencies_all_DAG1.csv",
+          file = here("Nat_resources", "dag_inconsistencies_all_DAG1.csv"),
           row.names = TRUE)
 
 
@@ -318,7 +319,7 @@ testf2 <- testf2[rev(order(abs(testf2$estimate))), ] # Sort test results by effe
 
 # SHOW THE INDEPENDENCIES THAT FAILED ####
 write.csv(x = testf2,
-          file = "/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/Nat resources/dag_inconsistencies_0.3_DAG1.csv",
+          file = here("Nat_resources", "dag_inconsistencies_0.3_DAG1.csv"),
           row.names = TRUE)
 # Add notes, are connections logical?
 # How to interpret these results?
