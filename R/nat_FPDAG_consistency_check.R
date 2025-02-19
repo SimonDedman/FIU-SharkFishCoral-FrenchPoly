@@ -7,9 +7,9 @@ library(readr)
 library(DataCombine)
 
 rm(list = ls())
-wd <- "~/Library/CloudStorage/OneDrive-DalhousieUniversity/Documents/Manuscripts/French Polynesia Reef Sharks/DAG consistency checks"
-wd <- "/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/NFF Data code/"
-setwd(wd)
+# wd <- "~/Library/CloudStorage/OneDrive-DalhousieUniversity/Documents/Manuscripts/French Polynesia Reef Sharks/DAG consistency checks"
+# wd <- "/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/NFF Data code/"
+# setwd(wd)
 
 
 # DOWNLOAD THE DAG ####
@@ -131,13 +131,13 @@ names(DAG)
 
 # IMPORT DATA ######
 # dat <- ReefWideBRUVUVC
-dat <- read.csv(paste(wd, "/ReefWideBRUVUVC.csv", sep = ""))
+dat <- read.csv(here("NFF_data", "/ReefWideBRUVUVC.csv"))
 str(dat)
 dat <- as.data.frame(dat)
 
-wd <- "/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/Nat resources/"
-setwd(wd)
-name_match <- read.csv(paste(wd, "/FPDAG_match_table.csv", sep = ""))
+# wd <- "/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/Nat resources/"
+# setwd(wd)
+name_match <- read.csv(here("Nat_resources", "FPDAG_match_table.csv"))
 str(name_match)
 
 
@@ -321,7 +321,7 @@ test <- dagitty::localTests(x = DAG,
                             data = ddat,
                             abbreviate.names = FALSE)
 write.csv(x = test,
-          file = "/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/Nat resources/dag_inconsistencies_all.csv",
+          file = here("Nat_resources", "dag_inconsistencies_all.csv"),
           row.names = TRUE)
 
 
@@ -332,14 +332,14 @@ testf2 <- testf2[rev(order(abs(testf2$estimate))), ] # Sort test results by effe
 
 # SHOW THE INDEPENDENCIES THAT FAILED ####
 write.csv(x = testf2,
-          file = "/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/Nat resources/dag_inconsistencies.csv",
+          file = here("Nat_resources", "dag_inconsistencies.csv"),
           row.names = TRUE)
 dev.off()
 dagitty::plotLocalTestResults(head(testf2, 20)) # Plot 20 results with largest effect size
 
 # Save ddat for analysis stage ####
 write.csv(x = ddat,
-          file = "/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/NFF Data code/ReefWideBRUVUVC-DAGtested.csv",
+          file = here("Nat_resources", "ReefWideBRUVUVC-DAGtested.csv"),
           row.names = FALSE)
 
 
@@ -544,7 +544,7 @@ test <- dagitty::localTests(x = DAG,
                             data = ddat,
                             abbreviate.names = FALSE)
 write.csv(x = test,
-          file = "/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/Nat resources/dag_inconsistencies_all.csv",
+          file = here("Nat_resources", "dag_inconsistencies_all.csv"),
           row.names = TRUE)
 
 
@@ -555,14 +555,14 @@ testf2 <- testf2[rev(order(abs(testf2$estimate))), ] # Sort test results by effe
 
 ## SHOW THE INDEPENDENCIES THAT FAILED ####
 write.csv(x = testf2,
-          file = "/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/Nat resources/dag_inconsistencies_ave-temp-reefsharks.csv",
+          file = here("Nat_resources", "dag_inconsistencies_ave-temp-reefsharks.csv"),
           row.names = TRUE)
 dev.off()
 dagitty::plotLocalTestResults(head(testf2, 20)) # Plot 20 results with largest effect size
 
 ## Save ddat for analysis stage ####
 write.csv(x = ddat,
-          file = "/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/NFF Data code/ReefWideBRUVUVC-DAGtested.csv",
+          file = here("Nat_resources", "ReefWideBRUVUVC-DAGtested.csv"),
           row.names = FALSE)
 
 # 2024-09-03 SST/reef_sharks linear model ####
