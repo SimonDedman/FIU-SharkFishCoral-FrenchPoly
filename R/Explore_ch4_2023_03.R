@@ -1,5 +1,5 @@
-setwd("~/Documents/My Documents/FinPrint French Poly/Analysis/Ch 4 Rethink Prelim") ## Change to appropriate working directory ##
-setwd("/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/NFF Data code/")
+# setwd("~/Documents/My Documents/FinPrint French Poly/Analysis/Ch 4 Rethink Prelim") ## Change to appropriate working directory ##
+# setwd("/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/NFF Data code/")
 library(tidyverse)
 library(MASS)
 library(vegan)
@@ -18,22 +18,24 @@ library(rmarkdown)
 library(esquisse)
 library(viridis)
 library(plotly)
+library(here)
 
 #### import all data frames####
 ##### import site order ####
-site.order.df <- data.frame(read.csv("site_order_df.csv", header = TRUE, as.is = TRUE))
+# site.order.df <- data.frame(read.csv("site_order_df.csv", header = TRUE, as.is = TRUE))
+site.order.df <- data.frame(read.csv(here("NFF_data", "site_order_df.csv"), header = TRUE, as.is = TRUE))
 site.order.df$site_name <- as.factor(site.order.df$site_name)
 
 
 ##### raw benthic uvc data####
-benthic.raw <- data.frame(read.csv("fixed_bethic_uvc_final_2023_02_26.csv", header = TRUE, as.is = TRUE))
+benthic.raw <- data.frame(read.csv(here("NFF_data", "fixed_bethic_uvc_final_2023_02_26.csv"), header = TRUE, as.is = TRUE))
 benthic.raw$site_name <- as.factor(benthic.raw$site_name)
 benthic.raw$reef_name <- as.factor(benthic.raw$reef_name)
 benthic.raw$UniqueID <- as.factor(benthic.raw$UniqueID)
 benthic.raw$Date <- as.factor(benthic.raw$Date)
 
 ##### raw fish uvc data####
-fish.uvc.raw <- data.frame(read.csv("fixed_fish_uvc_final_2023_02_28.csv", header = TRUE, as.is = TRUE))
+fish.uvc.raw <- data.frame(read.csv(here("NFF_data", "fixed_fish_uvc_final_2023_02_28.csv"), header = TRUE, as.is = TRUE))
 fish.uvc.raw$site_name <- as.factor(fish.uvc.raw$site_name)
 fish.uvc.raw$reef_name <- as.factor(fish.uvc.raw$reef_name)
 fish.uvc.raw$UniqueID <- as.factor(fish.uvc.raw$UniqueID)
@@ -44,7 +46,7 @@ fish.uvc.raw$diet.kulbiki <- as.factor(fish.uvc.raw$diet.kulbiki)
 fish.uvc.raw$Feeding.group <- as.factor(fish.uvc.raw$Feeding.group)
 
 ##### import teleost df ####
-teleost.bruv.raw <- data.frame(read.csv("wide.df1.teleosts.csv", header = TRUE, as.is = TRUE)) # importing CSV#
+teleost.bruv.raw <- data.frame(read.csv(here("NFF_data", "wide.df1.teleosts.csv"), header = TRUE, as.is = TRUE)) # importing CSV#
 teleost.bruv.raw$geo <- as.factor(teleost.bruv.raw$geo)
 teleost.bruv.raw$isl_grp <- as.factor(teleost.bruv.raw$isl_grp)
 teleost.bruv.raw$archi <- as.factor(teleost.bruv.raw$archi)
@@ -53,7 +55,7 @@ teleost.bruv.raw$bait <- as.factor(teleost.bruv.raw$bait)
 teleost.bruv.raw$topo <- as.factor(teleost.bruv.raw$topo)
 
 ##### import shark#####
-elasmo.bruv.raw <- data.frame(read.csv("wide.df1.ch3.60min.2023.01.csv", header = TRUE, as.is = TRUE)) # importing CSV#
+elasmo.bruv.raw <- data.frame(read.csv(here("NFF_data", "wide.df1.ch3.60min.2023.01.csv"), header = TRUE, as.is = TRUE)) # importing CSV#
 elasmo.bruv.raw$geo <- as.factor(elasmo.bruv.raw$geo)
 elasmo.bruv.raw$isl_grp <- as.factor(elasmo.bruv.raw$isl_grp)
 elasmo.bruv.raw$archi <- as.factor(elasmo.bruv.raw$archi)
@@ -85,8 +87,8 @@ benthic.reef.df <- benthic.raw %>%
     n_survey
   )
 
-write_csv(benthic.reef.df , "bethic_sum_reef_2023_02_26.csv")
-saveRDS(benthic.reef.df, file = "bethic_sum_reef_2023_02_26.RData")
+write_csv(benthic.reef.df , here("NFF_data", "benthic_sum_reef_2023_02_26.csv"))
+saveRDS(benthic.reef.df, file = here("NFF_data", "benthic_sum_reef_2023_02_26.RData"))
 
 
 # need full data frame with survey as the primary sampling unit ####
@@ -259,24 +261,24 @@ survey.wide.df1$topo <- factor(survey.wide.df1$topo,
 )
 
 
-write_csv(survey.wide.df1, "ch4_survey_wide_df1.csv")
-saveRDS(survey.wide.df1, file = "survey.wide.df1.RData")
+write_csv(survey.wide.df1, here("NFF_data", "ch4_survey_wide_df1.csv"))
+saveRDS(survey.wide.df1, file = here("NFF_data", "survey.wide.df1.RData"))
 
 ##### filter for just islands####
 island.survey.wide.df1 <- survey.wide.df1 %>%
   filter(geo == "island") %>%
   droplevels()
 
-write_csv(island.survey.wide.df1, "island.ch4_survey_wide_df1.csv")
-saveRDS(island.survey.wide.df1, file = "island.survey.wide.df1.RData")
+write_csv(island.survey.wide.df1, here("NFF_data", "island.ch4_survey_wide_df1.csv"))
+saveRDS(island.survey.wide.df1, file = here("NFF_data", "island.survey.wide.df1.RData"))
 
 ##### filter for just atolls####
 atoll.survey.wide.df1 <- survey.wide.df1 %>%
   filter(geo == "atoll") %>%
   droplevels()
 
-write_csv(atoll.survey.wide.df1, "atoll.ch4_survey_wide_df1.csv")
-saveRDS(atoll.survey.wide.df1, file = "atoll.survey.wide.df1.RData")
+write_csv(atoll.survey.wide.df1, here("NFF_data", "atoll.ch4_survey_wide_df1.csv"))
+saveRDS(atoll.survey.wide.df1, file = here("NFF_data", "atoll.survey.wide.df1.RData"))
 
 ##### remove marquesas ####
 survey.wide.df2 <- survey.wide.df1 %>%
@@ -286,16 +288,16 @@ survey.wide.df2 <- survey.wide.df1 %>%
   ) %>%
   droplevels()
 
-write_csv(survey.wide.df2, "ch4_survey_wide_df2.csv")
-saveRDS(survey.wide.df2, file = "survey.wide.df2.RData")
+write_csv(survey.wide.df2, here("NFF_data", "ch4_survey_wide_df2.csv"))
+saveRDS(survey.wide.df2, file = here("NFF_data", "survey.wide.df2.RData"))
 
 ##### just islands ####
 island.survey.wide.df2 <- survey.wide.df2 %>%
   filter(geo == "island") %>%
   droplevels()
 
-write_csv(island.survey.wide.df2, "island.ch4_survey_wide_df2.csv")
-saveRDS(island.survey.wide.df2, file = "island.survey.wide.df2.RData")
+write_csv(island.survey.wide.df2, here("NFF_data", "island.ch4_survey_wide_df2.csv"))
+saveRDS(island.survey.wide.df2, file = here("NFF_data", "island.survey.wide.df2.RData"))
 
 
 ##### just atoll ####
@@ -303,8 +305,8 @@ atoll.survey.wide.df2 <- survey.wide.df2 %>%
   filter(geo == "atoll") %>%
   droplevels()
 
-write_csv(atoll.survey.wide.df2, "atoll.ch4_survey_wide_df2.csv")
-saveRDS(atoll.survey.wide.df2, file = "atoll.survey.wide.df2.RData")
+write_csv(atoll.survey.wide.df2, here("NFF_data", "atoll.ch4_survey_wide_df2.csv"))
+saveRDS(atoll.survey.wide.df2, file = here("NFF_data", "atoll.survey.wide.df2.RData"))
 
 
 #### full summary by reef####
@@ -380,24 +382,24 @@ reef.df1$chi_prey_grade <- factor(reef.df1$chi_prey_grade,
                                   )
 )
 
-write_csv(reef.df1, "ch4_reef_wide_df1.csv")
-saveRDS(reef.df1, file = "ch4_reef_wide_df1.RData")
+write_csv(reef.df1, here("NFF_data", "ch4_reef_wide_df1.csv"))
+saveRDS(reef.df1, file = here("NFF_data", "ch4_reef_wide_df1.RData"))
 
 ##### just islands ####
 island.reef.df1 <- reef.df1 %>%
   filter(geo == "island") %>%
   droplevels()
 
-write_csv(island.reef.df1, "ch4_island_reef_wide_df1.csv")
-saveRDS(island.reef.df1, file = "ch4_island_reef_wide_df1.RData")
+write_csv(island.reef.df1, here("NFF_data", "ch4_island_reef_wide_df1.csv"))
+saveRDS(island.reef.df1, file = here("NFF_data", "ch4_island_reef_wide_df1.RData"))
 
 ##### just atolls ####
 atoll.reef.df1 <- reef.df1 %>%
   filter(geo == "atoll") %>%
   droplevels()
 
-write_csv(atoll.reef.df1, "ch4_atoll_reef_wide_df1.csv")
-saveRDS(atoll.reef.df1, file = "ch4_atoll_reef_wide_df1.RData")
+write_csv(atoll.reef.df1, here("NFF_data", "ch4_atoll_reef_wide_df1.csv"))
+saveRDS(atoll.reef.df1, file = here("NFF_data", "ch4_atoll_reef_wide_df1.RData"))
 
 ##### remove marquesas ####
 reef.df2 <- reef.df1 %>%
@@ -407,8 +409,8 @@ reef.df2 <- reef.df1 %>%
   ) %>%
   droplevels()
 
-write_csv(reef.df2, "ch4_reef_wide_df2.csv")
-saveRDS(reef.df2, file = "ch4_reef_wide_df2.RData")
+write_csv(reef.df2, here("NFF_data", "ch4_reef_wide_df2.csv"))
+saveRDS(reef.df2, file = here("NFF_data", "ch4_reef_wide_df2.RData"))
 
 
 ##### just islands ####
@@ -416,8 +418,8 @@ island.reef.df2 <- reef.df2 %>%
   filter(geo == "island") %>%
   droplevels()
 
-write_csv(island.reef.df2, "ch4_island_reef_wide_df2.csv")
-saveRDS(island.reef.df2, file = "ch4_island_reef_wide_df2.RData")
+write_csv(island.reef.df2, here("NFF_data", "ch4_island_reef_wide_df2.csv"))
+saveRDS(island.reef.df2, file = here("NFF_data", "ch4_island_reef_wide_df2.RData"))
 
 ##### just atolls ####
 
@@ -425,8 +427,8 @@ atoll.reef.df2 <- reef.df2 %>%
   filter(geo == "atoll") %>%
   droplevels()
 
-write_csv(atoll.reef.df2, "ch4_atoll_reef_wide_df2.csv")
-saveRDS(atoll.reef.df2, file = "ch4_atoll_reef_wide_df2.RData")
+write_csv(atoll.reef.df2, here("NFF_data", "ch4_atoll_reef_wide_df2.csv"))
+saveRDS(atoll.reef.df2, file = here("NFF_data", "ch4_atoll_reef_wide_df2.RData"))
 
 
 
@@ -443,8 +445,8 @@ pred.tel.uvc.reef.df <- pred.tel.uvc.survey.sum.df %>%
             group_by(reef_name) %>%
             summarise(n_survey = n_distinct(UniqueID, na.rm = TRUE))))
 
-write_csv(pred.tel.uvc.reef.df, "pred_tel_uvc_sum_reef_2023_02_28.csv")
-saveRDS(pred.tel.uvc.reef.df, file = "pred_tel_uvc_sum_reef_2023_02_28.RData")
+write_csv(pred.tel.uvc.reef.df, here("NFF_data", "pred_tel_uvc_sum_reef_2023_02_28.csv"))
+saveRDS(pred.tel.uvc.reef.df, file = here("NFF_data", "pred_tel_uvc_sum_reef_2023_02_28.RData"))
 
 # Summary by reef for prey fish UVC data ####
 ##### "prey" species only ####
@@ -458,8 +460,8 @@ prey.uvc.reef.df <- prey.uvc.survey.sum.df %>%
             group_by(reef_name) %>%
             summarise(n_survey = n_distinct(UniqueID, na.rm = TRUE))))
 
-write_csv(prey.uvc.reef.df , "prey_uvc_sum_reef_2023_02_28.csv")
-saveRDS(prey.uvc.reef.df, file = "prey_uvc_sum_reef_2023_02_28.RData")
+write_csv(prey.uvc.reef.df , here("NFF_data", "prey_uvc_sum_reef_2023_02_28.csv"))
+saveRDS(prey.uvc.reef.df, file = here("NFF_data", "prey_uvc_sum_reef_2023_02_28.RData"))
 
 
 ##### count surveys per reef ####
@@ -566,16 +568,16 @@ scatter_pred_tel_plot1 <- ggplot(compare.tel.df1,
     plot.title = element_text(hjust = 0.5)
   )
 scatter_pred_tel_plot1
-ggsave(filename = "scatter_pred_tel_plot1.png")
+ggsave(filename = here("NFF_data", "scatter_pred_tel_plot1.png"))
 
 
 
 # Extract unique colnames from all saved dfs ####
 # Reimport all saved dfs
 # list RData files in folder
-dflist <- as.list(list.files(pattern = "RData"))
+dflist <- as.list(list.files(path = here("NFF_data"), pattern = "RData"))
 # read them all into a list, each is a list element
-alldfs <- lapply(dflist, function(x) readRDS(x))
+alldfs <- lapply(dflist, function(x) readRDS(here("NFF_data", x)))
 # give them names in the list object
 names(alldfs) <- unlist(dflist)
 # extract colname from all
@@ -590,10 +592,8 @@ names(colnameslist) <- NULL
 colnameslist <- colnameslist[!(duplicated(colnameslist))]
 # save csv
 write.csv(x = colnameslist,
-          file = "AllDfsColnames.csv",
-          row.names = FALSE,
-          col.names = FALSE) # does nothing
-
+          file = here("NFF_data", "AllDfsColnames.csv"),
+          row.names = FALSE)
 
 # 2025-02-18 remake functional groups to match SCM DAG ####
 # sicklefin lemon sharks
