@@ -15,11 +15,11 @@ Read in data.
 
 ```{r}
 #| echo: false
-root <- "/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/NFF Data code/" # Si
+# root <- "/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/NFF Data code/" # Si
 # root <- "/home/NFF/MyFunFolder/SuperDuper/UltraMega/2024-01_SharksFishCoral-FrenchPoly/NFF Data code/" # NFF
-UVC <- readr::read_csv(file.path(root, "fixed_fish_uvc_final_2023_02_28.csv")) |> 
+UVC <- readr::read_csv(here("NFF_data", "fixed_fish_uvc_final_2023_02_28.csv")) |> 
   dplyr::filter(!Family %in% c("Carcharhinidae", "Myliobatidae"))
-Diet <- readr::read_csv(file.path(root, "Trophic_Categorisation_Desbiens.csv")) |> 
+Diet <- readr::read_csv(here("NFF_data", "Trophic_Categorisation_Desbiens.csv")) |> 
   dplyr::rename(Diet = "Main Diet") |> 
   dplyr::filter(!(Species == "Naso vlamingii" & Diet == "Browser"),
                 !(Species == "Naso annulatus" & Diet == "Browser"),
@@ -210,7 +210,7 @@ Import Official Functional Group manual additions, join with fish.spp.list
 
 ```{r}
 #| echo: false
-OFGaddition <- readr::read_csv(file.path(root, "OfficialFnGp-additions-Coralivores.csv")) |> 
+OFGaddition <- readr::read_csv(here("NFF_data", "OfficialFnGp-additions-Coralivores.csv")) |> 
   dplyr::rename(OFG = OfficialFnGp)
 
 fish.spp.list |> 
@@ -244,7 +244,7 @@ fish.spp.list |>
   fish.spp.list
 
 write.csv(x = fish.spp.list,
-          file = file.path(root, "TeleostDietFnGps.csv"),
+          file = here("NFF_data", "TeleostDietFnGps.csv"),
           row.names = FALSE)
 ```
 
@@ -252,9 +252,9 @@ Load lookup, UVC, and BRUVs master databases, left_join fish.spp.list's Feeding.
 
 ```{r}
 #| echo: false
-fish.spp.list <- readr::read_csv(file.path(root, "TeleostDietFnGps.csv"))
+fish.spp.list <- readr::read_csv(here("NFF_data", "TeleostDietFnGps.csv"))
 
-UVC <- readr::read_csv(file.path(root, "fixed_fish_uvc_final_2023_02_28.csv")) |> 
+UVC <- readr::read_csv(here("NFF_data", "fixed_fish_uvc_final_2023_02_28.csv")) |> 
   dplyr::filter(!Family %in% c("Carcharhinidae", "Myliobatidae")) |> 
   dplyr::left_join(fish.spp.list |> 
                      dplyr::rename(FdGpNFF = Feeding.group,
@@ -267,7 +267,7 @@ UVC <- readr::read_csv(file.path(root, "fixed_fish_uvc_final_2023_02_28.csv")) |
 
 rm(fish.spp.list)
 
-BRUV <- readr::read_csv(file.path(root, "wide.reef.60.ch3.2023.01.csv"))
+BRUV <- readr::read_csv(here("NFF_data", "wide.reef.60.ch3.2023.01.csv"))
 ```
 
 # Standardise UVC & BRUV effort/sampling range/amount
@@ -536,22 +536,22 @@ BRUV |>
   dplyr::select(archi, isl_grp, site_name, reef_name, latitude, longitude, geo, topo, lagoon.size, Emerged.land.area, depth, Population.size, grav, Season, ave_npp, ave_temp, visibility, vid_length, SampledVolumeM3, SampledVolumeM3min, time.no.bait, everything()) -> ReefWideBRUVUVC
 
 write.csv(x = ReefWideBRUVUVC,
-          file =  file.path(root, "ReefWideBRUVUVC.csv"),
+          file =  here("NFF_data", "ReefWideBRUVUVC.csv"),
           row.names = FALSE)
 write.csv(x = UVC,
-          file =  file.path(root, "UVC.csv"),
+          file =  here("NFF_data", "UVC.csv"),
           row.names = FALSE)
 write.csv(x = BRUV,
-          file =  file.path(root, "BRUV.csv"),
+          file =  here("NFF_data", "BRUV.csv"),
           row.names = FALSE)
 ```
 
 # Check we have all variables needed for DAG in dbase
 
 ```{r}
-ReefWideBRUVUVC <- readr::read_csv(file = file.path(root, "ReefWideBRUVUVC.csv"))
-BRUV <- readr::read_csv(file = file.path(root, "BRUV.csv"))
-UVC <- readr::read_csv(file = file.path(root, "UVC.csv"))
+ReefWideBRUVUVC <- readr::read_csv(file = here("NFF_data", "ReefWideBRUVUVC.csv"))
+BRUV <- readr::read_csv(file = here("NFF_data", "BRUV.csv"))
+UVC <- readr::read_csv(file = here("NFF_data", "UVC.csv"))
 ```
 
 Missing:
@@ -564,7 +564,7 @@ Missing:
 All in bethic_sum_reef_2023_02_26.csv ?
 
 ```{r}
-Benthic <- readr::read_csv(file = file.path(root, "bethic_sum_reef_2023_02_26.csv"))
+Benthic <- readr::read_csv(file = here("NFF_data", "bethic_sum_reef_2023_02_26.csv"))
 ReefWideBRUVUVC |> dplyr::left_join(Benthic) -> ReefWideBRUVUVC # add Benthic variables
 
 ```
@@ -584,9 +584,9 @@ ReefWideBRUVUVC |>
 
 # save block
 write.csv(x = ReefWideBRUVUVC,
-          file =  file.path(root, "ReefWideBRUVUVC.csv"),
+          file =  here("NFF_data", "ReefWideBRUVUVC.csv"),
           row.names = FALSE)
-ReefWideBRUVUVC <- readr::read_csv(file = file.path(root, "ReefWideBRUVUVC.csv"))
+ReefWideBRUVUVC <- readr::read_csv(file = here("NFF_data", "ReefWideBRUVUVC.csv"))
 ```
 
 # Remove all columns not to be used in the DAG
@@ -673,10 +673,10 @@ ReefWideBRUVUVC$browser[is.na(ReefWideBRUVUVC$browser)] <- runif(n = length(Reef
 
 # save block
 write.csv(x = ReefWideBRUVUVC,
-file =  file.path(root, "ReefWideBRUVUVC.csv"),
+file =  here("NFF_data", "ReefWideBRUVUVC.csv"),
 row.names = FALSE)
 
-ReefWideBRUVUVC <- readr::read_csv(file = file.path(root, "ReefWideBRUVUVC.csv"))
+ReefWideBRUVUVC <- readr::read_csv(file = here("NFF_data", "ReefWideBRUVUVC.csv"))
 ```
 
 # Feed into DAG
