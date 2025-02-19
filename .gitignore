@@ -8,6 +8,10 @@
 
 # User-specific files
 .Ruserdata
+Docs/
+Nat_resources/
+NFF_data/
+Presentations/
 
 # Example code in package build process
 *-Ex.R
