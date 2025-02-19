@@ -183,7 +183,7 @@ ciTest("site_name", "reef_name",
         type = "cis.chisq") # FAILS
 
 # brca.txt (download at: https://github.com/ankurankan/2020-dagitty-manual/)
-brca <- read.table("/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/Nat resources/Ankan/brca.txt",
+brca <- read.table(here("Nat_resources", "Ankan", "brca.txt"),
                    header = TRUE)
 ciTest("Age", "Recurrence", c("Irradiation", "Menopause"),
        data = brca,
@@ -204,7 +204,7 @@ xtfrm.data.frame(brca$Recurrence) # fails
 ```
 
 ```{r load data}
-ReefWideBRUVUVC <-  readr::read_csv(file =  "/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/NFF Data code/ReefWideBRUVUVC.csv")
+ReefWideBRUVUVC <-  readr::read_csv(file =  here("NFF_data", "ReefWideBRUVUVC.csv"))
 # download specified DAG from dagitty.net
 # DAG <- downloadGraph("dagitty.net/mt8WHQajL") # https://dagitty.net/mt8WHQajL
 ```
