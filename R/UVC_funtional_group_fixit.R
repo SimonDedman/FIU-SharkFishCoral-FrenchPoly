@@ -1,15 +1,16 @@
-setwd("~/Documents/My Documents/FinPrint French Poly/Analysis/Ch 4 Rethink Prelim") # Change to appropriate working directory
+# setwd("~/Documents/My Documents/FinPrint French Poly/Analysis/Ch 4 Rethink Prelim") # Change to appropriate working directory
 library(tidyverse)
+library(here)
 
 # Data files list#
 
 # import and clean raw data ####
 
 ## import organism list ####
-fish_uvc_OG <- data.frame(read.csv("fixed_fish_uvc_final_2023_02_28.csv", header = TRUE, as.is = TRUE))
+fish_uvc_OG <- data.frame(read.csv(here("NFF_data", "fixed_fish_uvc_final_2023_02_28.csv"), header = TRUE, as.is = TRUE))
 
 # import desbiens#
-des_categories_raw <- data.frame(read.csv("Trophic_Categorisation_Desbiens.csv",
+des_categories_raw <- data.frame(read.csv(here("NFF_data", "Trophic_Categorisation_Desbiens.csv"),
   header = TRUE, as.is = TRUE
 ))
 # delete species with more than one functional group#
