@@ -2,10 +2,12 @@
 # Run TeleostFunctionalGroupDiets.qmd then nat-FPDAG_consistency_check.R first.
 install.packages("BART")
 library(BART)
+library(here)
 
 # Sharks influence coral ####
-dat <- read.csv("/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/NFF Data code/ReefWideBRUVUVC-DAGtested.csv") # read data. Don't use read_csv: creates tibble which breaks gbart
-dat <- read.csv("C:/Users/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/NFF Data code/ReefWideBRUVUVC-DAGtested.csv") # read data. Don't use read_csv: creates tibble which breaks gbart
+dat <- read.csv(here("NFF_data", "ReefWideBRUVUVC-DAGtested.csv")) # read data. Don't use read_csv: creates tibble which breaks gbart
+# dat <- read.csv("/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/NFF Data code/ReefWideBRUVUVC-DAGtested.csv") # read data. Don't use read_csv: creates tibble which breaks gbart
+# dat <- read.csv("C:/Users/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/NFF Data code/ReefWideBRUVUVC-DAGtested.csv") # read data. Don't use read_csv: creates tibble which breaks gbart
 train <- sample(1:nrow(dat), nrow(dat) / 2) # 50% test/train proportion
 expvars <- c("reef_sharks", "piscivores", "pop_dens", "sicklefin_lemon_sharks", "transient_pelagic_sharks")
 x <- dat[, expvars] # set explanatory variables ("exposures" + minimal sufficient adjustment sets)
@@ -93,7 +95,7 @@ lines(xrange, apply(partial, 2, quantile, probs = 0.975), lty = 2)
 }
 
 
-# embarcadero ####
+# embarcadero BART model ####
 devtools::install_github('cjcarlson/embarcadero')
 library(embarcadero)
 xnames <- c("x1","x2","x3","x4","x5","x6","x7","x8")
@@ -128,7 +130,7 @@ step.model
 # (e) returns the summary of the final model.
 
 
-# PDPs:
+## PDPs ####
 partial(sdm,
         x.vars = c("x4"),
         smooth = 5,
