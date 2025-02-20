@@ -604,6 +604,3 @@ write.csv(x = colnameslist,
 # other algae
 # crustose coraline algae
 # hard coral
-
-# What did I send to Suchinta, i.e. the most important file(s)
-# ReefWideBRUVUVC-DAGtested.csv

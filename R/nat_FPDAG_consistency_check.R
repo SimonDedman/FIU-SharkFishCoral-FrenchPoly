@@ -560,11 +560,6 @@ write.csv(x = testf2,
 dev.off()
 dagitty::plotLocalTestResults(head(testf2, 20)) # Plot 20 results with largest effect size
 
-## Save ddat for analysis stage ####
-write.csv(x = ddat,
-          file = here("Nat_resources", "ReefWideBRUVUVC-DAGtested.csv"),
-          row.names = FALSE)
-
 # 2024-09-03 SST/reef_sharks linear model ####
 sst.lm <- lm(formula = reef_sharks ~ ave_temp,
              data = dat)
