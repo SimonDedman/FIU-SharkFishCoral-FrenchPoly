@@ -89,7 +89,7 @@ names(DAG)
 
 ###### IMPORT DATA ######
 
-dat <- read.csv(here("NFF_data", "/ReefWideBRUVUVC.csv"))
+dat <- read.csv(here("NFF_data", "ReefWideBRUVUVC.csv"))
 str(dat)
 
 # wd <- "/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/Nat resources/"
