@@ -20,51 +20,35 @@ library(viridis)
 library(plotly)
 library(here)
 
-#### import all data frames####
-##### import site order ####
+# import all data frames ####
+## import site order ####
 # site.order.df <- data.frame(read.csv("site_order_df.csv", header = TRUE, as.is = TRUE))
-site.order.df <- data.frame(read.csv(here("NFF_data", "site_order_df.csv"), header = TRUE, as.is = TRUE))
-site.order.df$site_name <- as.factor(site.order.df$site_name)
+site.order.df <- data.frame(read.csv(here("NFF_data", "site_order_df.csv"), header = TRUE, as.is = TRUE)) |>
+  mutate(across(.cols = site_name,
+                .fns = ~ factor(.x)))
 
+## raw benthic uvc data ####
+benthic.raw <- data.frame(read.csv(here("NFF_data", "fixed_bethic_uvc_final_2023_02_26.csv"), header = TRUE, as.is = TRUE)) |>
+  mutate(across(.cols = c(site_name, reef_name, UniqueID, Date),
+                .fns = ~ factor(.x)))
 
-##### raw benthic uvc data####
-benthic.raw <- data.frame(read.csv(here("NFF_data", "fixed_bethic_uvc_final_2023_02_26.csv"), header = TRUE, as.is = TRUE))
-benthic.raw$site_name <- as.factor(benthic.raw$site_name)
-benthic.raw$reef_name <- as.factor(benthic.raw$reef_name)
-benthic.raw$UniqueID <- as.factor(benthic.raw$UniqueID)
-benthic.raw$Date <- as.factor(benthic.raw$Date)
+## raw fish uvc data ####
+fish.uvc.raw <- data.frame(read.csv(here("NFF_data", "fixed_fish_uvc_final_2023_02_28.csv"), header = TRUE, as.is = TRUE)) |>
+  mutate(across(.cols = c(site_name, reef_name, UniqueID, Date, Species, Family, diet.kulbiki, Feeding.group),
+                .fns = ~ factor(.x)))
 
-##### raw fish uvc data####
-fish.uvc.raw <- data.frame(read.csv(here("NFF_data", "fixed_fish_uvc_final_2023_02_28.csv"), header = TRUE, as.is = TRUE))
-fish.uvc.raw$site_name <- as.factor(fish.uvc.raw$site_name)
-fish.uvc.raw$reef_name <- as.factor(fish.uvc.raw$reef_name)
-fish.uvc.raw$UniqueID <- as.factor(fish.uvc.raw$UniqueID)
-fish.uvc.raw$Date <- as.factor(fish.uvc.raw$Date)
-fish.uvc.raw$Species <- as.factor(fish.uvc.raw$Species)
-fish.uvc.raw$Family <- as.factor(fish.uvc.raw$Family)
-fish.uvc.raw$diet.kulbiki <- as.factor(fish.uvc.raw$diet.kulbiki)
-fish.uvc.raw$Feeding.group <- as.factor(fish.uvc.raw$Feeding.group)
+## import teleost df ####
+teleost.bruv.raw <- data.frame(read.csv(here("NFF_data", "wide.df1.teleosts.csv"), header = TRUE, as.is = TRUE)) |>  # importing CSV#
+  mutate(across(.cols = c(geo, isl_grp, archi, Season, bait, topo),
+                .fns = ~ factor(.x)))
 
-##### import teleost df ####
-teleost.bruv.raw <- data.frame(read.csv(here("NFF_data", "wide.df1.teleosts.csv"), header = TRUE, as.is = TRUE)) # importing CSV#
-teleost.bruv.raw$geo <- as.factor(teleost.bruv.raw$geo)
-teleost.bruv.raw$isl_grp <- as.factor(teleost.bruv.raw$isl_grp)
-teleost.bruv.raw$archi <- as.factor(teleost.bruv.raw$archi)
-teleost.bruv.raw$Season <- as.factor(teleost.bruv.raw$Season)
-teleost.bruv.raw$bait <- as.factor(teleost.bruv.raw$bait)
-teleost.bruv.raw$topo <- as.factor(teleost.bruv.raw$topo)
+## import shark ####
+elasmo.bruv.raw <- data.frame(read.csv(here("NFF_data", "wide.df1.ch3.60min.2023.01.csv"), header = TRUE, as.is = TRUE)) |>  # importing CSV#
+  mutate(across(.cols = c(geo, isl_grp, archi, Season, bait_type, topo),
+                .fns = ~ factor(.x)))
 
-##### import shark#####
-elasmo.bruv.raw <- data.frame(read.csv(here("NFF_data", "wide.df1.ch3.60min.2023.01.csv"), header = TRUE, as.is = TRUE)) # importing CSV#
-elasmo.bruv.raw$geo <- as.factor(elasmo.bruv.raw$geo)
-elasmo.bruv.raw$isl_grp <- as.factor(elasmo.bruv.raw$isl_grp)
-elasmo.bruv.raw$archi <- as.factor(elasmo.bruv.raw$archi)
-elasmo.bruv.raw$Season <- as.factor(elasmo.bruv.raw$Season)
-elasmo.bruv.raw$bait <- as.factor(elasmo.bruv.raw$bait)
-elasmo.bruv.raw$topo <- as.factor(elasmo.bruv.raw$topo)
-
-#### reef summaries by UVC pieces ####
-##### Summary by reef for benthic data ####
+# reef summaries by UVC pieces ####
+## Summary by reef for benthic data ####
 benthic.reef.df <- benthic.raw |>
   mutate(chi_benthos_percent = ((CCA + Hard.Coral) / 100)) |>
   group_by(reef_name) |>
@@ -151,6 +135,7 @@ fish.uvc.raw |>
   group_by(diet.kulbiki, Feeding.group) |>
   summarise(n = n())
 # AWAIT NFF SIGNOFF ####
+# "Feeding groups by teleost species" email, 2025-02-21
 # Then populate NA Feeding.group rows with the correct Feeding.group
 
 prey.uvc.survey.sum.df <- fish.uvc.raw |>
@@ -203,7 +188,7 @@ trash.tel.df1 <- teleost.bruv.raw |>
   group_by(reef_name) |>
   summarise(across(where(is.numeric), \(x) mean(x, na.rm = TRUE)))
 
-# make pred.df
+## make pred.df ####
 pred.bruv.df1 <- elasmo.bruv.raw |>
   # create new columns for reef_sharks, transient_pelagic sharks
   mutate(reef_sharks = Whitetip.reef.shark + Grey.reef.shark + Blacktip.reef.shark,
@@ -229,7 +214,7 @@ dplyr::select(site_name:reef_name, maxn_shark, transient_pelagic_sharks, sicklef
          reef_sharks, maxn_shark, teleost_maxn)
 
 
-##### combine into full dataframe ####
+## combine into full dataframe ####
 survey.wide.df1 <- benthic.raw |>
   mutate(chi_benthos_percent = ((CCA + Hard.Coral) / 100)) |>
   dplyr::rename(Time.start = Time) |>
@@ -330,7 +315,7 @@ dplyr::select(-c(latitude, longitude)) |>
 write_csv(survey.wide.df1, here("NFF_data", "ch4_survey_wide_df1.csv"))
 saveRDS(survey.wide.df1, file = here("NFF_data", "survey.wide.df1.RData"))
 
-##### filter for just islands####
+## filter for just islands ####
 island.survey.wide.df1 <- survey.wide.df1 |>
   filter(geo == "island") |>
   droplevels()
@@ -338,7 +323,7 @@ island.survey.wide.df1 <- survey.wide.df1 |>
 write_csv(island.survey.wide.df1, here("NFF_data", "island.ch4_survey_wide_df1.csv"))
 saveRDS(island.survey.wide.df1, file = here("NFF_data", "island.survey.wide.df1.RData"))
 
-##### filter for just atolls####
+## filter for just atolls ####
 atoll.survey.wide.df1 <- survey.wide.df1 |>
   filter(geo == "atoll") |>
   droplevels()
@@ -346,7 +331,7 @@ atoll.survey.wide.df1 <- survey.wide.df1 |>
 write_csv(atoll.survey.wide.df1, here("NFF_data", "atoll.ch4_survey_wide_df1.csv"))
 saveRDS(atoll.survey.wide.df1, file = here("NFF_data", "atoll.survey.wide.df1.RData"))
 
-##### remove marquesas ####
+## remove marquesas ####
 survey.wide.df2 <- survey.wide.df1 |>
   filter(
     site_name != "Nuka Hiva",
@@ -357,7 +342,7 @@ survey.wide.df2 <- survey.wide.df1 |>
 write_csv(survey.wide.df2, here("NFF_data", "ch4_survey_wide_df2.csv"))
 saveRDS(survey.wide.df2, file = here("NFF_data", "survey.wide.df2.RData"))
 
-##### just islands ####
+## just islands ####
 island.survey.wide.df2 <- survey.wide.df2 |>
   filter(geo == "island") |>
   droplevels()
@@ -366,7 +351,7 @@ write_csv(island.survey.wide.df2, here("NFF_data", "island.ch4_survey_wide_df2.c
 saveRDS(island.survey.wide.df2, file = here("NFF_data", "island.survey.wide.df2.RData"))
 
 
-##### just atoll ####
+## just atoll ####
 atoll.survey.wide.df2 <- survey.wide.df2 |>
   filter(geo == "atoll") |>
   droplevels()
@@ -377,20 +362,14 @@ saveRDS(atoll.survey.wide.df2, file = here("NFF_data", "atoll.survey.wide.df2.RD
 
 
 
-# 2025-02-21 SD FROMHERE ####
-
-#### full summary by reef####
+# full summary by reef ####
 reef.df1 <- survey.wide.df1 |>
   dplyr::select(-c(
-    UniqueID,
-    Date, Time.start,
-    Lat,
-    Long,
-    Observer,
-    Depth,
+    UniqueID:Depth, # includes Lat and Long
     sum,
-    chi_prey_grade,
-    chi_all_grade
+    contains("_grade")
+    # chi_prey_grade,
+    # chi_all_grade
   )) |>
   group_by(site_name, reef_name) |>
   summarise(
@@ -399,63 +378,28 @@ reef.df1 <- survey.wide.df1 |>
   ) |>
   merge((pred.bruv.df1) |> dplyr::select(c(reef_name, latitude, longitude)),
         by = c("reef_name")
+        # @NFF why remove Lat & Long from survey.wide.df1 then merge back in from pred.bruv.df1?####
   ) |>
-  mutate(
-    chi_all_grade =
-      ifelse(test = chi_all_score >= 0.80,
-             yes = "Very Healthy",
-             no = ifelse(test = (chi_all_score < 0.80) & (chi_all_score >= 0.60),
-                         yes = "Healthy",
-                         no = ifelse(test = (chi_all_score < 0.60) & (chi_all_score >= 0.40),
-                                     yes = "Fair",
-                                     no = ifelse(test = (chi_all_score < 0.40) & (chi_all_score >= 0.20),
-                                                 yes = "Degraded",
-                                                 no = "Very Degraded"
-                                     )
-                         )
-             )
-      )
-  ) |>
-  mutate(
-    chi_prey_grade =
-      ifelse(test = chi_prey_score >= 0.80,
-             yes = "Very Healthy",
-             no = ifelse(test = (chi_prey_score < 0.80) & (chi_prey_score >= 0.60),
-                         yes = "Healthy",
-                         no = ifelse(test = (chi_prey_score < 0.60) & (chi_prey_score >= 0.40),
-                                     yes = "Fair",
-                                     no = ifelse(test = (chi_prey_score < 0.40) & (chi_prey_score >= 0.20),
-                                                 yes = "Degraded",
-                                                 no = "Very Degraded"
-                                     )
-                         )
-             )
-      )
-  )
-
-reef.df1$chi_all_grade <- factor(reef.df1$chi_all_grade,
-                                 levels = c(
-                                   "Very Degraded",
-                                   "Degraded",
-                                   "Fair",
-                                   "Healthy",
-                                   "Very Healthy"
-                                 )
-)
-reef.df1$chi_prey_grade <- factor(reef.df1$chi_prey_grade,
-                                  levels = c(
-                                    "Very Degraded",
-                                    "Degraded",
-                                    "Fair",
-                                    "Healthy",
-                                    "Very Healthy"
-                                  )
-)
+  mutate(across(ends_with("_score"), ~ case_when(
+    . >= 0.80 ~ "Very Healthy",
+    . >= 0.60 ~ "Healthy",
+    . >= 0.40 ~ "Fair",
+    . >= 0.20 ~ "Degraded",
+    . >= 0.00 ~ "Very Degraded",
+    TRUE ~ "Unknown"
+  ), .names = "{.col}_grade")) |>
+  rename_with(~ gsub("score_grade", "grade", .x, fixed = TRUE)) |>
+  mutate(across(.cols = ends_with("_grade"),
+                .fns = ~ factor(.x, levels = c("Very Degraded",
+                                               "Degraded",
+                                               "Fair",
+                                               "Healthy",
+                                               "Very Healthy"))))
 
 write_csv(reef.df1, here("NFF_data", "ch4_reef_wide_df1.csv"))
 saveRDS(reef.df1, file = here("NFF_data", "ch4_reef_wide_df1.RData"))
 
-##### just islands ####
+## just islands ####
 island.reef.df1 <- reef.df1 |>
   filter(geo == "island") |>
   droplevels()
@@ -463,7 +407,7 @@ island.reef.df1 <- reef.df1 |>
 write_csv(island.reef.df1, here("NFF_data", "ch4_island_reef_wide_df1.csv"))
 saveRDS(island.reef.df1, file = here("NFF_data", "ch4_island_reef_wide_df1.RData"))
 
-##### just atolls ####
+## just atolls ####
 atoll.reef.df1 <- reef.df1 |>
   filter(geo == "atoll") |>
   droplevels()
@@ -471,7 +415,7 @@ atoll.reef.df1 <- reef.df1 |>
 write_csv(atoll.reef.df1, here("NFF_data", "ch4_atoll_reef_wide_df1.csv"))
 saveRDS(atoll.reef.df1, file = here("NFF_data", "ch4_atoll_reef_wide_df1.RData"))
 
-##### remove marquesas ####
+## remove marquesas ####
 reef.df2 <- reef.df1 |>
   filter(
     site_name != "Nuka Hiva",
@@ -483,7 +427,7 @@ write_csv(reef.df2, here("NFF_data", "ch4_reef_wide_df2.csv"))
 saveRDS(reef.df2, file = here("NFF_data", "ch4_reef_wide_df2.RData"))
 
 
-##### just islands ####
+## just islands ####
 island.reef.df2 <- reef.df2 |>
   filter(geo == "island") |>
   droplevels()
@@ -491,7 +435,7 @@ island.reef.df2 <- reef.df2 |>
 write_csv(island.reef.df2, here("NFF_data", "ch4_island_reef_wide_df2.csv"))
 saveRDS(island.reef.df2, file = here("NFF_data", "ch4_island_reef_wide_df2.RData"))
 
-##### just atolls ####
+## just atolls ####
 
 atoll.reef.df2 <- reef.df2 |>
   filter(geo == "atoll") |>
@@ -518,8 +462,11 @@ pred.tel.uvc.reef.df <- pred.tel.uvc.survey.sum.df |>
 write_csv(pred.tel.uvc.reef.df, here("NFF_data", "pred_tel_uvc_sum_reef_2023_02_28.csv"))
 saveRDS(pred.tel.uvc.reef.df, file = here("NFF_data", "pred_tel_uvc_sum_reef_2023_02_28.RData"))
 
+
+
+
 # Summary by reef for prey fish UVC data ####
-##### "prey" species only ####
+## "prey" species only ####
 prey.uvc.reef.df <- prey.uvc.survey.sum.df |>
   group_by(reef_name) |>
   summarise(
@@ -534,19 +481,18 @@ write_csv(prey.uvc.reef.df , here("NFF_data", "prey_uvc_sum_reef_2023_02_28.csv"
 saveRDS(prey.uvc.reef.df, file = here("NFF_data", "prey_uvc_sum_reef_2023_02_28.RData"))
 
 
-##### count surveys per reef ####
+## count surveys per reef ####
 survey_count <- survey.wide.df2 |>
   group_by(reef_name) |>
   summarise(n_uvc = n_distinct(UniqueID, na.rm = TRUE))
 
-
-##### count bruvs per reef ####
+## count bruvs per reef ####
 bruv_count <- elasmo.bruv.raw |>
   group_by(reef_name) |>
   summarise(n_bruv = n_distinct(set_code, na.rm = TRUE)) |>
   merge(survey_count, by = c("reef_name"))
 
-##### count # of fish observations ####
+## count # of fish observations ####
 fish_obs.d1 <- fish.uvc.raw |>
   filter(
     site_name != "Uapou",
@@ -555,40 +501,46 @@ fish_obs.d1 <- fish.uvc.raw |>
     UniqueID != "RIT1_1"
   )
 # see that there are 4 ID to genus so can calculate % from there
-
+# length(unique(fish_obs.d1$UniqueID)) # 119
+#@NFF is this what you mean? Else what are you checking for here? ####
+# general tip: leave mini test code in comments, with answers & dates,
+# so you know what you were testing for, and whether stuff's changed
 
 ##### count number of shark unknown sets ####
 # 1801 total sets used here
-uk_sets <- as.numeric(elasmo.bruv.raw |>
-                        filter(
-                          Unknown.Shark != 0,
-                          Whitetip.reef.shark == 0,
-                          Grey.reef.shark == 0,
-                          Blacktip.reef.shark == 0,
-                          Tawny.nurse.shark == 0,
-                          Lemon.shark == 0,
-                          Great.hammerhead.shark == 0,
-                          Common.Blacktip.shark == 0,
-                          Scalloped.hammerhead.shark == 0,
-                          Silvertip.shark == 0,
-                          Tiger.shark == 0,
-                          site_name != "Uapou",
-                          site_name != "Nuka Hiva",
-                          reef_name != "Marutea 2"
-                        ) |>
-                        summarise(count = n()))
+#@NFF: if object never used, don't create it, just spit out result ####
+# uk_sets <- as.numeric(
+as.numeric(
+  elasmo.bruv.raw |>
+    filter(
+      Unknown.Shark != 0,
+      Whitetip.reef.shark == 0,
+      Grey.reef.shark == 0,
+      Blacktip.reef.shark == 0,
+      Tawny.nurse.shark == 0,
+      Lemon.shark == 0,
+      Great.hammerhead.shark == 0,
+      Common.Blacktip.shark == 0,
+      Scalloped.hammerhead.shark == 0,
+      Silvertip.shark == 0,
+      Tiger.shark == 0,
+      site_name != "Uapou",
+      site_name != "Nuka Hiva",
+      reef_name != "Marutea 2"
+    ) |>
+    summarise(count = n())
+  ) # 2025-02-24: 7
 
 ### isl_group sums ####
-
 isl_grp_means <- survey.wide.df2 |>
   group_by(isl_grp) |>
   summarise(across(where(is.numeric), \(x) mean(x, na.rm = TRUE)))
-
 
 isl_grp_sd <- survey.wide.df2 |>
   group_by(isl_grp) |>
   summarise(across(where(is.numeric), \(x) sd(x, na.rm = TRUE)))
 
+## 3D scatterpolt ####
 d3_chi_plot2 <- (plot_ly(
   data = survey.wide.df2,
   x = ~maxn_shark,
@@ -602,12 +554,13 @@ d3_chi_plot2 <- (plot_ly(
     yaxis = list(title = "Pred. Teleost Biomass (g/m2)"),
     zaxis = list(title = "CCA + Hard Coral % Cover")
   ))
-
 d3_chi_plot2
 
 
-#### Compare Bruvs Pred. Teleost BRUVS vs UVC ####
-##### make df ####
+
+
+# Compare Bruvs Pred. Teleost BRUVS vs UVC ####
+## make df ####
 compare.tel.df1 <- teleost.bruv.raw |>
   dplyr::select(-c(lutjanidae_maxN:lethrinidae_maxN_a, carangidae_maxN_b:total_maxN_b)) |>
   dplyr::rename(teleost_maxn = total_maxN_a, site_name = site, reef_name = reef) |>
@@ -624,7 +577,7 @@ compare.tel.df1 <- teleost.bruv.raw |>
         by = c("reef_name")) |> # SD fix for missing pred_tel_biomass_g_per_m2 in ggplot call below
   filter(site_name != "Nuka Hiva")
 
-##### plot####
+## plot ####
 scatter_pred_tel_plot1 <- ggplot(compare.tel.df1,
                                  aes(x = teleost_maxn,
                                      y = pred_tel_biomass_g_per_m2)) +
@@ -662,7 +615,7 @@ names(colnameslist) <- NULL
 colnameslist <- colnameslist[!(duplicated(colnameslist))]
 # save csv
 write.csv(x = colnameslist,
-          file = here("NFF_data", "AllDfsColnames.csv"),
+          file = here("NFF_data", paste0(Sys.Date(), "_AllDfsColnames.csv")),
           row.names = FALSE)
 
 # 2025-02-18 remake functional groups to match SCM DAG ####
