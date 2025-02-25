@@ -533,6 +533,7 @@ UVC |> dplyr::filter(!reef_name %in% UVConlyReefs) -> UVC
 BRUV |> dplyr::filter(!reef_name %in% BRUVonlyReefs) -> BRUV
 BRUV |>
   dplyr::left_join(UVC) |> 
+  # reoarrange columns
   dplyr::select(archi, isl_grp, site_name, reef_name, latitude, longitude, geo, topo, lagoon.size, Emerged.land.area, depth, Population.size, grav, Season, ave_npp, ave_temp, visibility, vid_length, SampledVolumeM3, SampledVolumeM3min, time.no.bait, everything()) -> ReefWideBRUVUVC
 
 write.csv(x = ReefWideBRUVUVC,

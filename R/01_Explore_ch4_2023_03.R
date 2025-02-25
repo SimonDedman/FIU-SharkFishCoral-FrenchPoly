@@ -75,6 +75,12 @@ write_csv(benthic.reef.df , here("NFF_data", "benthic_sum_reef_2023_02_26.csv"))
 saveRDS(benthic.reef.df, file = here("NFF_data", "benthic_sum_reef_2023_02_26.RData"))
 
 
+# FIX MISSING FEEDING GROUPS HERE ####
+# see script #02.R for populating NAs
+# If that can be run entirely first, and its output used here, then renumber scripts accordingly
+
+
+
 # need full data frame with survey as the primary sampling unit ####
 ## first sort out fish
 # filter for only pred. teleost species, take out sharks
@@ -97,7 +103,6 @@ pred.tel.uvc.survey.sum.df <- fish.uvc.raw |>
   ) |>
   dplyr::rename(pred_tel_biomass_g = biomass_g, pred_tel_biomass_g_per_m2 = biomass_g_per_m2) |>
   mutate(chi_pred_tel_percent = (pred_tel_biomass_g_per_m2 / 500))
-
 
 # for just prey species i.e. non-target teleost families, sharks and rays
 # Assign NA Feeding.group rows to a Feeding.group
@@ -137,9 +142,10 @@ fish.uvc.raw |>
 # AWAIT NFF SIGNOFF ####
 # "Feeding groups by teleost species" email, 2025-02-21
 # Then populate NA Feeding.group rows with the correct Feeding.group
+# review this re script #02.R, work already done?
 
 prey.uvc.survey.sum.df <- fish.uvc.raw |>
-  filter(
+  filter( # filter out predator teleosts & sharks & rays
     Family != "Lutjanidae",
     Family != "Scombridae",
     Family != "Megalopidae",
@@ -147,12 +153,15 @@ prey.uvc.survey.sum.df <- fish.uvc.raw |>
     Family != "Sphyraenidae",
     Family != "Serranidae",
     Family != "Lethrinidae",
-    Family != "Carcharhinidae",
-    Family != "Myliobatidae"
+    Family != "Carcharhinidae", # sharks
+    Family != "Myliobatidae" # rays
+    # Feeding.group != "Piscivore"
   ) |>
   # Split to invertivores planktivores herbivores by Feeding.group
   # pivot.wider to get biomass_g and biomass_g_per_m2 columns for each Feeding.group
   pivot_wider(names_from = Feeding.group,
+              # TODO do this on fish UVC raw ####
+              # not pred & prey
               values_from = c(biomass_g, biomass_g_per_m2),
               values_fn = ~ mean(.x, na.rm = TRUE)) |>
   group_by(UniqueID) |> # reef
@@ -160,27 +169,35 @@ prey.uvc.survey.sum.df <- fish.uvc.raw |>
     across(c(site_name, reef_name, Date, Time.start, Lat, Long, Observer), \(x) first(x)),
     across(contains("biomass_g"), \(x) sum(x, na.rm = TRUE)) # contains was c(biomass_g, biomass_g_per_m2)
   ) |>
-  # dplyr::rename(prey_fish_biomass_g = biomass_g,
-  #               prey_fish_biomass_g_per_m2 = biomass_g_per_m2) |>
-  # mutate(chi_prey_fish_percent = (prey_fish_biomass_g_per_m2 / 500))
-  # @NFF explain what this is in comment please ####
-# this needs to be renamed so it doesn't overwrite the original columns
-mutate(across(contains("biomass_g_per_m2"), \(x) x/500, .names = "chi_{.col}_percent")) |>
+  # CHI = coral health index, g per m2 is how it was sampled. /500 to make consistent to the health index.
+  # Kaufman, L., Sala, E., Sandin, S. A., Obura, D. O., Rohwer, F., & Tschirky, J.
+  # (2011). Coral health index (CHI): Measuring coral community health.
+  # Conservation International. https://portals.iucn.org/library/node/28851
+  # NFF paper: To assess general health of each reef I use a modified two
+  # dimensional coral health index as described in Kaufman et al. (2011).
+  # This coral health index combines two parameters, percent cover of hard corals
+  # + crustose coralline algae and fish biomass as a fraction of 500 g/m2,
+  # which are averaged to produce a score which ranges from 0 to 1,
+  # which is then graded into five categories: very degraded, degraded, fair,
+  # healthy, and very healthy.
+  # this needs to be renamed so it doesn't overwrite the original columns
+  mutate(across(contains("biomass_g_per_m2"), \(x) x/500, .names = "chi_{.col}_percent")) |>
   # remove the "_biomass_g_per_m2" prefix from column names containing "percent"
   dplyr::rename_with(.fn = ~ stringr::str_replace(., "_biomass_g_per_m2", ""),
                      .cols = contains("percent")) |>
   # remove spaces in Mixed diet column names
   dplyr::rename_with(~ gsub(" ", "_", .x, fixed = TRUE))
 # @NFF Has piscivores; ensure they're used somewhere ####
+# retain prey & pred teleosts together in fish uvc raw near top,
+# run both through the same processing, then filter as needed
 
 
 # pare down predators bruvs ####
-# @NFF pare down how? ####
 # maxN teleosts per site
 # merged with elasmo.bruv.raw in next block
 # mean maxn per site only for families: lutjanidae scombridae megalopidae carangidae sphyraenidae serranidae lethrinidae
 # not for: carangidae sphyraenidae serranidae lethrinidae
-# @NFF what is the difference between the two lists? ####
+# maxN a & b: 2 ways of measuring maxN based on unknowns. B is a bad approach, ignore.
 # becomes teleost_maxn in pred.bruv.df1 below
 trash.tel.df1 <- teleost.bruv.raw |>
   dplyr::select(reef, total_maxN_a) |>
@@ -195,10 +212,7 @@ pred.bruv.df1 <- elasmo.bruv.raw |>
          transient_pelagic_sharks = Scalloped.hammerhead.shark + Common.Blacktip.shark + Tiger.shark + Great.hammerhead.shark) |>
   # rename sicklefin_lemon_sharks
   rename(sicklefin_lemon_sharks = Lemon.shark) |>
-  #@NFF better to select than -select, user can see what's being selected ####
-# only use MaxN
-# dplyr::select(-c(nspp_shark:Tiger.shark, maxn_ray:vid_length)) |>
-dplyr::select(site_name:reef_name, maxn_shark, transient_pelagic_sharks, sicklefin_lemon_sharks, reef_sharks, time.no.bait:topo) |>
+  dplyr::select(site_name:reef_name, maxn_shark, transient_pelagic_sharks, sicklefin_lemon_sharks, reef_sharks, time.no.bait:topo) |>
   group_by(site_name, reef_name) |>
   summarise(
     across(c(geo, archi, isl_grp, Season, topo), first),
@@ -289,8 +303,8 @@ survey.wide.df1 <- benthic.raw |>
   ), .names = "{.col}_grade")) |>
   rename_with(~ gsub("score_grade", "grade", .x, fixed = TRUE)) |>
   merge(pred.bruv.df1, by = c("site_name", "reef_name")) |>
-  # @NFF why remove these?####
-dplyr::select(-c(latitude, longitude)) |>
+  dplyr::select(-c(latitude, longitude)) |>
+  # Removed because we already have lat and lon, don't need 2 sets
   mutate(
     pop.dens = Population.size / Emerged.land.area,
     across(.cols = ends_with("grade"),
@@ -378,7 +392,8 @@ reef.df1 <- survey.wide.df1 |>
   ) |>
   merge((pred.bruv.df1) |> dplyr::select(c(reef_name, latitude, longitude)),
         by = c("reef_name")
-        # @NFF why remove Lat & Long from survey.wide.df1 then merge back in from pred.bruv.df1?####
+        # Lat & Long removed from survey.wide.df1 then merged back in from pred.bruv.df1
+        # to avoid lat & long being summaries
   ) |>
   mutate(across(ends_with("_score"), ~ case_when(
     . >= 0.80 ~ "Very Healthy",
@@ -450,6 +465,8 @@ saveRDS(atoll.reef.df2, file = here("NFF_data", "ch4_atoll_reef_wide_df2.RData")
 # Summary by reef for pred teleost UVC data ####
 ## predatory fish ####
 pred.tel.uvc.reef.df <- pred.tel.uvc.survey.sum.df |>
+  # TODO fix after removing pred & prey dfs ####
+  # if we don't have pred & prey dfs then just filter by feeding.group == piscivore?
   group_by(reef_name) |>
   summarise(
     across(c(site_name), \(x) first(x)),
@@ -468,6 +485,8 @@ saveRDS(pred.tel.uvc.reef.df, file = here("NFF_data", "pred_tel_uvc_sum_reef_202
 # Summary by reef for prey fish UVC data ####
 ## "prey" species only ####
 prey.uvc.reef.df <- prey.uvc.survey.sum.df |>
+  # TODO fix after removing pred & prey dfs ####
+# if we don't have pred & prey dfs then just filter by feeding.group == prey groups?
   group_by(reef_name) |>
   summarise(
     across(c(site_name), first),
@@ -495,21 +514,18 @@ bruv_count <- elasmo.bruv.raw |>
 ## count # of fish observations ####
 fish_obs.d1 <- fish.uvc.raw |>
   filter(
-    site_name != "Uapou",
-    site_name != "Nuka Hiva",
-    reef_name != "Marutea 2",
-    UniqueID != "RIT1_1"
+    site_name != "Uapou", # not coral reefs
+    site_name != "Nuka Hiva", # not coral reefs
+    reef_name != "Marutea 2", # no corresponding UVC surveys here
+    UniqueID != "RIT1_1" # no corresponding UVC surveys here
   )
-# see that there are 4 ID to genus so can calculate % from there
-# length(unique(fish_obs.d1$UniqueID)) # 119
-#@NFF is this what you mean? Else what are you checking for here? ####
-# general tip: leave mini test code in comments, with answers & dates,
-# so you know what you were testing for, and whether stuff's changed
+# see that there are 4 ID to genus so can calculate % (of CHI?) from there
+# length(unique(fish_obs.d1$UniqueID)) # 119 @ 2025-02-24
+# Unknown what this is for.
 
-##### count number of shark unknown sets ####
+
+## count number of shark unknown sets ####
 # 1801 total sets used here
-#@NFF: if object never used, don't create it, just spit out result ####
-# uk_sets <- as.numeric(
 as.numeric(
   elasmo.bruv.raw |>
     filter(
@@ -529,7 +545,7 @@ as.numeric(
       reef_name != "Marutea 2"
     ) |>
     summarise(count = n())
-  ) # 2025-02-24: 7
+) # 2025-02-24: 7
 
 ### isl_group sums ####
 isl_grp_means <- survey.wide.df2 |>
