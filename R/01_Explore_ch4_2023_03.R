@@ -32,6 +32,7 @@ benthic.raw <- data.frame(read.csv(here("NFF_data", "fixed_bethic_uvc_final_2023
   mutate(across(.cols = c(site_name, reef_name, UniqueID, Date),
                 .fns = ~ factor(.x)))
 
+# REPLACE THIS WITH fish.spp.list FROM SCRIPT 02.R ####
 ## raw fish uvc data ####
 fish.uvc.raw <- data.frame(read.csv(here("NFF_data", "fixed_fish_uvc_final_2023_02_28.csv"), header = TRUE, as.is = TRUE)) |>
   mutate(across(.cols = c(site_name, reef_name, UniqueID, Date, Species, Family, diet.kulbiki, Feeding.group),
@@ -78,6 +79,12 @@ saveRDS(benthic.reef.df, file = here("NFF_data", "benthic_sum_reef_2023_02_26.RD
 # FIX MISSING FEEDING GROUPS HERE ####
 # see script #02.R for populating NAs
 # If that can be run entirely first, and its output used here, then renumber scripts accordingly
+
+# q: what causes error "missing values are not allowed in subscripted assignments of data frames" and how do I solve it when trying to use indexing to assign values to NA cells, originally using the formulation: fish.spp.list[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Ambush Piscivore", "Feeding.group"] <- "Piscivore"
+# a: The error is caused by the fact that the data frame is not being subsetted correctly. The correct way to subset a data frame is to use the subset() function.
+# The correct way to assign values to NA cells in a data frame is to use the is.na() function to create a logical vector that identifies the NA cells,
+# and then use this logical vector to subset the data frame and assign the values.
+# The correct formulation is: fish.spp.list$Feeding.group[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Ambush Piscivore"] <- "Piscivore"
 
 
 

@@ -17,13 +17,14 @@ Read in data.
 #| echo: false
 # root <- "/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/NFF Data code/" # Si
 # root <- "/home/NFF/MyFunFolder/SuperDuper/UltraMega/2024-01_SharksFishCoral-FrenchPoly/NFF Data code/" # NFF
-UVC <- readr::read_csv(here("NFF_data", "fixed_fish_uvc_final_2023_02_28.csv")) |> 
+UVC <- readr::read_csv(here::here("NFF_data", "fixed_fish_uvc_final_2023_02_28.csv")) |> 
   dplyr::filter(!Family %in% c("Carcharhinidae", "Myliobatidae"))
-Diet <- readr::read_csv(here("NFF_data", "Trophic_Categorisation_Desbiens.csv")) |> 
+Diet <- readr::read_csv(here::here("NFF_data", "Trophic_Categorisation_Desbiens.csv")) |> 
   dplyr::rename(Diet = "Main Diet") |> 
   dplyr::filter(!(Species == "Naso vlamingii" & Diet == "Browser"),
                 !(Species == "Naso annulatus" & Diet == "Browser"),
                 !(Species == "Naso brevirostris" & Diet == "Browser"))
+BRUV <- readr::read_csv(here::here("NFF_data", "wide.reef.60.ch3.2023.01.csv"))
 ```
 
 Warning: Detected an unexpected many-to-many relationship between `x` and `y`. Diet has dupes: Choerodon anchorago: invertivore / pursuit piscivore: not in UVC list, ignore Naso vlamingii: browser/planktivore Naso annulatus: same
@@ -33,7 +34,8 @@ Join NFF UVC table to Desbiens SM Trophic_Categorisation_Desbiens to add Desbien
 ```{r}
 #| echo: false
 fish.spp.list <- UVC |>
-  dplyr::select(c(Species, Family, diet.kulbiki, Feeding.group)) |>
+  # might as well retain all these
+  # dplyr::select(c(Species, Family, diet.kulbiki, Feeding.group)) |>
   dplyr::group_by(Species) |>
   dplyr::distinct() |>
   merge(Diet,
@@ -44,42 +46,39 @@ fish.spp.list <- UVC |>
     # uvc.feeding_group = Feeding.group,
     uvc.diet = diet.kulbiki
   ) |>
+  # dupe column
   dplyr::mutate(offical_functional_group = Diet) |>
-  dplyr::mutate(offical_functional_group = ifelse(Feeding.group == "Invertivore" &
-                                                    is.na(Diet),
+  # populate NA inverts & corals
+  dplyr::mutate(offical_functional_group = ifelse(Feeding.group == "Invertivore" & is.na(Diet),
                                                   "Invertivore",
-                                                  (ifelse(Feeding.group == "Coralivore" &
-                                                            is.na(Diet),
+                                                  (ifelse(Feeding.group == "Coralivore" & is.na(Diet),
                                                           "Coralivore",
                                                           Diet
                                                   ))
   )) |>
-  dplyr::mutate(offical_functional_group = ifelse(uvc.diet == "Coral" &
-                                                    is.na(offical_functional_group),
+  dplyr::mutate(offical_functional_group = ifelse(uvc.diet == "Coral" & is.na(offical_functional_group),
                                                   "Coralivore",
                                                   offical_functional_group
   )) |>
-  dplyr::mutate(offical_functional_group = ifelse(uvc.diet == "Zooplancton" &
-                                                    is.na(offical_functional_group),
+  dplyr::mutate(offical_functional_group = ifelse(uvc.diet == "Zooplancton" & is.na(offical_functional_group),
                                                   "Planktivore",
                                                   offical_functional_group
   )) |>
-  dplyr::mutate(offical_functional_group = ifelse(uvc.diet == "Plancton" &
-                                                    is.na(offical_functional_group),
+  dplyr::mutate(offical_functional_group = ifelse(uvc.diet == "Plancton" & is.na(offical_functional_group),
                                                   "Planktivore",
                                                   offical_functional_group
   )) |>
-  dplyr::mutate(offical_functional_group = ifelse(uvc.diet == "Macroinvertebrates" &
-                                                    is.na(offical_functional_group),
+  dplyr::mutate(offical_functional_group = ifelse(uvc.diet == "Macroinvertebrates" & is.na(offical_functional_group),
                                                   "Invertivore",
                                                   offical_functional_group
   )) |>
-  dplyr::mutate(offical_functional_group = ifelse(uvc.diet == "Microinvertebrates" &
-                                                    is.na(offical_functional_group),
+  dplyr::mutate(offical_functional_group = ifelse(uvc.diet == "Microinvertebrates" & is.na(offical_functional_group),
                                                   "Invertivore",
                                                   offical_functional_group
   ))
 ```
+
+Check & remove duplicates & oddities
 
 ```{r}
 #| echo: false
@@ -152,7 +151,8 @@ Checked Diet against FamilyDiet. Where Diet present, no disagreements from Famil
 ```{r}
 #| echo: false
 fish.spp.list |> 
-  dplyr::select(Family, Species, uvc.diet, Feeding.group, Diet, FamilyDiet, offical_functional_group) |>
+  # don't remove columns, useful in Explore.R
+  # dplyr::select(Family, Species, uvc.diet, Feeding.group, Diet, FamilyDiet, offical_functional_group) |>
   dplyr::rename(OfficialFnGp = offical_functional_group) |>
   dplyr::mutate(BothDiet = ifelse(is.na(OfficialFnGp), FamilyDiet, OfficialFnGp)) |> 
   dplyr::select(!OfficialFnGp) |> 
@@ -201,8 +201,8 @@ fish.spp.list  |>
   dplyr::filter(OfficialFnGp == "Coralivore") ->
   Coralivores
 
-write.csv(x = joinReviewFamOutstanding,file = "joinReviewFamOutstanding.csv",row.names = FALSE)
-write.csv(x = Coralivores,file = "Coralivores.csv",row.names = FALSE)
+write.csv(x = joinReviewFamOutstanding, file = here::here("NFF_data", "joinReviewFamOutstanding.csv"), row.names = FALSE)
+write.csv(x = Coralivores, file = here::here("NFF_data", "Coralivores.csv"), row.names = FALSE)
 
 ```
 
@@ -210,7 +210,7 @@ Import Official Functional Group manual additions, join with fish.spp.list
 
 ```{r}
 #| echo: false
-OFGaddition <- readr::read_csv(here("NFF_data", "OfficialFnGp-additions-Coralivores.csv")) |> 
+OFGaddition <- readr::read_csv(here::here("NFF_data", "OfficialFnGp-additions-Coralivores.csv")) |> 
   dplyr::rename(OFG = OfficialFnGp)
 
 fish.spp.list |> 
@@ -219,7 +219,7 @@ fish.spp.list |>
   dplyr::mutate(BothOFG = ifelse(is.na(OfficialFnGp), OFG, OfficialFnGp)) |>
   dplyr::select(!OfficialFnGp) |> 
   dplyr::rename(OfficialFnGp = BothOFG) ->
-  fish.spp.list
+  fish.spp.list2
 
 ```
 
@@ -227,47 +227,92 @@ Back-populate Feeding.group from OfficialFnGp in case we use that schema, remove
 
 ```{r}
 #| echo: false
-fish.spp.list[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Ambush Piscivore", "Feeding.group"] <- "Piscivore"
-fish.spp.list[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Browser", "Feeding.group"] <- "Herbivore"
-fish.spp.list[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Coralivore", "Feeding.group"] <- "Coralivore"
-fish.spp.list[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Grazer", "Feeding.group"] <- "Herbivore"
-fish.spp.list[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Invertivore", "Feeding.group"] <- "Invertivore"
-fish.spp.list[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Planktivore" & fish.spp.list$uvc.diet == "Microalgae", "Feeding.group"] <- "Herbivore"
-fish.spp.list[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Planktivore" & fish.spp.list$uvc.diet == "Zooplancton", "Feeding.group"] <- "Planktivore"
-fish.spp.list[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Planktivore" & fish.spp.list$uvc.diet == "Coral", "Feeding.group"] <- "Coralivore"
-fish.spp.list[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Planktivore" & fish.spp.list$uvc.diet == "Plancton", "Feeding.group"] <- "Planktivore"
-fish.spp.list[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Pursuit Piscivore", "Feeding.group"] <- "Piscivore"
-fish.spp.list[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Scraper", "Feeding.group"] <- "Herbivore"
 
-fish.spp.list |>
-  dplyr::select(Family, Species, Feeding.group, OfficialFnGp) ->
-  fish.spp.list
+# Prior NA check process to get here:
+# return the number of NAs in fish.spp.list$Feeding.group
+# length(which(is.na(fish.spp.list$Feeding.group))) # 2, 0
 
-write.csv(x = fish.spp.list,
-          file = here("NFF_data", "TeleostDietFnGps.csv"),
-          row.names = FALSE)
+# find info on remaining 2.
+# fish.spp.list |>
+#  dplyr::filter(is.na(Feeding.group)) |> 
+#  dplyr::select(Species, Family) |> 
+#  unique() # Sunagocia otaitensis; Platycephalidae
+# research its diet
+# Feeds on crabs and prawns, also on fishes. https://www.fishbase.se/summary/12903
+# Add to back-populate list below
+
+# fish.spp.list |> 
+#   dplyr::filter(is.na(OfficialFnGp)) |> 
+#   dplyr::group_by(uvc.diet, Feeding.group) |> 
+#   dplyr::summarise(n = dplyr::n())
+
+fish.spp.list$Feeding.group[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Ambush Piscivore"] <- "Piscivore"
+fish.spp.list$Feeding.group[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Browser"] <- "Herbivore"
+fish.spp.list$Feeding.group[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Coralivore"] <- "Coralivore"
+fish.spp.list$Feeding.group[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Grazer"] <- "Herbivore"
+fish.spp.list$Feeding.group[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Invertivore"] <- "Invertivore"
+fish.spp.list$Feeding.group[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Scraper"] <- "Herbivore"
+fish.spp.list$Feeding.group[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Pursuit Piscivore"] <- "Piscivore"
+fish.spp.list$Feeding.group[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Planktivore" & fish.spp.list$uvc.diet == "Microalgae"] <- "Herbivore"
+fish.spp.list$Feeding.group[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Planktivore" & fish.spp.list$uvc.diet == "Zooplancton"] <- "Planktivore"
+fish.spp.list$Feeding.group[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Planktivore" & fish.spp.list$uvc.diet == "Coral"] <- "Coralivore"
+fish.spp.list$Feeding.group[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Planktivore" & fish.spp.list$uvc.diet == "Plancton"] <- "Planktivore"
+fish.spp.list$Feeding.group[is.na(fish.spp.list$Feeding.group) & fish.spp.list$uvc.diet == "Detritus"] <- "Herbivore"
+fish.spp.list$Feeding.group[is.na(fish.spp.list$Feeding.group) & fish.spp.list$uvc.diet == "Microalgae"] <- "Herbivore"
+fish.spp.list$Feeding.group[is.na(fish.spp.list$Feeding.group) & fish.spp.list$uvc.diet == "Necton"] <- "Piscivore"
+fish.spp.list$Feeding.group[is.na(fish.spp.list$Feeding.group) & fish.spp.list$Species == "Sunagocia otaitensis"] <- "Invertivore" # Feeds on crabs and prawns, also on fishes
+fish.spp.list$Feeding.group[is.na(fish.spp.list$Feeding.group) & fish.spp.list$uvc.diet == "Macroinvertebrates"] <- "Invertivore" # Feeds on crabs and prawns, also on fishes
+
+fish.spp.list <- fish.spp.list |> 
+  dplyr::mutate(
+    OfficialFnGp = dplyr::case_when(
+      is.na(OfficialFnGp) ~ Feeding.group,
+      .default = OfficialFnGp),
+    FamilyDiet = dplyr::case_when(
+      is.na(FamilyDiet) ~ Feeding.group,
+      .default = FamilyDiet)
+  )
+# don't remove columns
+# fish.spp.list |>
+# dplyr::select(Family, Species, Feeding.group, OfficialFnGp) ->
+# fish.spp.list
+
+# write.csv(x = fish.spp.list,
+#           file = here::here("NFF_data", "TeleostDietFnGps.csv"),
+#           row.names = FALSE)
 ```
 
-Load lookup, UVC, and BRUVs master databases, left_join fish.spp.list's Feeding.group & OfficialFnGp to the UVC
+Remove spaces from OfficialFnGp Ambush & Pursuit Piscivore
 
 ```{r}
 #| echo: false
-fish.spp.list <- readr::read_csv(here("NFF_data", "TeleostDietFnGps.csv"))
+# fish.spp.list <- readr::read_csv(here("NFF_data", "TeleostDietFnGps.csv"))
 
-UVC <- readr::read_csv(here("NFF_data", "fixed_fish_uvc_final_2023_02_28.csv")) |> 
-  dplyr::filter(!Family %in% c("Carcharhinidae", "Myliobatidae")) |> 
-  dplyr::left_join(fish.spp.list |> 
-                     dplyr::rename(FdGpNFF = Feeding.group,
-                                   FdGpDes = OfficialFnGp)) |> 
-  dplyr::mutate(FdGpDes = dplyr::case_match(
-    FdGpDes,
-    "Ambush Piscivore" ~ "AmbushPiscivore",
-    "Pursuit Piscivore" ~ "PursuitPiscivore",
-    .default = FdGpDes))
+# UVC <- readr::read_csv(here("NFF_data", "fixed_fish_uvc_final_2023_02_28.csv")) |> 
+#   dplyr::filter(!Family %in% c("Carcharhinidae", "Myliobatidae")) |> 
+#   dplyr::left_join(fish.spp.list |> 
+#                      dplyr::rename(FdGpNFF = Feeding.group,
+#                                    FdGpDes = OfficialFnGp)) |> 
+fish.spp.list <- fish.spp.list |>  
+  dplyr::mutate(OfficialFnGp = dplyr::case_match(
+    OfficialFnGp,
+    "Ambush Piscivore" ~ "AmbushPiscivore", # "Piscivore",
+    "Pursuit Piscivore" ~ "PursuitPiscivore", # "Piscivore",
+    # AWAIT NFF SIGNOFF ####
+    "AmbushPiscivore" ~ "Piscivore",
+    "Browser" ~ "Herbivore",
+    "Coralivore" ~ "Herbivore",
+    "Grazer" ~ "Herbivore",
+    # "Herbivore",
+    # "Invertivore",
+    # "Planktivore",
+    "PursuitPiscivore" ~ "Piscivore",
+    "Scraper" ~ "Herbivore",
+    # "Piscivore",
+    .default = OfficialFnGp))
 
-rm(fish.spp.list)
-
-BRUV <- readr::read_csv(here("NFF_data", "wide.reef.60.ch3.2023.01.csv"))
+# At this point I think I can export fish.spp.list for use in 01_explore.R ####
+# See L35
 ```
 
 # Standardise UVC & BRUV effort/sampling range/amount
@@ -451,7 +496,7 @@ NFF:
 
 -   Could just do a typical, k-means style standardisation, scale & centre or whatever.
 
-# Join UVC & BRUV together
+# Join UVC (fish.spp.list) & BRUV together
 
 UVC is long & BRUV is wide.
 
@@ -467,17 +512,24 @@ Snapshot: reef. BRUV smallest unit is reef_name, UVC's is UniqueID. Ignore Uniqu
 #                    Long = mean(Long, na.rm = TRUE)) ->
 #   reef_latlons
 
-UVC |> 
-  dplyr::group_by(reef_name, FdGpDes) |> # Species
+# fish.spp.list is forked from UVC immediately after the file is read in,
+# and UVC isn't touched until now. Arguably fish.spp.list should have been 
+# UVC from the beginning, tho in fairness I've changed the desired outcome.
+# At this point, FSL is per species per reef, and UVC is per reef.
+
+fish.spp.list |> 
+  dplyr::group_by(reef_name, OfficialFnGp) |> # Species
   dplyr::summarise(site_name = dplyr::first(site_name, na_rm = TRUE),
                    SppNoMean = mean(Number, na.rm = TRUE),
                    SppSizeMean = mean(Size, na.rm = TRUE),
                    BiomassMean = mean(biomass_g_per_m2, na.rm = TRUE)
   ) |> 
   dplyr::select(site_name, tidyselect::everything()) |> 
-  tidyr::pivot_wider(names_from = c(FdGpDes),
+  # pivot_wider from OfficialFnGp creates "NA_" columns due to NA OfficialFnGp values.
+  # Need to clean those upstream.
+  tidyr::pivot_wider(names_from = c(OfficialFnGp),
                      values_from = c(SppNoMean, SppSizeMean, BiomassMean),
-                     names_glue = "{FdGpDes}_{.value}") |> 
+                     names_glue = "{OfficialFnGp}_{.value}") |> 
   # dplyr::left_join(reef_latlons) |> 
   dplyr::select(site_name,
                 reef_name,
@@ -487,7 +539,8 @@ UVC |>
                 tidyselect::ends_with("_SppSizeMean"),
                 tidyselect::ends_with("_BiomassMean")) ->
   UVC
-# rm(reef_latlons)
+# This is wide by OfficialFnGp but still has groups we don't want in the DAG.
+# Fix above in fish.spp.list
 ```
 
 Find reef_name mismatches in UVC and BRUV
@@ -533,7 +586,7 @@ UVC |> dplyr::filter(!reef_name %in% UVConlyReefs) -> UVC
 BRUV |> dplyr::filter(!reef_name %in% BRUVonlyReefs) -> BRUV
 BRUV |>
   dplyr::left_join(UVC) |> 
-  # reoarrange columns
+  # rearrange columns
   dplyr::select(archi, isl_grp, site_name, reef_name, latitude, longitude, geo, topo, lagoon.size, Emerged.land.area, depth, Population.size, grav, Season, ave_npp, ave_temp, visibility, vid_length, SampledVolumeM3, SampledVolumeM3min, time.no.bait, everything()) -> ReefWideBRUVUVC
 
 write.csv(x = ReefWideBRUVUVC,
@@ -562,7 +615,7 @@ Missing:
 -   Other.Algae
 -   Relief
 
-All in bethic_sum_reef_2023_02_26.csv ?
+All in benthic_sum_reef_2023_02_26.csv ?
 
 ```{r}
 Benthic <- readr::read_csv(file = here("NFF_data", "bethic_sum_reef_2023_02_26.csv"))
@@ -612,6 +665,7 @@ ReefWideBRUVUVC <- ReefWideBRUVUVC |>
     reef_sharks,
     piscivores,
     herbivores,
+    # why are these names janky? ####
     Invertivore_SppNoMean,
     Planktivore_SppNoMean,
     # AmbushPiscivore_SppNoMean:Scraper_SppNoMean,
@@ -638,13 +692,13 @@ Only need to do this for columns/variables we're using in the DAG
 
 ```{r convert columns}
 ReefWideBRUVUVC <- ReefWideBRUVUVC |>
-dplyr::mutate(island_geomorphology = as.numeric(dplyr::case_match(island_geomorphology, # "open atoll"   "near atoll"   "closed atoll" "high rocky"   "high barrier"
-"open atoll" ~ "1", 
-"closed atoll" ~ "0.75",
-"near atoll" ~ "0.5",
-"high barrier" ~ "0.25",
-"high rocky" ~ "0",
-.default = island_geomorphology)))
+  dplyr::mutate(island_geomorphology = as.numeric(dplyr::case_match(island_geomorphology, # "open atoll"   "near atoll"   "closed atoll" "high rocky"   "high barrier"
+                                                                    "open atoll" ~ "1", 
+                                                                    "closed atoll" ~ "0.75",
+                                                                    "near atoll" ~ "0.5",
+                                                                    "high barrier" ~ "0.25",
+                                                                    "high rocky" ~ "0",
+                                                                    .default = island_geomorphology)))
 # season = as.numeric(dplyr::case_match(season, # "Dry" "Wet"
 # "Wet" ~ "0", 
 # "Dry" ~ "1",
@@ -660,10 +714,10 @@ Nat: make function & apply
 
 ```{r}
 stdize <- function(x) { # centre around mean, scale to SD, then rescale to 0:1
-x <- (x - mean(x, na.rm = TRUE)) / (sd(x, na.rm = TRUE)) # centre & scale to SD
-x <- x - min(x, na.rm = TRUE) # shift so min is 0
-x <- x / max(x, na.rm = TRUE) # scale so max is 1
-return(x)
+  x <- (x - mean(x, na.rm = TRUE)) / (sd(x, na.rm = TRUE)) # centre & scale to SD
+  x <- x - min(x, na.rm = TRUE) # shift so min is 0
+  x <- x / max(x, na.rm = TRUE) # scale so max is 1
+  return(x)
 }
 
 # apply function
@@ -674,8 +728,8 @@ ReefWideBRUVUVC$browser[is.na(ReefWideBRUVUVC$browser)] <- runif(n = length(Reef
 
 # save block
 write.csv(x = ReefWideBRUVUVC,
-file =  here("NFF_data", "ReefWideBRUVUVC.csv"),
-row.names = FALSE)
+          file =  here("NFF_data", "ReefWideBRUVUVC.csv"),
+          row.names = FALSE)
 
 ReefWideBRUVUVC <- readr::read_csv(file = here("NFF_data", "ReefWideBRUVUVC.csv"))
 ```
