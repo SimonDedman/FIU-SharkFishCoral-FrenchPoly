@@ -24,7 +24,6 @@ Diet <- readr::read_csv(here::here("NFF_data", "Trophic_Categorisation_Desbiens.
   dplyr::filter(!(Species == "Naso vlamingii" & Diet == "Browser"),
                 !(Species == "Naso annulatus" & Diet == "Browser"),
                 !(Species == "Naso brevirostris" & Diet == "Browser"))
-BRUV <- readr::read_csv(here::here("NFF_data", "wide.reef.60.ch3.2023.01.csv"))
 ```
 
 Warning: Detected an unexpected many-to-many relationship between `x` and `y`. Diet has dupes: Choerodon anchorago: invertivore / pursuit piscivore: not in UVC list, ignore Naso vlamingii: browser/planktivore Naso annulatus: same
@@ -219,7 +218,7 @@ fish.spp.list |>
   dplyr::mutate(BothOFG = ifelse(is.na(OfficialFnGp), OFG, OfficialFnGp)) |>
   dplyr::select(!OfficialFnGp) |> 
   dplyr::rename(OfficialFnGp = BothOFG) ->
-  fish.spp.list2
+  fish.spp.list
 
 ```
 
@@ -293,12 +292,11 @@ Remove spaces from OfficialFnGp Ambush & Pursuit Piscivore
 #   dplyr::left_join(fish.spp.list |> 
 #                      dplyr::rename(FdGpNFF = Feeding.group,
 #                                    FdGpDes = OfficialFnGp)) |> 
-fish.spp.list <- fish.spp.list |>  
+fish.spp.list |>  
   dplyr::mutate(OfficialFnGp = dplyr::case_match(
     OfficialFnGp,
     "Ambush Piscivore" ~ "AmbushPiscivore", # "Piscivore",
     "Pursuit Piscivore" ~ "PursuitPiscivore", # "Piscivore",
-    # AWAIT NFF SIGNOFF ####
     "AmbushPiscivore" ~ "Piscivore",
     "Browser" ~ "Herbivore",
     "Coralivore" ~ "Herbivore",
@@ -309,9 +307,11 @@ fish.spp.list <- fish.spp.list |>
     "PursuitPiscivore" ~ "Piscivore",
     "Scraper" ~ "Herbivore",
     # "Piscivore",
-    .default = OfficialFnGp))
-
-# At this point I think I can export fish.spp.list for use in 01_explore.R ####
+    .default = OfficialFnGp)) %T>% # save intermediary df to object & continue
+  assign(x = "fish.spp.list", value = ., pos = 1) |> 
+  readr::write_csv(here::here("NFF_data", "fish.spp.list.fn.gps.fixed.csv")) |> 
+  saveRDS(here::here("NFF_data", "fish.spp.list.fn.gps.fixed.rds"))
+# fish.spp.list for use in 01_explore.R ####
 # See L35
 ```
 
@@ -456,6 +456,16 @@ View = c((1/4) * 3, # 0.75
          (1/16) * 9) # 0.5625
 FOV <- FOV[1] # select 1 2 3 for Ultrawide/Medium/Narrow. NFF says 1
 View <- View[2] # select 1 2 for POV 1080 Superview (4:3) / Regular (16:9). NFF says 2.
+```
+
+Import BRUV data, tidy, calculate 4D chronovolume captured
+
+```{r}
+BRUV <- readr::read_csv(here::here("NFF_data", "wide.reef.60.ch3.2023.01.csv")) |> 
+  dplyr::rename(Sicklefin.lemon.shark = Lemon.shark,
+                Island.geomorphology = topo) |>
+  dplyr::mutate(Transient.pelagic.sharks = Great.hammerhead.shark + Scalloped.hammerhead.shark + Tiger.shark,
+                reef_sharks = Tawny.nurse.shark + Common.Blacktip.shark + Grey.reef.shark + Blacktip.reef.shark + Silvertip.shark + Whitetip.reef.shark)
 
 BRUV$SampledVolumeM3 <- (4/3) * pi * BRUV$visibility^3 * # 4/3 pi r3, visibility is r 
   (FOV/360) * # width FOV proportion of sphere
@@ -496,13 +506,16 @@ NFF:
 
 -   Could just do a typical, k-means style standardisation, scale & centre or whatever.
 
+
 # Join UVC (fish.spp.list) & BRUV together
 
-UVC is long & BRUV is wide.
+fish.spp.list is long & BRUV is wide.
 
 Need to attach them to the same conceptual unit.
 
 Snapshot: reef. BRUV smallest unit is reef_name, UVC's is UniqueID. Ignore UniqueID and summarise to reef_name
+
+### Create UVC (wide) from fish.spp.list
 
 ```{r}
 # lat lon to Add back later. Not needed if joining UVC to BRUV as BRUV already has.
@@ -517,6 +530,7 @@ Snapshot: reef. BRUV smallest unit is reef_name, UVC's is UniqueID. Ignore Uniqu
 # UVC from the beginning, tho in fairness I've changed the desired outcome.
 # At this point, FSL is per species per reef, and UVC is per reef.
 
+# fish.spp.list <- loadRDS(here::here("NFF_data", "fish.spp.list.fn.gps.fixed.rds"))
 fish.spp.list |> 
   dplyr::group_by(reef_name, OfficialFnGp) |> # Species
   dplyr::summarise(site_name = dplyr::first(site_name, na_rm = TRUE),
@@ -581,31 +595,44 @@ In UVC but not BRUV:
 
 Remove from UVC?
 
+### Join BRUV + UVC both wide
+
 ```{r}
 UVC |> dplyr::filter(!reef_name %in% UVConlyReefs) -> UVC
 BRUV |> dplyr::filter(!reef_name %in% BRUVonlyReefs) -> BRUV
 BRUV |>
-  dplyr::left_join(UVC) |> 
+  dplyr::left_join(UVC) |>
+  # dplyr::select(1:Tiger.shark, Transient.pelagic.sharks, tidyselect::everything()) -> ReefWideBRUVUVC
   # rearrange columns
-  dplyr::select(archi, isl_grp, site_name, reef_name, latitude, longitude, geo, topo, lagoon.size, Emerged.land.area, depth, Population.size, grav, Season, ave_npp, ave_temp, visibility, vid_length, SampledVolumeM3, SampledVolumeM3min, time.no.bait, everything()) -> ReefWideBRUVUVC
+  dplyr::mutate(pop.dens = Population.size / Emerged.land.area) |> 
+  dplyr::select(archi, isl_grp, site_name, reef_name, latitude, longitude, geo,
+                Island.geomorphology, lagoon.size, Emerged.land.area, depth,
+                Population.size, pop.dens, grav, Season, ave_npp, ave_temp, visibility,
+                vid_length, SampledVolumeM3, SampledVolumeM3min, time.no.bait,
+                Transient.pelagic.sharks, Sicklefin.lemon.shark, reef_sharks,
+                contains("_SppNoMean"), contains("_SppSizeMean"), contains("_BiomassMean"),
+                everything()
+  ) -> ReefWideBRUVUVC
+
+# previous names exported were "piscivores" & "herbivores"; check usage of ReefWideBRUVUVC.csv downstream ####
 
 write.csv(x = ReefWideBRUVUVC,
-          file =  here("NFF_data", "ReefWideBRUVUVC.csv"),
+          file =  here::here("NFF_data", "ReefWideBRUVUVC.csv"),
           row.names = FALSE)
 write.csv(x = UVC,
-          file =  here("NFF_data", "UVC.csv"),
+          file =  here::here("NFF_data", "UVC.csv"),
           row.names = FALSE)
 write.csv(x = BRUV,
-          file =  here("NFF_data", "BRUV.csv"),
+          file =  here::here("NFF_data", "BRUV.csv"),
           row.names = FALSE)
 ```
 
 # Check we have all variables needed for DAG in dbase
 
 ```{r}
-ReefWideBRUVUVC <- readr::read_csv(file = here("NFF_data", "ReefWideBRUVUVC.csv"))
-BRUV <- readr::read_csv(file = here("NFF_data", "BRUV.csv"))
-UVC <- readr::read_csv(file = here("NFF_data", "UVC.csv"))
+ReefWideBRUVUVC <- readr::read_csv(file = here::here("NFF_data", "ReefWideBRUVUVC.csv"))
+BRUV <- readr::read_csv(file = here::here("NFF_data", "BRUV.csv"))
+UVC <- readr::read_csv(file = here::here("NFF_data", "UVC.csv"))
 ```
 
 Missing:
@@ -618,72 +645,48 @@ Missing:
 All in benthic_sum_reef_2023_02_26.csv ?
 
 ```{r}
-Benthic <- readr::read_csv(file = here("NFF_data", "bethic_sum_reef_2023_02_26.csv"))
+Benthic <- readr::read_csv(file = here::here("NFF_data", "benthic_sum_reef_2023_02_26.csv")) |> 
+  dplyr::rename(Crustose.coraline.algae = CCA)
 ReefWideBRUVUVC |> dplyr::left_join(Benthic) -> ReefWideBRUVUVC # add Benthic variables
 
 ```
-
-# Clean/Align names, join apex / Transient.pelagic.sharks
-
-```{r}
-ReefWideBRUVUVC |>
-  dplyr::rename(Sicklefin.lemon.shark = Lemon.shark,
-                Island.geomorphology = topo,
-                Crustose.coraline.algae = CCA) |>
-  dplyr::mutate(Transient.pelagic.sharks = Great.hammerhead.shark + Scalloped.hammerhead.shark + Tiger.shark,
-                reef_sharks = Tawny.nurse.shark + Common.Blacktip.shark + Grey.reef.shark + Blacktip.reef.shark + Silvertip.shark + Whitetip.reef.shark,
-                piscivores = AmbushPiscivore_SppNoMean + PursuitPiscivore_SppNoMean,
-                herbivores = Browser_SppNoMean + Grazer_SppNoMean + Scraper_SppNoMean) |> 
-  dplyr::select(1:Tiger.shark, Transient.pelagic.sharks, tidyselect::everything()) -> ReefWideBRUVUVC
-
-# save block
-write.csv(x = ReefWideBRUVUVC,
-          file =  here("NFF_data", "ReefWideBRUVUVC.csv"),
-          row.names = FALSE)
-ReefWideBRUVUVC <- readr::read_csv(file = here("NFF_data", "ReefWideBRUVUVC.csv"))
-```
-
 # Remove all columns not to be used in the DAG
 
 ```{r remove columns}
 ReefWideBRUVUVC <- ReefWideBRUVUVC |>
-  dplyr::mutate(pop.dens = Population.size / Emerged.land.area) |> 
+  dplyr::rename_with(~ tolower(gsub(".", "_", .x, fixed = TRUE))) |> 
+  dplyr::rename_with(~ gsub("_sppnomean", "s", .x, fixed = TRUE)) |> 
+  dplyr::rename(sicklefin_lemon_sharks = sicklefin_lemon_shark) |> 
   dplyr::select(
     # isl_grp,# "east tuamotu" "west tuamotu" "leeward"      "marquesas"    "windward"     "australes"
     # Mark as unobserved since it's a proxy for latlon and they're its only parents.
     latitude,
     # longitude,
-    Island.geomorphology:Emerged.land.area,
+    island_geomorphology:emerged_land_area, # inc lagoon size
     # Population.size,
-    pop.dens, # added above
+    pop_dens, # added above
     # Season,
-    ave_npp:ave_temp,
-    # Whitetip.reef.shark:Sicklefin.lemon.shark,
-    # Silvertip.shark,
-    Transient.pelagic.sharks,
-    Sicklefin.lemon.shark,
+    ave_npp,
+    ave_temp,
+    # Whitetip_reef_shark:Sicklefin_lemon_shark,
+    # Silvertip_shark,
+    transient_pelagic_sharks,
+    sicklefin_lemon_sharks,
     reef_sharks,
     piscivores,
     herbivores,
+    invertivores,
+    planktivores,
     # why are these names janky? ####
-    Invertivore_SppNoMean,
-    Planktivore_SppNoMean,
+    # Invertivore_SppNoMean, # renamed
+    # Planktivore_SppNoMean, # renamed
     # AmbushPiscivore_SppNoMean:Scraper_SppNoMean,
-    Relief,
-    Other.Algae:Crustose.coraline.algae,
-    Invert
-  ) |>
-  # Remove _SppNoMean from BRUV teleost abundances
-  # dplyr::rename_with(.cols = tidyselect::ends_with("_SppNoMean"),
-  #                    .fn = ~ sub("_SppNoMean$", "", .x)) |>
-  # Rename columns: underscores & nocaps
-  dplyr::rename_with(~ tolower(gsub(".", "_", .x, fixed = TRUE))) |> 
-  dplyr::rename_with(~ gsub("_sppnomean", "s", .x, fixed = TRUE)) |> 
-  dplyr::rename(sicklefin_lemon_sharks = sicklefin_lemon_shark)
-# |> 
-# # underscores for piscivores
-# dplyr::rename(ambush_piscivore = ambushpiscivore,
-#               pursuit_piscivore = pursuitpiscivore)
+    relief,
+    other_algae,
+    hard_coral,
+    crustose_coraline_algae,
+    invert
+  )
 ```
 
 # Convert character columns
@@ -692,13 +695,19 @@ Only need to do this for columns/variables we're using in the DAG
 
 ```{r convert columns}
 ReefWideBRUVUVC <- ReefWideBRUVUVC |>
-  dplyr::mutate(island_geomorphology = as.numeric(dplyr::case_match(island_geomorphology, # "open atoll"   "near atoll"   "closed atoll" "high rocky"   "high barrier"
-                                                                    "open atoll" ~ "1", 
-                                                                    "closed atoll" ~ "0.75",
-                                                                    "near atoll" ~ "0.5",
-                                                                    "high barrier" ~ "0.25",
-                                                                    "high rocky" ~ "0",
-                                                                    .default = island_geomorphology)))
+  dplyr::mutate(
+    island_geomorphology = as.numeric(
+      dplyr::case_match(
+        island_geomorphology, # "open atoll"   "near atoll"   "closed atoll" "high rocky"   "high barrier"
+        "open atoll" ~ "1", 
+        "closed atoll" ~ "0.75",
+        "near atoll" ~ "0.5",
+        "high barrier" ~ "0.25",
+        "high rocky" ~ "0",
+        .default = island_geomorphology
+      )
+    )
+  )
 # season = as.numeric(dplyr::case_match(season, # "Dry" "Wet"
 # "Wet" ~ "0", 
 # "Dry" ~ "1",
@@ -728,12 +737,13 @@ ReefWideBRUVUVC$browser[is.na(ReefWideBRUVUVC$browser)] <- runif(n = length(Reef
 
 # save block
 write.csv(x = ReefWideBRUVUVC,
-          file =  here("NFF_data", "ReefWideBRUVUVC.csv"),
+          file =  here::here("NFF_data", "ReefWideBRUVUVC.csv"),
           row.names = FALSE)
 
-ReefWideBRUVUVC <- readr::read_csv(file = here("NFF_data", "ReefWideBRUVUVC.csv"))
+ReefWideBRUVUVC <- readr::read_csv(file = here::here("NFF_data", "ReefWideBRUVUVC.csv"))
 ```
 
-# Feed into DAG
+# Feed into Explore & DAG scripts
 
+Separate script: Explore_ch4_2023_03.R
 Separate script: SharksFishCoralDAG.qmd

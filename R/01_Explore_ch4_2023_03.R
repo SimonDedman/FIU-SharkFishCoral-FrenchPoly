@@ -34,7 +34,8 @@ benthic.raw <- data.frame(read.csv(here("NFF_data", "fixed_bethic_uvc_final_2023
 
 # REPLACE THIS WITH fish.spp.list FROM SCRIPT 02.R ####
 ## raw fish uvc data ####
-fish.uvc.raw <- data.frame(read.csv(here("NFF_data", "fixed_fish_uvc_final_2023_02_28.csv"), header = TRUE, as.is = TRUE)) |>
+# fish.uvc.raw <- data.frame(read.csv(here("NFF_data", "fixed_fish_uvc_final_2023_02_28.csv"), header = TRUE, as.is = TRUE)) |>
+fish.uvc.raw <- data.frame(read.csv(here("NFF_data", "fish.spp.list.fn.gps.fixed.csv"), header = TRUE, as.is = TRUE)) |>
   mutate(across(.cols = c(site_name, reef_name, UniqueID, Date, Species, Family, diet.kulbiki, Feeding.group),
                 .fns = ~ factor(.x)))
 
