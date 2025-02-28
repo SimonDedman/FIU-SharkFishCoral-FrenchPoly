@@ -8,6 +8,54 @@
 
 
 
+# Example usage
+script_path <- here::here("R", "02_Explore_ch4_2023_03.R")
+# imported_files <- analyze_imports(script_path)
+# print(paste(script_path, "imports:", paste(imported_files, collapse = ", ")))
+analyze_imports(script_path) # "site_order_df.csv" "NFF_data"
+
+
+exported_files <- analyze_exports(script_path)
+cleaned_files <- remove_trailing_parentheses(exported_files)
+cleaned_files_starting <- clean_starting_sections(cleaned_files)
+final_cleaned_prefixes <- clean_here_prefixes(cleaned_files_starting)
+final_cleaned_here <- remove_here_function(final_cleaned_prefixes)
+print(final_cleaned_here)
+
+
+script_paths <- find_r_scripts() # Or provide a path: find_r_scripts("path/to/scripts")
+script_data <- analyze_all_scripts(script_paths)
+# analyze_all_scripts(find_r_scripts())
+dependency_graph <- build_dependency_graph(script_data)
+visualize_graph(dependency_graph)
+
+
+# 0. Find R scripts ####
+library(codetools)
+library(here)
+library(igraph)
+
+find_r_scripts <- function(path = NULL) {
+  if (is.null(path)) {
+    # Find scripts in the current project (RStudio)
+    if (requireNamespace("rstudioapi", quietly = TRUE) && rstudioapi::isAvailable()) {
+      project_dir <- rstudioapi::getActiveProject()
+      if (!is.null(project_dir)) {
+        path <- file.path(project_dir, "R")
+      } else {
+        path <- getwd()
+      }
+    } else {
+      path <- getwd()
+    }
+  }
+
+  r_scripts <- list.files(path, pattern = "\\.R$", full.names = TRUE, recursive = TRUE)
+  return(r_scripts)
+}
+
+
+
 
 # 1. Cataloguing Files Used (Imported) by Each Script ####
 
@@ -15,62 +63,186 @@
 # You can parse the R scripts using tools like codetools or regular expressions to
 # identify source(), read.csv(), readRDS(), load(), and similar functions that load external files.
 # For package dependencies, use renv::dependencies() or pak::pkg_deps().
+# analyze_import_calls <- function(script_content, call_pattern, extract_pattern) {
+#   imported_files <- c()
+#   calls <- grep(call_pattern, script_content, value = TRUE)
+#
+#   for (call in calls) {
+#     if (grepl("here\\(", call)) {
+#       here_args <- gsub(".*here\\(([^\\)]+)\\).*", "\\1", call)
+#       here_args_list <- trimws(unlist(strsplit(here_args, ",")))
+#       here_args_list <- gsub("[\"']", "", here_args_list)
+#
+#       tryCatch({
+#         file_path <- do.call(here::here, as.list(here_args_list))
+#         imported_files <- c(imported_files, file_path)
+#       }, error = function(e) {
+#         imported_files <- c(imported_files, paste("here(", paste(here_args_list, collapse = ","), ")"))
+#       })
+#     } else {
+#       file_path <- gsub(extract_pattern, "\\1", call)
+#       imported_files <- c(imported_files, file_path)
+#     }
+#   }
+#   return(imported_files)
+# }
+#
+# analyze_imports <- function(script_path) {
+#   script_content <- readLines(script_path)
+#
+#   imported_files <- c(
+#     analyze_import_calls(script_content, "source\\(", ".*source\\(\"([^\"]+)\".*"),
+#     analyze_import_calls(script_content, "load\\(", ".*load\\(\"([^\"]+)\".*"),
+#     analyze_import_calls(script_content, "(read\\.(csv|rds|table|delim)\\(|readRDS\\(|load\\()", ".*(read\\.(csv|rds|table|delim)\\(|\"|readRDS\\(\"|load\\(\")([^\"]+)\".*")
+#   )
+#
+#   imported_files <- unique(imported_files)
+#   imported_files <- imported_files[!endsWith(imported_files, "/x")] # Remove if ends with "/x"
+#   return(unique(imported_files))
+# }
 
-library(codetools)
+analyze_import_calls <- function(script_content, call_pattern, extract_pattern) {
+  imported_files <- c()
+  calls <- grep(call_pattern, script_content, value = TRUE)
+
+  for (call in calls) {
+    if (grepl("here\\(", call)) {
+      here_args <- gsub(".*here\\(([^\\)]+)\\).*", "\\1", call)
+      here_args_list <- trimws(unlist(strsplit(here_args, ",")))
+      here_args_list <- gsub("[\"']", "", here_args_list)
+
+      tryCatch({
+        file_path <- do.call(here::here, as.list(here_args_list))
+        imported_files <- c(imported_files, file_path)
+      }, error = function(e) {
+        imported_files <- c(imported_files, paste("here(", paste(here_args_list, collapse = ","), ")"))
+      })
+    } else {
+      file_path <- gsub(extract_pattern, "\\1", call)
+      imported_files <- c(imported_files, file_path)
+    }
+  }
+  return(imported_files)
+}
+
 analyze_imports <- function(script_path) {
   script_content <- readLines(script_path)
 
-  # Find source() calls
-  source_files <- grep("source\\(\"", script_content, value = TRUE)
-  source_files <- gsub(".*source\\(\"([^\"]+)\".*", "\\1", source_files)
+  imported_files <- c(
+    analyze_import_calls(script_content, "source\\(", ".*source\\(\"([^\"]+)\".*"),
+    analyze_import_calls(script_content, "load\\(", ".*load\\(\"([^\"]+)\".*"),
+    analyze_import_calls(script_content, "(read\\.(csv|rds|table|delim)\\(|readRDS\\(|load\\()", ".*(read\\.(csv|rds|table|delim)\\(|\"|readRDS\\(\"|load\\(\")([^\"]+)\".*")
+  )
 
-  # Find read.csv(), readRDS(), load(), etc.
-  read_files <- grep("read\\.(csv|rds|table|delim)\\(", script_content, value = TRUE, ignore.case = TRUE)
-  read_files_rds <- grep("readRDS\\(", script_content, value = TRUE, ignore.case = TRUE)
-  load_files <- grep("load\\(", script_content, value = TRUE, ignore.case = TRUE)
+  imported_files <- unique(imported_files)
 
-  read_files <- c(read_files, read_files_rds, load_files)
-  read_files <- gsub(".*\\(\"([^\"]+)\".*", "\\1", read_files)
+  # Filter out non-character elements before using endsWith
+  imported_files <- imported_files[sapply(imported_files, is.character)]
 
-  imported_files <- c(source_files, read_files)
-
+  imported_files <- imported_files[!endsWith(imported_files, "/x")] # Remove if ends with "/x"
   return(unique(imported_files))
 }
-
-# Example usage
-script_path <- "R/my_script.R"
-imported_files <- analyze_imports(script_path)
-print(paste(script_path, "imports:", paste(imported_files, collapse = ", ")))
-
 
 
 
 # 2. Cataloguing Files Created (Exported) by Each Script ####
 # Static Code Analysis: Look for functions like write.csv(), writeRDS(), saveRDS(), save(), etc.
+analyze_export_calls <- function(script_content, call_pattern) {
+  exported_files <- c()
+  calls <- grep(call_pattern, script_content, value = TRUE, ignore.case = TRUE)
 
-analyze_exports <- function(script_path) {
-  script_content <- readLines(script_path)
-
-  write_files <- grep("write\\.(csv|rds|table|delim)\\(", script_content, value = TRUE, ignore.case = TRUE)
-  write_files_rds <- grep("saveRDS\\(", script_content, value = TRUE, ignore.case = TRUE)
-  save_files <- grep("save\\(", script_content, value = TRUE, ignore.case = TRUE)
-
-  write_files <- c(write_files, write_files_rds, save_files)
-  write_files <- gsub(".*\\(\"([^\"]+)\".*", "\\1", write_files)
-
-  exported_files <- unique(write_files)
-  return(exported_files)
+  for (call in calls) {
+    exported_files <- c(exported_files, call)
+  }
+  return(unique(exported_files))
 }
 
-# Example usage
-script_path <- "R/my_script.R"
-exported_files <- analyze_exports(script_path)
-print(paste(script_path, "exports:", paste(exported_files, collapse = ", ")))
+analyze_exports <- function(script_path) {
+  script_content <- readLines(script_path) # Corrected line
+
+  exported_files <- c(
+    analyze_export_calls(script_content, "write\\.csv\\("),
+    analyze_export_calls(script_content, "saveRDS\\("),
+    analyze_export_calls(script_content, "save\\(")
+  )
+  return(unique(exported_files))
+}
+
+remove_trailing_parentheses <- function(exported_files) {
+  cleaned_files <- gsub("\\)\\)$", "", exported_files)
+  return(cleaned_files)
+}
+
+clean_starting_sections <- function(cleaned_files) {
+  cleaned_starts <- sapply(cleaned_files, function(file_string) {
+    # Handle both file= and filename=
+    file_string <- gsub("^(write\\.(csv|rds|table|delim)\\(|saveRDS\\(|save\\(|ggsave\\().*(file|filename)\\s*=\\s*", "", file_string, ignore.case = TRUE)
+    return(file_string)
+  })
+
+  final_cleaned_files <- sapply(cleaned_starts, function(file_string) {
+    if (grepl("here\\(", file_string)) {
+      tryCatch({
+        file_path <- eval(parse(text = file_string))
+        return(file_path)
+      }, error = function(e) {
+        # If evaluation fails, extract and reconstruct the file path
+        here_args <- gsub(".*here\\(([^\\)]+)\\).*", "\\1", file_string)
+        here_args_list <- trimws(unlist(strsplit(here_args, ",")))
+        here_args_list <- gsub('["\']', "", here_args_list)
+        file_path <- paste(here_args_list, collapse = "/")
+
+        # Handle paste0() and Sys.Date()
+        if (grepl("paste0\\(", file_string) || grepl("Sys.Date\\(", file_string)) {
+          # Capture everything after the closing parenthesis of the here() call.
+          remaining_part <- regmatches(file_string, regexpr("\\).*$", file_string))
+          if (length(remaining_part) > 0) {
+            # Remove the first ) from the remaining part
+            remaining_part = substring(remaining_part, 2)
+            file_path <- paste0(file_path, "/", remaining_part)
+          }
+        }
+
+        return(file_path)
+      })
+    } else {
+      return(file_string)
+    }
+  })
+
+  return(unique(final_cleaned_files))
+}
+
+clean_here_prefixes <- function(cleaned_files) {
+  cleaned_prefixes <- gsub("^here/", "", cleaned_files)
+  return(cleaned_prefixes)
+}
+
+remove_here_function <- function(cleaned_files){
+  cleaned_here <- gsub("here\\(", "", cleaned_files)
+  return(cleaned_here)
+}
 
 
 
 
-# 3. Determining Script Execution Order ####
+# 3. Analyse all scripts imports and exports ####
+
+analyze_all_scripts <- function(script_paths) {
+  script_data <- list()
+  for (script_path in script_paths) {
+    script_name <- basename(script_path)
+    imports <- analyze_imports(script_path)
+    exports <- remove_here_function(clean_here_prefixes(clean_starting_sections(remove_trailing_parentheses(analyze_exports(script_path)))))
+    script_data[[script_name]] <- list(imports = imports, exports = exports)
+  }
+  return(script_data)
+}
+
+
+
+
+# 4. Determining Script Execution Order ####
 # Dependency Analysis: Combine the import/export information to build a dependency graph.
 # If script B imports a file exported by script A, then script A must run before script B.
 # Use the R packages igraph to help with the generation of the dependency graph.

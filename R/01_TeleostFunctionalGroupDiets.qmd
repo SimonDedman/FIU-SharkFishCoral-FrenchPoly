@@ -506,7 +506,6 @@ NFF:
 
 -   Could just do a typical, k-means style standardisation, scale & centre or whatever.
 
-
 # Join UVC (fish.spp.list) & BRUV together
 
 fish.spp.list is long & BRUV is wide.
@@ -650,6 +649,7 @@ Benthic <- readr::read_csv(file = here::here("NFF_data", "benthic_sum_reef_2023_
 ReefWideBRUVUVC |> dplyr::left_join(Benthic) -> ReefWideBRUVUVC # add Benthic variables
 
 ```
+
 # Remove all columns not to be used in the DAG
 
 ```{r remove columns}
@@ -745,5 +745,4 @@ ReefWideBRUVUVC <- readr::read_csv(file = here::here("NFF_data", "ReefWideBRUVUV
 
 # Feed into Explore & DAG scripts
 
-Separate script: Explore_ch4_2023_03.R
-Separate script: SharksFishCoralDAG.qmd
+Separate script: Explore_ch4_2023_03.R Separate script: SharksFishCoralDAG.qmd

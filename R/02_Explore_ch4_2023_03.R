@@ -22,7 +22,6 @@ library(here)
 
 # import all data frames ####
 ## import site order ####
-# site.order.df <- data.frame(read.csv("site_order_df.csv", header = TRUE, as.is = TRUE))
 site.order.df <- data.frame(read.csv(here("NFF_data", "site_order_df.csv"), header = TRUE, as.is = TRUE)) |>
   mutate(across(.cols = site_name,
                 .fns = ~ factor(.x)))
@@ -32,11 +31,11 @@ benthic.raw <- data.frame(read.csv(here("NFF_data", "fixed_bethic_uvc_final_2023
   mutate(across(.cols = c(site_name, reef_name, UniqueID, Date),
                 .fns = ~ factor(.x)))
 
-# REPLACE THIS WITH fish.spp.list FROM SCRIPT 02.R ####
 ## raw fish uvc data ####
 # fish.uvc.raw <- data.frame(read.csv(here("NFF_data", "fixed_fish_uvc_final_2023_02_28.csv"), header = TRUE, as.is = TRUE)) |>
+# replaced w/ fish.spp.list from teleostfunctionalgroupdiets.qmd
 fish.uvc.raw <- data.frame(read.csv(here("NFF_data", "fish.spp.list.fn.gps.fixed.csv"), header = TRUE, as.is = TRUE)) |>
-  mutate(across(.cols = c(site_name, reef_name, UniqueID, Date, Species, Family, diet.kulbiki, Feeding.group),
+  mutate(across(.cols = c(site_name, reef_name, UniqueID, Date, Species, Family, uvc.diet, Feeding.group),
                 .fns = ~ factor(.x)))
 
 ## import teleost df ####
@@ -76,26 +75,17 @@ benthic.reef.df <- benthic.raw |>
 write_csv(benthic.reef.df , here("NFF_data", "benthic_sum_reef_2023_02_26.csv"))
 saveRDS(benthic.reef.df, file = here("NFF_data", "benthic_sum_reef_2023_02_26.RData"))
 
-
-# FIX MISSING FEEDING GROUPS HERE ####
-# see script #02.R for populating NAs
-# If that can be run entirely first, and its output used here, then renumber scripts accordingly
-
-# q: what causes error "missing values are not allowed in subscripted assignments of data frames" and how do I solve it when trying to use indexing to assign values to NA cells, originally using the formulation: fish.spp.list[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Ambush Piscivore", "Feeding.group"] <- "Piscivore"
-# a: The error is caused by the fact that the data frame is not being subsetted correctly. The correct way to subset a data frame is to use the subset() function.
-# The correct way to assign values to NA cells in a data frame is to use the is.na() function to create a logical vector that identifies the NA cells,
-# and then use this logical vector to subset the data frame and assign the values.
-# The correct formulation is: fish.spp.list$Feeding.group[is.na(fish.spp.list$Feeding.group) & fish.spp.list$OfficialFnGp == "Ambush Piscivore"] <- "Piscivore"
-
-
+# 2025-02-26 FROMHERE ####
+# can I use prey.uvc.survey.sum.df code below for both pred & prey the same?
+# use SCRIPT PACKAGE WORKFLOW to analyse script and check dependencies to see if I can simplify this script.
 
 # need full data frame with survey as the primary sampling unit ####
 ## first sort out fish
 # filter for only pred. teleost species, take out sharks
 pred.tel.uvc.survey.sum.df <- fish.uvc.raw |>
   filter(
-    Family != "Carcharhinidae",
-    Family != "Myliobatidae"
+    Family != "Carcharhinidae", # same in prey.uvc.survey.sum.df
+    Family != "Myliobatidae" # same in prey.uvc.survey.sum.df
   ) |>
   filter(Family == "Lutjanidae" |
            Family == "Scombridae" |
@@ -113,47 +103,9 @@ pred.tel.uvc.survey.sum.df <- fish.uvc.raw |>
   mutate(chi_pred_tel_percent = (pred_tel_biomass_g_per_m2 / 500))
 
 # for just prey species i.e. non-target teleost families, sharks and rays
-# Assign NA Feeding.group rows to a Feeding.group
-NA.Feeding.group <- fish.uvc.raw |>
-  filter(
-    Family != "Lutjanidae",
-    Family != "Scombridae",
-    Family != "Megalopidae",
-    Family != "Carangidae",
-    Family != "Sphyraenidae",
-    Family != "Serranidae",
-    Family != "Lethrinidae",
-    Family != "Carcharhinidae",
-    Family != "Myliobatidae",
-    is.na(Feeding.group)) |>
-  distinct(Family, diet.kulbiki) |>
-  arrange(diet.kulbiki, Family) |>
-  mutate(Feeding.group = "NA") |>
-  write_csv(here("NFF_data", "NA.Feeding.group.csv"))
-
-# summarise diet.kulbiki by Family
-fish.uvc.raw |>
-  filter(
-    Family != "Lutjanidae",
-    Family != "Scombridae",
-    Family != "Megalopidae",
-    Family != "Carangidae",
-    Family != "Sphyraenidae",
-    Family != "Serranidae",
-    Family != "Lethrinidae",
-    Family != "Carcharhinidae",
-    Family != "Myliobatidae",
-    !is.na(Feeding.group)
-  ) |>
-  group_by(diet.kulbiki, Feeding.group) |>
-  summarise(n = n())
-# AWAIT NFF SIGNOFF ####
-# "Feeding groups by teleost species" email, 2025-02-21
-# Then populate NA Feeding.group rows with the correct Feeding.group
-# review this re script #02.R, work already done?
 
 prey.uvc.survey.sum.df <- fish.uvc.raw |>
-  filter( # filter out predator teleosts & sharks & rays
+  dplyr::filter( # filter out predator teleosts & sharks & rays
     Family != "Lutjanidae",
     Family != "Scombridae",
     Family != "Megalopidae",
@@ -167,15 +119,15 @@ prey.uvc.survey.sum.df <- fish.uvc.raw |>
   ) |>
   # Split to invertivores planktivores herbivores by Feeding.group
   # pivot.wider to get biomass_g and biomass_g_per_m2 columns for each Feeding.group
-  pivot_wider(names_from = Feeding.group,
-              # TODO do this on fish UVC raw ####
-              # not pred & prey
-              values_from = c(biomass_g, biomass_g_per_m2),
-              values_fn = ~ mean(.x, na.rm = TRUE)) |>
-  group_by(UniqueID) |> # reef
-  summarise(
-    across(c(site_name, reef_name, Date, Time.start, Lat, Long, Observer), \(x) first(x)),
-    across(contains("biomass_g"), \(x) sum(x, na.rm = TRUE)) # contains was c(biomass_g, biomass_g_per_m2)
+  dplyr::pivot_wider(names_from = OfficialFnGp,
+                     # TODO do this on fish UVC raw ####
+                     # not pred & prey
+                     values_from = c(biomass_g, biomass_g_per_m2),
+                     values_fn = ~ mean(.x, na.rm = TRUE)) |>
+  dplyr::group_by(UniqueID) |> # reef
+  dplyr::summarise(
+    dplyr::across(c(site_name, reef_name, Date, Time.start, Lat, Long, Observer), \(x) first(x)),
+    dplyr::across(contains("biomass_g"), \(x) sum(x, na.rm = TRUE)) # contains was c(biomass_g, biomass_g_per_m2)
   ) |>
   # CHI = coral health index, g per m2 is how it was sampled. /500 to make consistent to the health index.
   # Kaufman, L., Sala, E., Sandin, S. A., Obura, D. O., Rohwer, F., & Tschirky, J.
@@ -189,7 +141,7 @@ prey.uvc.survey.sum.df <- fish.uvc.raw |>
   # which is then graded into five categories: very degraded, degraded, fair,
   # healthy, and very healthy.
   # this needs to be renamed so it doesn't overwrite the original columns
-  mutate(across(contains("biomass_g_per_m2"), \(x) x/500, .names = "chi_{.col}_percent")) |>
+  dplyr::mutate(dplyr::across(contains("biomass_g_per_m2"), \(x) x/500, .names = "chi_{.col}_percent")) |>
   # remove the "_biomass_g_per_m2" prefix from column names containing "percent"
   dplyr::rename_with(.fn = ~ stringr::str_replace(., "_biomass_g_per_m2", ""),
                      .cols = contains("percent")) |>
@@ -474,8 +426,8 @@ saveRDS(atoll.reef.df2, file = here("NFF_data", "ch4_atoll_reef_wide_df2.RData")
 ## predatory fish ####
 pred.tel.uvc.reef.df <- pred.tel.uvc.survey.sum.df |>
   # TODO fix after removing pred & prey dfs ####
-  # if we don't have pred & prey dfs then just filter by feeding.group == piscivore?
-  group_by(reef_name) |>
+# if we don't have pred & prey dfs then just filter by feeding.group == piscivore?
+group_by(reef_name) |>
   summarise(
     across(c(site_name), \(x) first(x)),
     across(where(is.numeric), \(x) mean(x, na.rm = TRUE))
@@ -495,7 +447,7 @@ saveRDS(pred.tel.uvc.reef.df, file = here("NFF_data", "pred_tel_uvc_sum_reef_202
 prey.uvc.reef.df <- prey.uvc.survey.sum.df |>
   # TODO fix after removing pred & prey dfs ####
 # if we don't have pred & prey dfs then just filter by feeding.group == prey groups?
-  group_by(reef_name) |>
+group_by(reef_name) |>
   summarise(
     across(c(site_name), first),
     across(where(is.numeric), \(x) mean(x, na.rm = TRUE))
@@ -504,7 +456,7 @@ prey.uvc.reef.df <- prey.uvc.survey.sum.df |>
             group_by(reef_name) |>
             summarise(n_survey = n_distinct(UniqueID, na.rm = TRUE))))
 
-write_csv(prey.uvc.reef.df , here("NFF_data", "prey_uvc_sum_reef_2023_02_28.csv"))
+write_csv(prey.uvc.reef.df, here("NFF_data", "prey_uvc_sum_reef_2023_02_28.csv"))
 saveRDS(prey.uvc.reef.df, file = here("NFF_data", "prey_uvc_sum_reef_2023_02_28.RData"))
 
 
@@ -638,9 +590,7 @@ names(colnameslist) <- NULL
 # remove dupes
 colnameslist <- colnameslist[!(duplicated(colnameslist))]
 # save csv
-write.csv(x = colnameslist,
-          file = here("NFF_data", paste0(Sys.Date(), "_AllDfsColnames.csv")),
-          row.names = FALSE)
+write.csv(x = colnameslist, file = here("NFF_data", paste0(Sys.Date(), "_AllDfsColnames.csv")), row.names = FALSE)
 
 # 2025-02-18 remake functional groups to match SCM DAG ####
 # sicklefin lemon sharks
