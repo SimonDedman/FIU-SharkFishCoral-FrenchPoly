@@ -10,21 +10,13 @@ set.seed(5)
 
 # define variables for protected area, fire, poaching, logging, distance to roads and cities, slope, elevation, carbon sequestration and forest species abundance
 def <- defData(varname = "slope", dist = "normal", formula = 0, variance = 1)
-
 def <- defData(def, varname = "elevation", dist = "normal", formula = 0, variance = 1)
-
 def <- defData(def, varname = "distancetoroadsandcities", dist = "normal", formula = 0, variance = 1)
-
 def <- defData(def, varname = "protectedarea", dist = "binary", 	formula = "0.9 * slope + 0.9 * elevation + -1.2 *	distancetoroadsandcities", link = "logit", variance = 1)
-
 def <- defData(def, varname = "fire", dist = "normal", formula = "-0.5 * protectedarea + 0.6 * distancetoroadsandcities", variance = 1)
-
 def <- defData(def, varname = "poaching", dist = "normal", formula = "-1.1 * protectedarea + 0.8 * distancetoroadsandcities", variance = 1)
-
 def <- defData(def, varname = "logging", dist = "normal", formula = "-0.7 * slope + -0.7 * elevation + -1.6 * protectedarea + 0.6 * distancetoroadsandcities", variance = 1)
-
 def <- defData(def, varname = "forestspeciesabundance", dist = "normal", formula = "-0.4 * fire + -0.6 * poaching + -0.7 * logging", variance = 1)
-
 def <- defData(def, varname = "carbonsequestration", dist = "normal", formula = "-0.8 * logging + 0.4 * forestspeciesabundance", variance = 1)
 
 # create 10000 observations
@@ -61,7 +53,6 @@ summary(M2a) # provides point estimate, standard errors, and AIC values
 # Option 2:
 M2b <- glm(forestspeciesabundance ~ fire + 	distancetoroadsandcities + protectedarea, data = ForestSpeciesAbundanceData)
 summary(M2b)
-
 
 ## Poaching Models [known effect: -0.6] ####
 # Option 1:
@@ -113,11 +104,10 @@ sharkdata <- data.frame(Fishing_Pressure = Fishing_Pressure,
                         Rays = Rays,
                         Bivalves = Bivalves)
 
-
 # Statistical models in Figure 7 ####
 # Employing the front-door criterion to determine effect of sharks on bivalves.
 # First, a model to determine the effect of sharks on rays:
-M1 <- glm(Rays~Sharks, data = sharkdata)
+M1 <- glm(Rays ~ Sharks, data = sharkdata)
 summary(M1) # provides point estimate and standard error for sharks, which is -0.1 + 0.003SE
 
 # Next, a model to determine the effect of rays on bivalves:

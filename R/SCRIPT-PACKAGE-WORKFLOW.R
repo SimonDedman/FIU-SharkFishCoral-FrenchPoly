@@ -7,14 +7,60 @@
 # - modify these updated scripts to be used in a `targets` package workflow?
 
 
+# FROMHERE ####
+# L170 analyze_imports not working for 01_TeleostFunctionalGroupDiets.qmd
+#
 
-# Example usage
+
+# Examples
+# Imported files for one script
 script_path <- here::here("R", "02_Explore_ch4_2023_03.R")
+
+analyze_imports(script_path <- ("/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/R/01_TeleostFunctionalGroupDiets.qmd"))
+ # Error in endsWith(imported_files, "/x") : non-character object(s)
+analyze_imports(script_path <- ("/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/R/02_Explore_ch4_2023_03.R"))
+"/media/simon/data/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/NFF_data/site_order_df.csv"
+"/media/simon/data/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/NFF_data/fixed_bethic_uvc_final_2023_02_26.csv"
+"/media/simon/data/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/NFF_data/fixed_fish_uvc_final_2023_02_28.csv"
+"/media/simon/data/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/NFF_data/fish.spp.list.fn.gps.fixed.csv"
+"/media/simon/data/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/NFF_data/wide.df1.teleosts.csv"
+"/media/simon/data/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/NFF_data/wide.df1.ch3.60min.2023.01.csv"
+analyze_imports(script_path <- ("/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/R/03_UVC_funtional_group_fixit.R"))
+"/media/simon/data/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/NFF_data/fixed_fish_uvc_final_2023_02_28.csv"
+"/media/simon/data/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/NFF_data/Trophic_Categorisation_Desbiens.csv"
+analyze_imports(script_path <- ("/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/R/05_nat_FPDAG_consistency_check.R"))
+"/media/simon/data/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/NFF_data//ReefWideBRUVUVC.csv"
+"/media/simon/data/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/Nat_resources/FPDAG_match_table.csv"
+analyze_imports(script_path <- ("/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/R/06_nat_FPDAG_consistency_check_DAG1-tophalf-topdown.R"))
+"/media/simon/data/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/NFF_data//ReefWideBRUVUVC.csv"
+"/media/simon/data/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/Nat_resources/FPDAG_match_table.csv"
+analyze_imports(script_path <- ("/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/R/07_nat_FPDAG_consistency_check_DAG2-tophalf-bottomup.R"))
+"/media/simon/data/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/NFF_data//ReefWideBRUVUVC.csv"
+"/media/simon/data/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/Nat_resources/FPDAG_match_table.csv"
+analyze_imports(script_path <- ("/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/R/08_nat_FPDAG_consistency_check_DAG3-bottomhalf-bottomup.R"))
+"/media/simon/data/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/NFF_data//ReefWideBRUVUVC.csv"
+"/media/simon/data/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/Nat_resources/FPDAG_match_table.csv"
+analyze_imports(script_path <- ("/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/R/09_BART-DAG.R"))
+"/media/simon/data/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/NFF_data/ReefWideBRUVUVC-DAGtested.csv"
+"\""
+analyze_imports(script_path <- ("/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/R/Arif2022ecologicalMonographs.R"))
+# NULL
+analyze_imports(script_path <- ("/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/R/brt_benthos_2023_05.R"))
+"/media/simon/data/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/NFF_data/island.survey.wide.df2.RData"
+"/media/simon/data/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/NFF_data/atoll.survey.wide.df2.RData"
+"/media/simon/data/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/NFF_data/survey.wide.df2.RData"
+analyze_imports(script_path <- ("/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/R/brt_prey_teleost_2023_05.R"))
+"/media/simon/data/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/NFF_data/island.survey.wide.df2.RData"
+"/media/simon/data/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/NFF_data/atoll.survey.wide.df2.RData"
+"/media/simon/data/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/NFF_data/survey.wide.df2.RData"
+analyze_imports(script_path <- ("/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/R/SCRIPT-PACKAGE-WORKFLOW.R"))
+"# identify source(), read.csv(), readRDS(), load(), and similar functions that load external files." "\""
+
 # imported_files <- analyze_imports(script_path)
 # print(paste(script_path, "imports:", paste(imported_files, collapse = ", ")))
 analyze_imports(script_path) # "site_order_df.csv" "NFF_data"
 
-
+# Exported files for one script
 exported_files <- analyze_exports(script_path)
 cleaned_files <- remove_trailing_parentheses(exported_files)
 cleaned_files_starting <- clean_starting_sections(cleaned_files)
@@ -22,7 +68,7 @@ final_cleaned_prefixes <- clean_here_prefixes(cleaned_files_starting)
 final_cleaned_here <- remove_here_function(final_cleaned_prefixes)
 print(final_cleaned_here)
 
-
+# Imported & exported files & dependencies for all scripts
 script_paths <- find_r_scripts() # Or provide a path: find_r_scripts("path/to/scripts")
 script_data <- analyze_all_scripts(script_paths)
 # analyze_all_scripts(find_r_scripts())
@@ -34,6 +80,7 @@ visualize_graph(dependency_graph)
 library(codetools)
 library(here)
 library(igraph)
+library(stringr)
 
 find_r_scripts <- function(path = NULL) {
   if (is.null(path)) {
@@ -50,19 +97,13 @@ find_r_scripts <- function(path = NULL) {
     }
   }
 
-  r_scripts <- list.files(path, pattern = "\\.R$", full.names = TRUE, recursive = TRUE)
+  r_scripts <- list.files(path, pattern = "\\.(R|qmd)$", full.names = TRUE, recursive = TRUE)
   return(r_scripts)
 }
 
 
 
-
 # 1. Cataloguing Files Used (Imported) by Each Script ####
-
-## Static Code Analysis ####
-# You can parse the R scripts using tools like codetools or regular expressions to
-# identify source(), read.csv(), readRDS(), load(), and similar functions that load external files.
-# For package dependencies, use renv::dependencies() or pak::pkg_deps().
 # analyze_import_calls <- function(script_content, call_pattern, extract_pattern) {
 #   imported_files <- c()
 #   calls <- grep(call_pattern, script_content, value = TRUE)
@@ -97,9 +138,14 @@ find_r_scripts <- function(path = NULL) {
 #   )
 #
 #   imported_files <- unique(imported_files)
-#   imported_files <- imported_files[!endsWith(imported_files, "/x")] # Remove if ends with "/x"
+#
+#   # Filter out non-character elements before using endsWith
+#   imported_files <- imported_files[sapply(imported_files, is.character)]
+#
+#   if (!is.null(imported_files)) imported_files <- imported_files[!endsWith(imported_files, "/x")] # Remove if ends with "/x"
 #   return(unique(imported_files))
 # }
+
 
 analyze_import_calls <- function(script_content, call_pattern, extract_pattern) {
   imported_files <- c()
@@ -126,7 +172,16 @@ analyze_import_calls <- function(script_content, call_pattern, extract_pattern) 
 }
 
 analyze_imports <- function(script_path) {
-  script_content <- readLines(script_path)
+  script_content <- readLines(script_path, warn = FALSE)
+
+  if (str_detect(script_path, "\\.qmd$")) {
+    # Extract code chunks from .qmd files
+    code_chunks <- str_extract_all(paste(script_content, collapse = "\n"), "```\\{r.*?\\}\\n(.*?)\\n```", simplify = TRUE)
+    script_content <- unlist(lapply(code_chunks, function(chunk) {
+      gsub("```\\{r.*?\\}\\n|\\n```", "", chunk)
+    }))
+    script_content <- script_content[script_content != ""]
+  }
 
   imported_files <- c(
     analyze_import_calls(script_content, "source\\(", ".*source\\(\"([^\"]+)\".*"),
@@ -142,6 +197,11 @@ analyze_imports <- function(script_path) {
   imported_files <- imported_files[!endsWith(imported_files, "/x")] # Remove if ends with "/x"
   return(unique(imported_files))
 }
+
+
+
+
+
 
 
 
@@ -258,6 +318,58 @@ library(igraph)
 graph <- graph_from_data_frame(dependencies)
 execution_order <- names(topo_sort(graph))
 print(execution_order)
+
+
+
+# 4. Dependency graph ####
+build_dependency_graph <- function(script_data) {
+  edges <- data.frame(from = character(), to = character(), stringsAsFactors = FALSE)
+
+  for (script_name in names(script_data)) {
+    exports <- script_data[[script_name]]$exports
+    for (other_script_name in names(script_data)) {
+      if (script_name != other_script_name) {
+        imports <- script_data[[other_script_name]]$imports
+        if (any(exports %in% imports)) {
+          edges <- rbind(edges, data.frame(from = script_name, to = other_script_name, stringsAsFactors = FALSE))
+        }
+      }
+    }
+  }
+
+  if (nrow(edges) > 0) {
+    graph <- igraph::graph_from_data_frame(edges, directed = TRUE)
+    return(graph)
+  } else {
+    return(NULL)
+  }
+}
+
+visualize_graph <- function(graph) {
+  if (!is.null(graph)) {
+    igraph::plot.igraph(graph, vertex.label = igraph::V(graph)$name, vertex.color = "lightblue", edge.arrow.size = 0.5)
+  } else {
+    print("No dependencies found.")
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

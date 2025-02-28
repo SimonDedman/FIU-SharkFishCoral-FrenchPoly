@@ -1,3 +1,7 @@
+# use SCRIPT PACKAGE WORKFLOW to analyse script and check dependencies to see if I can simplify this script.
+# that's a bigger project than I realised
+
+
 # setwd("~/Documents/My Documents/FinPrint French Poly/Analysis/Ch 4 Rethink Prelim") ## Change to appropriate working directory ##
 # setwd("/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/NFF Data code/")
 library(tidyverse)
@@ -36,7 +40,9 @@ benthic.raw <- data.frame(read.csv(here("NFF_data", "fixed_bethic_uvc_final_2023
 # replaced w/ fish.spp.list from teleostfunctionalgroupdiets.qmd
 fish.uvc.raw <- data.frame(read.csv(here("NFF_data", "fish.spp.list.fn.gps.fixed.csv"), header = TRUE, as.is = TRUE)) |>
   mutate(across(.cols = c(site_name, reef_name, UniqueID, Date, Species, Family, uvc.diet, Feeding.group),
-                .fns = ~ factor(.x)))
+                .fns = ~ factor(.x))) |>
+  # prey.uvc.survey.sum.df has seconds, benthic.raw does not, so merge breaks. Fix above.
+  mutate(Time.start = as.character(stringr::str_sub(Time.start, start = 1, end = 5)))
 
 ## import teleost df ####
 teleost.bruv.raw <- data.frame(read.csv(here("NFF_data", "wide.df1.teleosts.csv"), header = TRUE, as.is = TRUE)) |>  # importing CSV#
@@ -77,7 +83,6 @@ saveRDS(benthic.reef.df, file = here("NFF_data", "benthic_sum_reef_2023_02_26.RD
 
 # 2025-02-26 FROMHERE ####
 # can I use prey.uvc.survey.sum.df code below for both pred & prey the same?
-# use SCRIPT PACKAGE WORKFLOW to analyse script and check dependencies to see if I can simplify this script.
 
 # need full data frame with survey as the primary sampling unit ####
 ## first sort out fish
@@ -119,7 +124,7 @@ prey.uvc.survey.sum.df <- fish.uvc.raw |>
   ) |>
   # Split to invertivores planktivores herbivores by Feeding.group
   # pivot.wider to get biomass_g and biomass_g_per_m2 columns for each Feeding.group
-  dplyr::pivot_wider(names_from = OfficialFnGp,
+  tidyr::pivot_wider(names_from = OfficialFnGp,
                      # TODO do this on fish UVC raw ####
                      # not pred & prey
                      values_from = c(biomass_g, biomass_g_per_m2),
@@ -187,20 +192,55 @@ pred.bruv.df1 <- elasmo.bruv.raw |>
          time.no.bait, transient_pelagic_sharks, sicklefin_lemon_sharks,
          reef_sharks, maxn_shark, teleost_maxn)
 
+# which rows of UniqueID in benthic.raw are not in prey.tel.uvc.survey.sum.df?
+# benthic.raw |>
+#   dplyr::select(UniqueID) |>
+#   anti_join(prey.uvc.survey.sum.df |>
+#               dplyr::select(UniqueID),
+#             by = "UniqueID") |>
+#   pull()
+# MM1_1  MM1_2  MM1_3  MM1_4  MM1_5  MM2_1  MM2_2  MM2_3  MM2_4  MM2_5  MM3_1  MM3_2  MM3_3  MM3_4  MM3_5  TET1_1 TET1_2 TET1_3 TET1_4 TET1_5 TET2_1 TET2_2 TET2_3
+
+tmp <- survey.wide.df1
+# colnames(tmp)[which(!colnames(tmp) %in% colnames(survey.wide.df1))] # "site_name.x" "site_name.y"
+#
+# class(benthic.raw$Time) # character
+# class(prey.uvc.survey.sum.df$Time.start) # character
+# benthic.raw$Time[1] # "11:05"
+# prey.uvc.survey.sum.df$Time.start[1] # "10:20:00"
+# # prey.uvc.survey.sum.df has seconds, benthic.raw does not, so merge breaks. Fix above.
+
+# which rows of tmp aren't present in survey.wide.df1 based on unique combinations of UniqueID, site_name, reef_name, Date, and Time.start?
+library(magrittr) # %T>%
+survey.wide.df1 |>
+  dplyr::rename(Time.start = Time.start.x) |>
+  # dplyr::select(UniqueID, site_name, reef_name, Date, Time.start) |>
+  anti_join(tmp
+            # |>
+            #   dplyr::select(UniqueID, site_name, reef_name, Date, Time.start)
+            ,
+            by = c("UniqueID", "site_name", "reef_name", "Date", "Time.start")) %T>%
+  saveRDS(file = here("NFF_data", "fish.uvc.raw-dontMatch-benthic.raw.RData")) ->
+  missing
+
+# FROMHERE 2025-02-26 ####
+# Time.start mismatch between benthic.raw and prey.uvc.survey.sum.df
+# 50 rows lost, perhaps incorrectly
 
 ## combine into full dataframe ####
-survey.wide.df1 <- benthic.raw |>
-  mutate(chi_benthos_percent = ((CCA + Hard.Coral) / 100)) |>
-  dplyr::rename(Time.start = Time) |>
-  merge(prey.uvc.survey.sum.df, by = c(
-    "UniqueID",
-    "site_name",
-    "reef_name",
-    "Date",
-    "Time.start",
-    "Lat",
-    "Long"
-  )) |>
+survey.wide.df1 <- benthic.raw |> # 167 x 19
+  mutate(chi_benthos_percent = ((CCA + Hard.Coral) / 100)) |> # 167 x 20
+  dplyr::rename(Time.start = Time) |> # 167 x 20
+  merge(prey.uvc.survey.sum.df, # (145 x 20)
+        by = c(
+          "UniqueID", # 144 x 39, = 23 rows lost, which?
+          "site_name", # 144 x 38, losing 1 col per merge since it merges col.x col.y to col
+          "reef_name", # 144 x 37
+          "Date"#, # 144 x 36
+          # "Time.start", # 94 x 35, 50 rows lost
+          # "Lat", # # 94 x 34
+          # "Long" # 94 x 33
+        )) |>
   # mutate(chi_prey_score = ((chi_benthos_percent + chi_prey_fish_percent) / 2)) |>
   # need to replace chi_prey_fish_percent with multiple columns
   # "chi_NA_percent"               "chi_Herbivore_percent"        "chi_Invertivore_percent"      "chi_Coralivore_percent"       "chi_Mixed_diet_percent"       "chi_Piscivore_percent"
@@ -530,7 +570,7 @@ d3_chi_plot2 <- (plot_ly(
     yaxis = list(title = "Pred. Teleost Biomass (g/m2)"),
     zaxis = list(title = "CCA + Hard Coral % Cover")
   ))
-d3_chi_plot2
+d3_chi_plot2 # 2025-02-28 doesn't work
 
 
 
@@ -566,7 +606,7 @@ scatter_pred_tel_plot1 <- ggplot(compare.tel.df1,
     legend.position = "right",
     plot.title = element_text(hjust = 0.5)
   )
-scatter_pred_tel_plot1
+scatter_pred_tel_plot1 # 2025-02-28 doesn't work
 ggsave(filename = here("NFF_data", "scatter_pred_tel_plot1.png"))
 
 
