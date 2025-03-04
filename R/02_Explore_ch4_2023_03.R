@@ -1,7 +1,7 @@
 # use SCRIPT PACKAGE WORKFLOW to analyse script and check dependencies to see if I can simplify this script.
 # that's a bigger project than I realised
 
-## Frances Checking In 123 can you read me? ##
+## Hi github friends! ##
 
 
 # setwd("~/Documents/My Documents/FinPrint French Poly/Analysis/Ch 4 Rethink Prelim") ## Change to appropriate working directory ##
