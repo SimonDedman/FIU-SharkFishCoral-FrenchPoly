@@ -289,7 +289,7 @@ pred.bruv.df1 <- elasmo.bruv.raw |>
 #                                    "high rocky"))
 #   )
 
-## combine into full dataframe ####
+
 survey.wide.df1 <- benthic.raw |> # 167 x 19
   # "site_name"   "UniqueID"    "Date"        "reef_name"   "Lat"         "Long"        "Time"        "Depth"       "Relief"      "Sand"        "Rubble"      "Pavement"    "CCA"         "Other.Algae" "Hard.Coral"  "Soft.Coral"  "Invert"      "sum"         "site_order"
   mutate(chi_benthos_percent = ((CCA + Hard.Coral) / 100)) |> # 167 x 20
@@ -483,6 +483,7 @@ saveRDS(atoll.survey.wide.df2, file = here("NFF_data", "atoll.survey.wide.df2.RD
 
 # full summary by reef ####
 reef.df1 <- survey.wide.df1 |>
+  select(-Lat, -Long) |>
   group_by(site_name, reef_name) |>
   summarise(
     across(c(geo, archi, isl_grp, Season, topo), first),
@@ -490,6 +491,7 @@ reef.df1 <- survey.wide.df1 |>
   ) |>
   merge((pred.bruv.df1) |> dplyr::select(c(reef_name, latitude, longitude)),
         by = c("reef_name")) |>
+  select(reef_name, site_name, latitude, longitude, everything()) |>
         # Lat & Long removed from survey.wide.df1 then merged back in from pred.bruv.df1
         # to avoid lat & long being summaries
   mutate(across(ends_with("_score"), ~ case_when(
@@ -524,6 +526,7 @@ write_csv(atoll.reef.df1, here("NFF_data", "ch4_atoll_reef_wide_df1.csv"))
 saveRDS(atoll.reef.df1, file = here("NFF_data", "ch4_atoll_reef_wide_df1.RData"))
 
 ## remove marquesas ####
+# THIS IS WHAT WE WANT FOR BRT ####
 reef.df2 <- reef.df1 |>
   filter(
     site_name != "Nuka Hiva",
@@ -722,3 +725,4 @@ write.csv(x = colnameslist, file = here("NFF_data", paste0(Sys.Date(), "_AllDfsC
 # other algae
 # crustose coraline algae
 # hard coral
+
