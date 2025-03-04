@@ -645,7 +645,7 @@ isl_grp_sd <- survey.wide.df2 |>
   group_by(isl_grp) |>
   summarise(across(where(is.numeric), \(x) sd(x, na.rm = TRUE)))
 
-## 3D scatterpolt ####
+## 3D scatterplot ####
 d3_chi_plot2 <- (plot_ly(
   data = survey.wide.df2,
   x = ~maxn_shark,
