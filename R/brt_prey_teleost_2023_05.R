@@ -12,7 +12,7 @@ library(ggplot2)
 library(gplots)
 library(rstatix)
 library(dismo)
-library(ggBRT)
+# library(ggBRT) # not available for R 4.4.1
 library(ape)
 library(gbm)
 library(gbm.auto)
@@ -20,29 +20,20 @@ library(here)
 #library(remotes)
 #remotes::install_github("SimonDedman/gbm.auto", force = TRUE)
 
-
 # import dataframes ####
-island.data.df1 <- readRDS(here("NFF_data", "island.survey.wide.df2.RData")) # high islands
-atoll.data.df1 <- readRDS(here("NFF_data", "atoll.survey.wide.df2.RData")) # atolls
-all.data.df1 <- readRDS(here("NFF_data", "survey.wide.df2.RData"))
-
-## rename columns to match DAG ####
-island.data.df1 <- island.data.df1 |> dplyr::rename_with(~ gsub("pred_tel", "piscivore", .x))
-atoll.data.df1 <- atoll.data.df1 |> dplyr::rename_with(~ gsub("pred_tel", "piscivore", .x))
-all.data.df1 <- all.data.df1 |> dplyr::rename_with(~ gsub("pred_tel", "piscivore", .x))
-
-#average teleost biomasses for analysis #
-#calculate pop. dens ####
-
-# Island only####
-island.brt.df1 <- island.data.df1 %>%
+island.data.df1 <- readRDS(here("NFF_data", "ch4_reef_wide_df2.RData")) %>%  # high islands
+  mutate(log_prey_tel = log1p(prey_fish_biomass_g_per_m2)) %>%
+  mutate(log_piscivore = log1p(piscivore_biomass_g_per_m2))
+atoll.data.df1 <- readRDS(here("NFF_data", "ch4_atoll_reef_wide_df2.RData")) %>%  # atolls
   mutate(log_prey_tel = log1p(prey_fish_biomass_g_per_m2)) %>%
   mutate(log_piscivore = log1p(piscivore_biomass_g_per_m2))
 
+
+# Prey Fish Biomass ####
 ## hist ####
 hist(island.brt.df1$log_prey)
 
-## Prey Fish Biomass ####
+## gbm.auto param combos ####
 gbm.auto(
   grids = NULL,
   samples = island.brt.df1,
@@ -136,14 +127,11 @@ gbm.auto(
 
 
 # Atoll only ####
-atoll.brt.df1 <- atoll.data.df1 %>%
-  mutate(log_prey_tel = log1p(prey_fish_biomass_g_per_m2)) %>%
-  mutate(log_piscivore = log1p(piscivore_biomass_g_per_m2))
-
 ## hist ####
 hist(atoll.brt.df1$log_prey)
 
 ## Prey Fish Biomass ####
+## gbm.auto param combos ####
 gbm.auto(
   grids = NULL,
   samples = atoll.brt.df1,

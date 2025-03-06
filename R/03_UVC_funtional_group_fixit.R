@@ -1,3 +1,7 @@
+# 2025-03-05 SD: NOT SURE WHAT THIS SCRIPT IS DOING
+# IS STILL REQUIRED?
+# I think everything in here is already done in 01 & 02
+
 # setwd("~/Documents/My Documents/FinPrint French Poly/Analysis/Ch 4 Rethink Prelim") # Change to appropriate working directory
 library(tidyverse)
 library(here)
