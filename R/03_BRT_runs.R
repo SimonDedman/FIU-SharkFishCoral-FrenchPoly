@@ -5,26 +5,9 @@
 
 
 library(tidyverse)
-# library(MASS)
-# library(vegan)
-# library(reshape)
-# library(doBy)
-# library(utils)
-# library(RcmdrMisc)
-# library(ResourceSelection)
-# library(boot)
-# library(ggplot2)
-# library(gplots)
-# library(rstatix)
-# library(dismo)
-# library(ggBRT) # not available for R 4.4.1
-# library(ape)
-# library(gbm) # Loaded gbm 2.2.2: This version of gbm is no longer under development. Consider transitioning to gbm3, https://github.com/gbm-developers/gbm3
-remotes::install_github("SimonDedman/gbm.auto")
+# remotes::install_github("SimonDedman/gbm.auto")
 library(gbm.auto)
 library(here)
-#library(remotes)
-#remotes::install_github("SimonDedman/gbm.auto", force = TRUE)
 
 # import dataframes ####
 brt.df1 <- readRDS(here("NFF_data", "ch4_reef_wide_df2.RData")) %>%  # high islands
@@ -61,51 +44,89 @@ expvars <- c("ave_temp",
              "log_Invertivore",
              "log_piscivore")
 
-## Islands ####
+
+## All: Islands + Atolls ####
 ### histogram ####
-hist(island.brt.df1$chi_benthos_percent)
+hist(brt.df1$chi_benthos_percent)
 
-### gbm.auto combos ####
-
-# Error in gbm.fit(x = x, y = y, offset = offset, distribution = distribution,: The data set is too small or the subsampling rate is too large: `nTrain * bag.fraction <= 2 * n.minobsinnode + 1`
-tmp <- rbind(
-  brt.df1,
-  brt.df1
+### preset hyperparameters ####
+tmp <- rbind(brt.df1, brt.df1)
+gbm.bfcheck(samples = brt.df1, resvar = "chi_benthos_percent", ZI = FALSE) # 0.875
+gbm.auto( # working but with double dataset hack
+  samples = tmp, expvar = c(expvars, "geo"), resvar = "chi_benthos_percent",
+  randomvar = TRUE, tc = 1, lr = 0.5, bf = 0.7, n.trees = 100, ZI = FALSE,
+  smooth = TRUE, savedir = here("Results", "BRT", "All"), savegbm = FALSE, alerts = FALSE,
+  pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png"
 )
 
+### gbm.auto combos ####
+# Error in gbm.fit(x = x, y = y, offset = offset, distribution = distribution,: The data set is too small or the subsampling rate is too large: `nTrain * bag.fraction <= 2 * n.minobsinnode + 1`
+
 gbm.auto(
-  samples = tmp, # change to island
+  samples = brt.df1, # change to island
   expvar = c(expvars, "geo"),
   resvar = "chi_benthos_percent",
+  randomvar = TRUE,
   tc = c(
-    # 1,
+    # 1:12
+    1
     # 2,
     # 3,
     # 4,
-    12
+    # 12
   ), # add combos you want to see for initial runs and it will try each. doesn't run the whole gambit like the loops do
   lr = c(
-    0.05 #,
+    # 0.5, 0.25, 0.1, 0.075, 0.05, 0.01
+    0.00001
+    # 0.05 #,
     # 0.001,
     # 0.005,
     # 0.01
     ),
   bf = c(
+    # (5:9)/10
     # 0.5,
     # 0.65,
-    # 0.7,
+    0.9
     # 0.75
-    0.5
+    # 0.5
   ),
   n.trees = 100,
-  simp = FALSE,
+  # simp = FALSE,
   ZI = FALSE, # forces fam2 only, gaussian only run
   # fam1 = "gaussian",
-  smooth = TRUE, savedir = here("Results", "BRT", "Islands"),
+  smooth = TRUE, savedir = here("Results", "BRT", "All"),
   savegbm = FALSE, alerts = FALSE,
   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png" #,
   # gaus = FALSE
   )
+
+
+
+
+
+## Islands ####
+### histogram ####
+hist(island.brt.df1$chi_benthos_percent)
+
+### gbm.auto combos ####
+gbm.auto(
+  samples = tmp, # change to island
+  expvar = c(expvars, "geo"),
+  resvar = "chi_benthos_percent",
+  randomvar = TRUE,
+  tc = c(1, 2, 3, 4, 12), # add combos you want to see for initial runs and it will try each. doesn't run the whole gambit like the loops do
+  lr = c(0.5, 0.05, 0.001, 0.005, 0.01 ),
+  bf = c(0.5, 0.65, 0.7, 0.75),
+  n.trees = 100,
+  # simp = FALSE,
+  ZI = FALSE, # forces fam2 only, gaussian only run
+  # fam1 = "gaussian",
+  smooth = TRUE, savedir = here("Results", "BRT", "All"),
+  savegbm = FALSE, alerts = FALSE,
+  pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png" #,
+  # gaus = FALSE
+)
 
 ### preset hyperparameters ####
 gbm.auto(
