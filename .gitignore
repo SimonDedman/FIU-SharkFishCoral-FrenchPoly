@@ -12,6 +12,7 @@ Docs/
 Nat_resources/
 NFF_data/
 Presentations/
+Results/
 
 # Example code in package build process
 *-Ex.R
