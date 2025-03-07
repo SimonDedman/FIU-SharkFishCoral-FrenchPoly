@@ -27,7 +27,14 @@ library(here)
 #remotes::install_github("SimonDedman/gbm.auto", force = TRUE)
 
 # import dataframes ####
-island.brt.df1 <- readRDS(here("NFF_data", "ch4_reef_wide_df2.RData")) %>%  # high islands
+brt.df1 <- readRDS(here("NFF_data", "ch4_reef_wide_df2.RData")) %>%  # high islands
+  mutate(log_Planktivore = log1p(biomass_g_per_m2_Planktivore),
+         log_Herbivore = log1p(biomass_g_per_m2_Herbivore),
+         log_Invertivore = log1p(biomass_g_per_m2_Invertivore),
+         log_piscivore = log1p(biomass_g_per_m2_Piscivore))
+# geo as expvar option
+
+island.brt.df1 <- readRDS(here("NFF_data", "ch4_island_reef_wide_df2.RData")) %>%  # high islands
   mutate(log_Planktivore = log1p(biomass_g_per_m2_Planktivore),
          log_Herbivore = log1p(biomass_g_per_m2_Herbivore),
          log_Invertivore = log1p(biomass_g_per_m2_Invertivore),
@@ -61,20 +68,24 @@ hist(island.brt.df1$chi_benthos_percent)
 ### gbm.auto combos ####
 
 # Error in gbm.fit(x = x, y = y, offset = offset, distribution = distribution,: The data set is too small or the subsampling rate is too large: `nTrain * bag.fraction <= 2 * n.minobsinnode + 1`
+tmp <- rbind(
+  brt.df1,
+  brt.df1
+)
 
 gbm.auto(
-  samples = island.brt.df1,
-  expvar = expvars,
+  samples = tmp, # change to island
+  expvar = c(expvars, "geo"),
   resvar = "chi_benthos_percent",
   tc = c(
     # 1,
     # 2,
     # 3,
     # 4,
-    5
+    12
   ), # add combos you want to see for initial runs and it will try each. doesn't run the whole gambit like the loops do
   lr = c(
-    0.00001 #,
+    0.05 #,
     # 0.001,
     # 0.005,
     # 0.01
@@ -84,8 +95,10 @@ gbm.auto(
     # 0.65,
     # 0.7,
     # 0.75
-    0.9
+    0.5
   ),
+  n.trees = 100,
+  simp = FALSE,
   ZI = FALSE, # forces fam2 only, gaussian only run
   # fam1 = "gaussian",
   smooth = TRUE, savedir = here("Results", "BRT", "Islands"),
