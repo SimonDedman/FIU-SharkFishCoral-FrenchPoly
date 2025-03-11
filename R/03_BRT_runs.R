@@ -53,12 +53,63 @@ hist(brt.df1$chi_benthos_percent)
 tmp <- rbind(brt.df1, brt.df1)
 gbm.bfcheck(samples = brt.df1, resvar = "chi_benthos_percent", ZI = FALSE) # 0.875
 gbm.auto( # working but with double dataset hack
-  samples = tmp, expvar = c(expvars, "geo"), resvar = "chi_benthos_percent",
-  randomvar = TRUE, tc = 1, lr = 0.5, bf = 0.7, n.trees = 100, ZI = FALSE,
+  samples = tmp, # brt.df1
+  expvar = c(expvars, "geo"), resvar = "chi_benthos_percent",
+  # randomvar = TRUE,
+  tc = 1,
+  lr = 0.5,
+  bf = 0.7,
+  n.trees = 100,
+  ZI = FALSE,
   smooth = TRUE, savedir = here("Results", "BRT", "All"), savegbm = FALSE, alerts = FALSE,
   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png"
 )
 
+# ### NFF worked-before hyperparameters ####
+# gbm.auto( # working but with double dataset hack
+#   samples = tmp,
+#   expvar = c(expvars, "geo"), resvar = "chi_benthos_percent",
+#   # randomvar = TRUE,
+#   tc = 5,
+#   lr = 0.005,
+#   bf = 0.75,
+#   n.trees = 100,
+#   # ZI = FALSE,
+#   ZI = "CHECK",
+#   fam1 = c("binomial"),
+#   fam2 = c("gaussian"),
+#   smooth = TRUE, savedir = here("Results", "BRT", "All"), savegbm = FALSE, alerts = FALSE,
+#   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png"
+# )
+
+# loop results
+gbm.loop( # working but with double dataset hack
+  samples = tmp, # brt.df1
+  expvar = c(expvars, "geo"), resvar = "chi_benthos_percent",
+  # randomvar = TRUE,
+  tc = 1,
+  lr = 0.5,
+  bf = 0.7,
+  n.trees = 100,
+  ZI = FALSE,
+  smooth = TRUE, savedir = here("Results", "BRT", "All", "Loop"), savegbm = FALSE, alerts = FALSE,
+  pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png"
+)
+
+# stitch together successful runs
+gbm.loop(
+  runautos = FALSE,
+  samples = tmp, # brt.df1
+  expvar = c(expvars, "geo"), resvar = "chi_benthos_percent",
+  # tc = 1,
+  # lr = 0.5,
+  # bf = 0.7,
+  # n.trees = 100,
+  # ZI = FALSE,
+  # smooth = TRUE,
+  savedir = here("Results", "BRT", "All", "Loop"), savegbm = FALSE, alerts = FALSE,
+  pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png"
+)
 ### gbm.auto combos ####
 # Error in gbm.fit(x = x, y = y, offset = offset, distribution = distribution,: The data set is too small or the subsampling rate is too large: `nTrain * bag.fraction <= 2 * n.minobsinnode + 1`
 
