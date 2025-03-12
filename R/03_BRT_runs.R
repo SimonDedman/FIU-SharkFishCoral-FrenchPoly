@@ -1,9 +1,3 @@
-# TODO
-# fix gbm.auto issue
-# comment out combos sections, leave preset hyperparams uncommented
-# delete both brt_.R scripts, redundant
-
-
 library(tidyverse)
 # remotes::install_github("SimonDedman/gbm.auto")
 library(gbm.auto)
@@ -417,7 +411,7 @@ gbm.auto(
 gbm.auto( # working but with double dataset hack
   samples = tmp, # brt.df1
   expvar = c(expvars), resvar = "log_Invertivore",
-  randomvar = TRUE,
+  # randomvar = TRUE,
   tc = 5,
   lr = 0.5,
   bf = 0.9,
@@ -426,7 +420,6 @@ gbm.auto( # working but with double dataset hack
   smooth = TRUE, savedir = here("Results", "BRT", "All"), savegbm = FALSE, alerts = FALSE,
   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png"
 )
-
 ### gbm.loop run ####
 dir.create(here("Results", "BRT", "All", "log_Invertivore", "Loop"))
 
