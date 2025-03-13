@@ -24,7 +24,7 @@ atoll.brt.df1 <- readRDS(here("NFF_data", "ch4_atoll_reef_wide_df2.RData")) %>% 
          log_piscivore = log1p(biomass_g_per_m2_Piscivore))
 
 # Coral Health Index Benthos % ####
-## Common expvars for BRTs ####
+## expvars ####
 expvars <- c("ave_temp",
              "ave_npp",
              "topo",
@@ -217,7 +217,7 @@ gbm.auto(
 
 
 # Herbivore Biomass ####
-## Common expvars for BRTs ####
+## expvars ####
 expvars <- c("ave_temp",
              "ave_npp",
              "topo",
@@ -227,7 +227,9 @@ expvars <- c("ave_temp",
              "maxn_shark",
              "Relief",
              "chi_benthos_percent",
-             "log_piscivore")
+             "log_piscivore",
+             "log_Planktivore",
+             "log_Invertivore")
 
 ## All: Islands + Atolls ####
 ### hist ####
@@ -242,28 +244,16 @@ gbm.auto(
   resvar = "log_Herbivore",
   randomvar = TRUE,
   tc = c(
-    1:12
-    # 1
-    # 2,
-    # 3,
-    # 4,
-    # 12
+    # 1:12
+    3:5 # winning range all comps
   ), # add combos you want to see for initial runs and it will try each. doesn't run the whole gambit like the loops do
   lr = c(
-    0.5, 0.25, 0.1, 0.075, 0.05, 0.01
-    # 0.00001
-    # 0.05 #,
-    # 0.001,
-    # 0.005,
-    # 0.01
+    # 0.5, 0.25, 0.1, 0.075, 0.05, 0.01
+    0.5 # winner in all comps
   ),
   bf = c(
-    (5:9)/10
-    # 0.5,
-    # 0.65,
-    # 0.9
-    # 0.75
-    # 0.5
+    # (5:9)/10
+    0.9 # winner all comps
   ),
   n.trees = 100,
   # simp = FALSE,
@@ -279,7 +269,7 @@ gbm.auto(
 gbm.auto( # working but with double dataset hack
   samples = tmp, # brt.df1
   expvar = c(expvars), resvar = "log_Herbivore",
-  tc = 5,
+  tc = 4,
   lr = 0.5,
   bf = 0.9,
   n.trees = 100,
@@ -290,10 +280,11 @@ gbm.auto( # working but with double dataset hack
 
 ### gbm.loop run ####
 dir.create(here("Results", "BRT", "All", "log_Herbivore", "Loop"))
+dir.create(here("Results", "BRT", "All", "log_Herbivore", "Loop", "safe"))
 gbm.loop( # working but with double dataset hack
   samples = tmp, # brt.df1
   expvar = c(expvars), resvar = "log_Herbivore",
-  tc = 5,
+  tc = 4,
   lr = 0.5,
   bf = 0.9,
   n.trees = 100,
@@ -301,7 +292,6 @@ gbm.loop( # working but with double dataset hack
   smooth = TRUE, savedir = here("Results", "BRT", "All", "log_Herbivore", "Loop"), savegbm = FALSE, alerts = FALSE,
   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png"
   )
-
 #### stitch together successful loops ####
 gbm.loop(
   runautos = FALSE,
@@ -311,58 +301,23 @@ gbm.loop(
   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png"
 )
 
-## Islands ####
-# gbm.auto(
-#   samples = island.brt.df1, expvar = expvars,
-#   resvar = "log_Herbivore",
-#   tc = c(1, 2, 3, 4, 5), # add combos you want to see for initial runs and it will try each. doesn't run the whole gambit like the loops do
-#   lr = c(0.0005, 0.001, 0.005, 0.01),
-#   bf = c(0.5, 0.55, 0.5, 0.65, 0.7, 0.75),
-#   smooth = TRUE, savedir = here("Results", "BRT", "Islands"),
-#   savegbm = FALSE, alerts = FALSE,
-#   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png")
-
-### preset hyperparameters ####
-# gbm.auto(
-#   samples = island.brt.df1, expvar = expvars,
-#   resvar = "log_Herbivore",
-#   tc = 5, # add combos you want to see for initial runs and it will try each. doesn't run the whole gambit like the loops do
-#   lr = 0.01,
-#   bf = 0.65,
-#   smooth = TRUE, savedir = here("Results", "BRT", "Islands"),
-#   savegbm = FALSE, alerts = FALSE,
-#   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png")
-
-## Atolls ####
-### hist ####
-# hist(atoll.brt.df1$log_prey)
-
-### gbm.auto param combos ####
-# gbm.auto(
-#   samples = atoll.brt.df1, expvar = expvars,
-#   resvar = "log_Herbivore",
-#   tc = c(1, 2, 3, 4, 5), # add combos you want to see for initial runs and it will try each. doesn't run the whole gambit like the loops do
-#   lr = c(0.0005, 0.001, 0.005, 0.01),
-#   bf = c(0.5, 0.55, 0.5, 0.65, 0.7, 0.75),
-#   smooth = TRUE, savedir = here("Results", "BRT", "Atolls"),
-#   savegbm = FALSE, alerts = FALSE,
-#   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png")
-
-### preset hyperparameters ####
-# gbm.auto(
-#   samples = atoll.brt.df1, expvar = expvars,
-#   resvar = "log_Herbivore",
-#   tc = 4, # add combos you want to see for initial runs and it will try each. doesn't run the whole gambit like the loops do
-#   lr = 0.001,
-#   bf = 0.7,
-#   smooth = TRUE, savedir = here("Results", "BRT", "Atolls"),
-#   savegbm = FALSE, alerts = FALSE,
-#   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png")
-
 
 
 
 # Invertivore Biomass ####
+## expvars ####
+expvars <- c("ave_temp",
+             "ave_npp",
+             "topo",
+             "pop.dens",
+             "isl_grp",
+             "lagoon.size",
+             "maxn_shark",
+             "Relief",
+             "chi_benthos_percent",
+             "log_piscivore",
+             "log_Planktivore",
+             "log_Herbivore")
 ## All: Islands + Atolls ####
 ### hist ####
 hist(tmp$log_Invertivore)
@@ -374,28 +329,16 @@ gbm.auto(
   resvar = "log_Invertivore",
   randomvar = TRUE,
   tc = c(
-    1:12
-    # 1
-    # 2,
-    # 3,
-    # 4,
-    # 12
+    # 1:12
+    3:5 # winning range all comps
   ), # add combos you want to see for initial runs and it will try each. doesn't run the whole gambit like the loops do
   lr = c(
-    0.5, 0.25, 0.1, 0.075, 0.05, 0.01
-    # 0.00001
-    # 0.05 #,
-    # 0.001,
-    # 0.005,
-    # 0.01
+    # 0.5, 0.25, 0.1, 0.075, 0.05, 0.01
+    0.5 # winner in all comps
   ),
   bf = c(
-    (5:9)/10
-    # 0.5,
-    # 0.65,
-    # 0.9
-    # 0.75
-    # 0.5
+    # (5:9)/10
+    0.9 # winner all comps
   ),
   n.trees = 100,
   # simp = FALSE,
@@ -412,7 +355,7 @@ gbm.auto( # working but with double dataset hack
   samples = tmp, # brt.df1
   expvar = c(expvars), resvar = "log_Invertivore",
   # randomvar = TRUE,
-  tc = 5,
+  tc = 3,
   lr = 0.5,
   bf = 0.9,
   n.trees = 100,
@@ -422,11 +365,12 @@ gbm.auto( # working but with double dataset hack
 )
 ### gbm.loop run ####
 dir.create(here("Results", "BRT", "All", "log_Invertivore", "Loop"))
+dir.create(here("Results", "BRT", "All", "log_Invertivore", "Loop", "safe"))
 
 gbm.loop( # working but with double dataset hack
   samples = tmp, # brt.df1
   expvar = c(expvars), resvar = "log_Invertivore",
-  tc = 5,
+  tc = 3,
   lr = 0.5,
   bf = 0.9,
   n.trees = 100,
@@ -434,7 +378,6 @@ gbm.loop( # working but with double dataset hack
   smooth = TRUE, savedir = here("Results", "BRT", "All", "log_Invertivore", "Loop"), savegbm = FALSE, alerts = FALSE,
   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png"
 )
-
 #### stitch together successful loops ####
 gbm.loop(
   loops = 11, # just because I ended up with 1 extra good run
@@ -446,59 +389,22 @@ gbm.loop(
 )
 
 
-## Islands ####
-### gbm.auto param combos ####
-# gbm.auto(
-#   samples = island.brt.df1, expvar = expvars,
-#   resvar = "log_Invertivore",
-#   tc = c(1, 2, 3, 4, 5), # add combos you want to see for initial runs and it will try each. doesn't run the whole gambit like the loops do
-#   lr = c(0.0005, 0.001, 0.005, 0.01),
-#   bf = c(0.5, 0.55, 0.5, 0.65, 0.7, 0.75),
-#   smooth = TRUE, savedir = here("Results", "BRT", "Islands"),
-#   savegbm = FALSE, alerts = FALSE,
-#   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png")
-
-### preset hyperparameters ####
-# gbm.auto(
-#   samples = island.brt.df1, expvar = expvars,
-#   resvar = "log_Invertivore",
-#   tc = 5, # add combos you want to see for initial runs and it will try each. doesn't run the whole gambit like the loops do
-#   lr = 0.01,
-#   bf = 0.65,
-#   smooth = TRUE, savedir = here("Results", "BRT", "Islands"),
-#   savegbm = FALSE, alerts = FALSE,
-#   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png")
-
-## Atolls ####
-### hist ####
-# hist(atoll.brt.df1$log_prey)
-
-### gbm.auto param combos ####
-# gbm.auto(
-#   samples = atoll.brt.df1, expvar = expvars,
-#   resvar = "log_Invertivore",
-#   tc = c(1, 2, 3, 4, 5), # add combos you want to see for initial runs and it will try each. doesn't run the whole gambit like the loops do
-#   lr = c(0.0005, 0.001, 0.005, 0.01),
-#   bf = c(0.5, 0.55, 0.5, 0.65, 0.7, 0.75),
-#   smooth = TRUE, savedir = here("Results", "BRT", "Atolls"),
-#   savegbm = FALSE, alerts = FALSE,
-#   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png")
-
-### preset hyperparameters ####
-# gbm.auto(
-#   samples = atoll.brt.df1, expvar = expvars,
-#   resvar = "log_Invertivore",
-#   tc = 4, # add combos you want to see for initial runs and it will try each. doesn't run the whole gambit like the loops do
-#   lr = 0.001,
-#   bf = 0.7,
-#   smooth = TRUE, savedir = here("Results", "BRT", "Atolls"),
-#   savegbm = FALSE, alerts = FALSE,
-#   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png")
-
-
 
 
 # Planktivore Biomass ####
+## expvars ####
+expvars <- c("ave_temp",
+             "ave_npp",
+             "topo",
+             "pop.dens",
+             "isl_grp",
+             "lagoon.size",
+             "maxn_shark",
+             "Relief",
+             "chi_benthos_percent",
+             "log_piscivore",
+             "log_Invertivore",
+             "log_Herbivore")
 ## All: Islands + Atolls ####
 ### hist ####
 hist(tmp$log_Planktivore)
@@ -510,28 +416,16 @@ gbm.auto(
   resvar = "log_Planktivore",
   randomvar = TRUE,
   tc = c(
-    1:12
-    # 1
-    # 2,
-    # 3,
-    # 4,
-    # 12
+    # 1:12
+    3:5 # winning range all comps
   ), # add combos you want to see for initial runs and it will try each. doesn't run the whole gambit like the loops do
   lr = c(
-    0.5, 0.25, 0.1, 0.075, 0.05, 0.01
-    # 0.00001
-    # 0.05 #,
-    # 0.001,
-    # 0.005,
-    # 0.01
+    # 0.5, 0.25, 0.1, 0.075, 0.05, 0.01
+    0.5 # winner in all comps
   ),
   bf = c(
-    (5:9)/10
-    # 0.5,
-    # 0.65,
-    # 0.9
-    # 0.75
-    # 0.5
+    # (5:9)/10
+    0.9 # winner all comps
   ),
   n.trees = 100,
   # simp = FALSE,
@@ -548,7 +442,7 @@ gbm.auto( # working but with double dataset hack
   samples = tmp, # brt.df1
   expvar = c(expvars), resvar = "log_Planktivore",
   # randomvar = TRUE,
-  tc = 3,
+  tc = 5,
   lr = 0.5,
   bf = 0.9,
   n.trees = 100,
@@ -559,11 +453,12 @@ gbm.auto( # working but with double dataset hack
 
 ### gbm.loop run ####
 dir.create(here("Results", "BRT", "All", "log_Planktivore", "Loop"))
+dir.create(here("Results", "BRT", "All", "log_Planktivore", "Loop", "safe"))
 
 gbm.loop( # working but with double dataset hack
   samples = tmp, # brt.df1
   expvar = c(expvars), resvar = "log_Planktivore",
-  tc = 3,
+  tc = 5,
   lr = 0.5,
   bf = 0.9,
   n.trees = 100,
@@ -573,7 +468,7 @@ gbm.loop( # working but with double dataset hack
 )
 #### stitch together successful loops ####
 gbm.loop(
-  loops = 12, # just because I ended up with 2 extra good runs
+  loops = 10, # just because I ended up with 2 extra good runs
   runautos = FALSE,
   samples = tmp, # brt.df1
   expvar = c(expvars), resvar = "log_Planktivore",
@@ -581,60 +476,12 @@ gbm.loop(
   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png"
 )
 
-# ## Islands ####
-# ### gbm.auto param combos ####
-# gbm.auto(
-#   samples = island.brt.df1, expvar = expvars,
-#   resvar = "log_Planktivore",
-#   tc = c(1, 2, 3, 4, 5), # add combos you want to see for initial runs and it will try each. doesn't run the whole gambit like the loops do
-#   lr = c(0.0005, 0.001, 0.005, 0.01),
-#   bf = c(0.5, 0.55, 0.5, 0.65, 0.7, 0.75),
-#   smooth = TRUE, savedir = here("Results", "BRT", "Islands"),
-#   savegbm = FALSE, alerts = FALSE,
-#   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png")
-#
-# ### preset hyperparameters ####
-# gbm.auto(
-#   samples = island.brt.df1, expvar = expvars,
-#   resvar = "log_Planktivore",
-#   tc = 5, # add combos you want to see for initial runs and it will try each. doesn't run the whole gambit like the loops do
-#   lr = 0.01,
-#   bf = 0.65,
-#   smooth = TRUE, savedir = here("Results", "BRT", "Islands"),
-#   savegbm = FALSE, alerts = FALSE,
-#   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png")
-#
-# ## Atolls ####
-# ### hist ####
-# hist(atoll.brt.df1$log_prey)
-#
-# ### gbm.auto param combos ####
-# gbm.auto(
-#   samples = atoll.brt.df1, expvar = expvars,
-#   resvar = "log_Planktivore",
-#   tc = c(1, 2, 3, 4, 5), # add combos you want to see for initial runs and it will try each. doesn't run the whole gambit like the loops do
-#   lr = c(0.0005, 0.001, 0.005, 0.01),
-#   bf = c(0.5, 0.55, 0.5, 0.65, 0.7, 0.75),
-#   smooth = TRUE, savedir = here("Results", "BRT", "Atolls"),
-#   savegbm = FALSE, alerts = FALSE,
-#   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png")
-#
-# ### preset hyperparameters ####
-# gbm.auto(
-#   samples = atoll.brt.df1, expvar = expvars,
-#   resvar = "log_Planktivore",
-#   tc = 4, # add combos you want to see for initial runs and it will try each. doesn't run the whole gambit like the loops do
-#   lr = 0.001,
-#   bf = 0.7,
-#   smooth = TRUE, savedir = here("Results", "BRT", "Atolls"),
-#   savegbm = FALSE, alerts = FALSE,
-#   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png")
-
 
 
 
 
 # Piscivore Biomass ####
+## expvars ####
 expvars <- c("ave_temp",
              "ave_npp",
              "topo",
@@ -644,10 +491,9 @@ expvars <- c("ave_temp",
              "maxn_shark",
              "Relief",
              "chi_benthos_percent",
-             "log_Planktivore",
-             "log_Herbivore",
-             "log_Invertivore")
-
+             "log_piscivore",
+             "log_Invertivore",
+             "log_Herbivore")
 ## All: Islands + Atolls ####
 ### hist ####
 hist(tmp$log_piscivore)
@@ -707,6 +553,8 @@ gbm.auto( # working but with double dataset hack
 )
 ### gbm.loop run ####
 dir.create(here("Results", "BRT", "All", "log_piscivore", "Loop"))
+dir.create(here("Results", "BRT", "All", "log_piscivore", "Loop", "safe"))
+
 gbm.loop( # working but with double dataset hack
   samples = tmp, # brt.df1
   expvar = c(expvars), resvar = "log_piscivore",
@@ -726,52 +574,3 @@ gbm.loop(
   savedir = here("Results", "BRT", "All", "log_piscivore", "Loop"), savegbm = FALSE, alerts = FALSE,
   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png"
 )
-
-## Islands ####
-### gbm.auto param combos ####
-# gbm.auto(
-#   samples = island.brt.df1, expvar = expvars,
-#   resvar = "log_piscivore",
-#   tc = c(1, 2, 3, 4, 5), # add combos you want to see for initial runs and it will try each. doesn't run the whole gambit like the loops do
-#   lr = c(0.0005, 0.001, 0.005, 0.01),
-#   bf = c(0.5, 0.55, 0.5, 0.65, 0.7, 0.75),
-#   smooth = TRUE, savedir = here("Results", "BRT", "Islands"),
-#   savegbm = FALSE, alerts = FALSE,
-#   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png")
-
-### preset hyperparameters ####
-# gbm.auto(
-#   samples = island.brt.df1, expvar = expvars,
-#   resvar = "log_piscivore",
-#   tc = 5, # add combos you want to see for initial runs and it will try each. doesn't run the whole gambit like the loops do
-#   lr = 0.01,
-#   bf = 0.65,
-#   smooth = TRUE, savedir = here("Results", "BRT", "Islands"),
-#   savegbm = FALSE, alerts = FALSE,
-#   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png")
-
-## Atolls ####
-### hist ####
-hist(atoll.brt.df1$log_prey)
-
-### gbm.auto param combos ####
-# gbm.auto(
-#   samples = atoll.brt.df1, expvar = expvars,
-#   resvar = "log_piscivore",
-#   tc = c(1, 2, 3, 4, 5), # add combos you want to see for initial runs and it will try each. doesn't run the whole gambit like the loops do
-#   lr = c(0.0005, 0.001, 0.005, 0.01),
-#   bf = c(0.5, 0.55, 0.5, 0.65, 0.7, 0.75),
-#   smooth = TRUE, savedir = here("Results", "BRT", "Atolls"),
-#   savegbm = FALSE, alerts = FALSE,
-#   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png")
-
-### preset hyperparameters ####
-# gbm.auto(
-#   samples = atoll.brt.df1, expvar = expvars,
-#   resvar = "log_piscivore",
-#   tc = 4, # add combos you want to see for initial runs and it will try each. doesn't run the whole gambit like the loops do
-#   lr = 0.001,
-#   bf = 0.7,
-#   smooth = TRUE, savedir = here("Results", "BRT", "Atolls"),
-#   savegbm = FALSE, alerts = FALSE,
-#   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png")
