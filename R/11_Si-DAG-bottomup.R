@@ -26,11 +26,10 @@ ReefWideBRUVUVC.DAGtested <- readRDS(here(
   dplyr::mutate(dplyr::across(where(is.numeric), stdize))
 
 # STAN GLM effects ####
-## sicklefin on reef sharks ####
 models_list <- list()
+## reef sharks on sicklefin ####
 models_list[[1]] <- stan_glm(
-  # sicklefin_reef_sharks
-  reef_sharks ~ sicklefin_lemon_sharks,
+  sicklefin_lemon_sharks ~ reef_sharks,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(), # change if your response is non-continuous
   prior = normal(0, 2.5), # weakly informative prior for slopes
@@ -51,10 +50,9 @@ intervals_list[[1]] <- as.data.frame(posterior_interval(
   prob = 0.95
 ))
 
-## sicklefin on piscivores ####
+## transient pelagics on reef_sharks ####
 models_list[[2]] <- stan_glm(
-  # sicklefin_piscivores_bayes
-  chi_Piscivore_percent ~ sicklefin_lemon_sharks,
+  transient_pelagic_sharks ~ reef_sharks,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
   prior = normal(0, 2.5),
@@ -69,10 +67,10 @@ intervals_list[[2]] <- as.data.frame(posterior_interval(
   prob = 0.95
 ))
 
-## transient pelagics on reef_sharks ####
+## piscivores on sicklefin ####
 models_list[[3]] <- stan_glm(
-  # transient_reef_sharks_bayes
-  reef_sharks ~ transient_pelagic_sharks,
+  # sicklefin_piscivores_bayes
+  sicklefin_lemon_sharks ~ chi_Piscivore_percent,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
   prior = normal(0, 2.5),
@@ -87,10 +85,10 @@ intervals_list[[3]] <- as.data.frame(posterior_interval(
   prob = 0.95
 ))
 
-## transient pelagics on piscivores ####
+## piscivores on transient pelagics ####
 models_list[[4]] <- stan_glm(
   # transient_piscivores_bayes
-  chi_Piscivore_percent ~ transient_pelagic_sharks,
+  transient_pelagic_sharks ~ chi_Piscivore_percent,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
   prior = normal(0, 2.5),
@@ -105,10 +103,9 @@ intervals_list[[4]] <- as.data.frame(posterior_interval(
   prob = 0.95
 ))
 
-## reef_sharks on herbivores ####
+## herbivores on reef_sharks ####
 models_list[[5]] <- stan_glm(
-  # reef_sharks_herbivores_bayes
-  chi_Herbivore_percent ~ reef_sharks + chi_Piscivore_percent + pop.dens,
+  reef_sharks ~ chi_Herbivore_percent + pop.dens, # + chi_Piscivore_percent   # + inverts planks offshoreprey via pop.dens?
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
   prior = normal(0, 2.5),
@@ -117,17 +114,15 @@ models_list[[5]] <- stan_glm(
   iter = 2000,
   seed = 123
 )
-
 ### 95% credible intervals ####
 intervals_list[[5]] <- as.data.frame(posterior_interval(
   models_list[[5]],
   prob = 0.95
 ))
 
-## reef_sharks on invertivores ####
+## invertivores on reef_sharks ####
 models_list[[6]] <- stan_glm(
-  # reef_sharks_invertivores_bayes
-  chi_Invertivore_percent ~ reef_sharks + chi_Piscivore_percent + pop.dens,
+  reef_sharks ~ chi_Invertivore_percent + pop.dens, # + chi_Herbivore_percent planks via pop.dens?
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
   prior = normal(0, 2.5),
@@ -145,7 +140,7 @@ intervals_list[[6]] <- as.data.frame(posterior_interval(
 ## reef_sharks on planktivores ####
 models_list[[7]] <- stan_glm(
   # reef_sharks_planktivores_bayes
-  chi_Planktivore_percent ~ reef_sharks + chi_Piscivore_percent + pop.dens,
+  chi_Herbivore_percent ~ reef_sharks + chi_Planktivore_percent + pop.dens,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
   prior = normal(0, 2.5),
@@ -198,6 +193,7 @@ intervals_list[[9]] <- as.data.frame(posterior_interval(
 
 ## piscivores on invertivores ####
 models_list[[10]] <- stan_glm(
+  # piscivore_herbivore_bayes
   chi_Invertivore_percent ~ chi_Piscivore_percent + pop.dens + reef_sharks,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
@@ -215,11 +211,10 @@ intervals_list[[10]] <- as.data.frame(posterior_interval(
 
 ## herbivores on hard_coral ####
 models_list[[11]] <- stan_glm(
+  # herbivores_hard_coral_bayes
   Hard.Coral ~
     chi_Herbivore_percent +
       chi_Planktivore_percent +
-      # CHECK THIS####
-      chi_Invertivore_percent + # WAS MISSING, TO CHECK
       chi_Piscivore_percent +
       pop.dens +
       reef_sharks +
@@ -240,8 +235,7 @@ intervals_list[[11]] <- as.data.frame(posterior_interval(
 
 ## herbivores on CCA ####
 models_list[[12]] <- stan_glm(
-  # CHECK THIS ####
-  # doesn't look like backdoor path?
+  # herbivores_crustose_bayes
   CCA ~ chi_Herbivore_percent + pop.dens + Relief,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
@@ -259,9 +253,8 @@ intervals_list[[12]] <- as.data.frame(posterior_interval(
 
 ## herbivores on other algae ####
 models_list[[13]] <- stan_glm(
+  # herbivores_other_bayes
   Other.Algae ~
-    # check this ####
-    # Don't understand backdoor path choices here
     chi_Herbivore_percent + chi_Invertivore_percent + pop.dens + Relief,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
