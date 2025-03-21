@@ -1,4 +1,5 @@
 # Suchinta Arif, 2025-03-14 & earlier
+# https://dagitty.net/dags.html?id=7bBT4Rqj#
 
 # Load packages ####
 # install.packages("rstanarm")
@@ -23,14 +24,18 @@ ReefWideBRUVUVC.DAGtested <- readRDS(here(
   # remove dud column
   dplyr::select(-sum) |>
   # apply standardisation function
-  dplyr::mutate(dplyr::across(where(is.numeric), stdize))
+  dplyr::mutate(dplyr::across(where(is.numeric), stdize)) |>
+  # subset to atolls, where we believe healthier shark populations beget top-down trophic cascades
+  # dplyr::filter(topo %in% c("open atoll", "closed atoll")) # Atolls; from n=24 to n=13
+  dplyr::filter(topo %in% c("near atoll", "high barrier")) # High Islands; from n=24 to n=11
+
 
 # STAN GLM effects ####
 ## sicklefin on reef sharks ####
 models_list <- list()
 models_list[[1]] <- stan_glm(
   # sicklefin_reef_sharks
-  reef_sharks ~ sicklefin_lemon_sharks,
+  reef_sharks ~ sicklefin_lemon_sharks, # use dagitty to check for backdoor paths, include all from ONE bullet point
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(), # change if your response is non-continuous
   prior = normal(0, 2.5), # weakly informative prior for slopes
@@ -117,7 +122,6 @@ models_list[[5]] <- stan_glm(
   iter = 2000,
   seed = 123
 )
-
 ### 95% credible intervals ####
 intervals_list[[5]] <- as.data.frame(posterior_interval(
   models_list[[5]],
@@ -217,9 +221,6 @@ intervals_list[[10]] <- as.data.frame(posterior_interval(
 models_list[[11]] <- stan_glm(
   Hard.Coral ~
     chi_Herbivore_percent +
-      chi_Planktivore_percent +
-      # CHECK THIS####
-      chi_Invertivore_percent + # WAS MISSING, TO CHECK
       chi_Piscivore_percent +
       pop.dens +
       reef_sharks +
@@ -240,8 +241,6 @@ intervals_list[[11]] <- as.data.frame(posterior_interval(
 
 ## herbivores on CCA ####
 models_list[[12]] <- stan_glm(
-  # CHECK THIS ####
-  # doesn't look like backdoor path?
   CCA ~ chi_Herbivore_percent + pop.dens + Relief,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
@@ -260,8 +259,6 @@ intervals_list[[12]] <- as.data.frame(posterior_interval(
 ## herbivores on other algae ####
 models_list[[13]] <- stan_glm(
   Other.Algae ~
-    # check this ####
-    # Don't understand backdoor path choices here
     chi_Herbivore_percent + chi_Invertivore_percent + pop.dens + Relief,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
@@ -280,12 +277,24 @@ intervals_list[[13]] <- as.data.frame(posterior_interval(
 # Save 95% credible intervals ####
 do.call(rbind, intervals_list) |>
   tibble::rownames_to_column("Value") |>
-  readr::write_csv(file = here("Results", "DAG", "95pct_intervals_list.csv"))
+  readr::write_csv(
+    file = here(
+      "Results",
+      "DAG",
+      # "95pct_intervals_list_Atolls_TopDown.csv"
+      "95pct_intervals_list_HighIslands_TopDown.csv"
+    )
+  )
 
 # Save models list ####
 saveRDS(
   object = models_list,
-  file = here("Results", "DAG", "models_list.Rds"),
+  file = here(
+    "Results",
+    "DAG",
+    # "models_list_Atolls_TopDown.Rds"
+    "models_list_HighIslands_TopDown.Rds"
+  ),
   compress = "xz"
 )
 
@@ -310,9 +319,6 @@ df <- data.frame(
     "Effect of herbivores on crustose coraline algae",
     "Effect of herbivores on other algae"
   ),
-  # TODO
-  # convert effect lower upper to code
-  # effect: sicklefin_reef_sharks$coefficients[2]  ?
   effect = c(
     models_list[[1]]$coefficients[2],
     models_list[[2]]$coefficients[2],
@@ -328,10 +334,8 @@ df <- data.frame(
     models_list[[12]]$coefficients[2],
     models_list[[13]]$coefficients[2]
   ),
-  # c(0.003, -0.07, -0.313, 0.01, -0.258, -0.215, -0.23, 0.54, -0.29, -0.144, 0.25),
-  # lower: posterior_interval(sicklefin_reef_sharks, prob = 0.95)[2,1]  ?
   lower = c(
-    intervals_list[[1]][2, 1],
+    intervals_list[[1]][2, 1], # same as models_list[[1]]$stan_summary[2, 4]
     intervals_list[[2]][2, 1],
     intervals_list[[3]][2, 1],
     intervals_list[[4]][2, 1],
@@ -345,10 +349,72 @@ df <- data.frame(
     intervals_list[[12]][2, 1],
     intervals_list[[13]][2, 1]
   ),
-  # c(-0.518, -0.634, -0.681, -0.39, -0.55, -0.55, -0.50, 0.27, -0.82, -0.59, -0.47),
-  # upper: posterior_interval(sicklefin_reef_sharks, prob = 0.95)[2,2]  ?
+  tenpct = c(
+    # 10%
+    models_list[[1]]$stan_summary[2, 5], # same as models_list[[1]]$stan_summary[2, 5]
+    models_list[[2]]$stan_summary[2, 5],
+    models_list[[3]]$stan_summary[2, 5],
+    models_list[[4]]$stan_summary[2, 5],
+    models_list[[5]]$stan_summary[2, 5],
+    models_list[[6]]$stan_summary[2, 5],
+    models_list[[7]]$stan_summary[2, 5],
+    models_list[[8]]$stan_summary[2, 5],
+    models_list[[9]]$stan_summary[2, 5],
+    models_list[[10]]$stan_summary[2, 5],
+    models_list[[11]]$stan_summary[2, 5],
+    models_list[[12]]$stan_summary[2, 5],
+    models_list[[13]]$stan_summary[2, 5]
+  ),
+  twentyfivepct = c(
+    # 25%
+    models_list[[1]]$stan_summary[2, 6], # same as models_list[[1]]$stan_summary[2, 5]
+    models_list[[2]]$stan_summary[2, 6],
+    models_list[[3]]$stan_summary[2, 6],
+    models_list[[4]]$stan_summary[2, 6],
+    models_list[[5]]$stan_summary[2, 6],
+    models_list[[6]]$stan_summary[2, 6],
+    models_list[[7]]$stan_summary[2, 6],
+    models_list[[8]]$stan_summary[2, 6],
+    models_list[[9]]$stan_summary[2, 6],
+    models_list[[10]]$stan_summary[2, 6],
+    models_list[[11]]$stan_summary[2, 6],
+    models_list[[12]]$stan_summary[2, 6],
+    models_list[[13]]$stan_summary[2, 6]
+  ),
+  seventyfivepct = c(
+    # 25%
+    models_list[[1]]$stan_summary[2, 8],
+    models_list[[2]]$stan_summary[2, 8],
+    models_list[[3]]$stan_summary[2, 8],
+    models_list[[4]]$stan_summary[2, 8],
+    models_list[[5]]$stan_summary[2, 8],
+    models_list[[6]]$stan_summary[2, 8],
+    models_list[[7]]$stan_summary[2, 8],
+    models_list[[8]]$stan_summary[2, 8],
+    models_list[[9]]$stan_summary[2, 8],
+    models_list[[10]]$stan_summary[2, 8],
+    models_list[[11]]$stan_summary[2, 8],
+    models_list[[12]]$stan_summary[2, 8],
+    models_list[[13]]$stan_summary[2, 8]
+  ),
+  ninetypct = c(
+    # 25%
+    models_list[[1]]$stan_summary[2, 9],
+    models_list[[2]]$stan_summary[2, 9],
+    models_list[[3]]$stan_summary[2, 9],
+    models_list[[4]]$stan_summary[2, 9],
+    models_list[[5]]$stan_summary[2, 9],
+    models_list[[6]]$stan_summary[2, 9],
+    models_list[[7]]$stan_summary[2, 9],
+    models_list[[8]]$stan_summary[2, 9],
+    models_list[[9]]$stan_summary[2, 9],
+    models_list[[10]]$stan_summary[2, 9],
+    models_list[[11]]$stan_summary[2, 9],
+    models_list[[12]]$stan_summary[2, 9],
+    models_list[[13]]$stan_summary[2, 9]
+  ),
   upper = c(
-    intervals_list[[1]][2, 2],
+    intervals_list[[1]][2, 2], # same as models_list[[1]]$stan_summary[2, 10]
     intervals_list[[2]][2, 2],
     intervals_list[[3]][2, 2],
     intervals_list[[4]][2, 2],
@@ -362,14 +428,13 @@ df <- data.frame(
     intervals_list[[12]][2, 2],
     intervals_list[[13]][2, 2]
   ),
-  # c(0.52, 0.048, 0.053, 0.42, 0.03, 0.11, 0.04, 0.81, 0.23, 0.30, 0.97),
   group = factor(
     c(
       rep("Group 1", 4), # sicklefin & transient shark effects
       rep("Group 2", 3), # reef shark effects
       rep("Group 3", 3), # piscivore effects
-      rep("Group 4", 3)
-    ), # herbivore effects
+      rep("Group 4", 3) # herbivore effects
+    ),
     levels = c("Group 1", "Group 2", "Group 3", "Group 4")
   )
 )
@@ -388,7 +453,12 @@ colors <- c(
 # Create the plot without a legend or title, ensuring the x-axis is clearly visible
 ggplot(df, aes(x = effect, y = label, color = group)) +
   geom_point(size = 3) +
-  geom_errorbarh(aes(xmin = lower, xmax = upper), height = 0.2) +
+  geom_errorbarh(aes(xmin = lower, xmax = upper), height = 0.1) + # 2.5%, 97.5%
+  geom_errorbarh(aes(xmin = tenpct, xmax = ninetypct), height = 0.2) + # 10/90
+  geom_errorbarh(
+    aes(xmin = twentyfivepct, xmax = seventyfivepct),
+    height = 0.3
+  ) + # 25/75
   scale_color_manual(values = colors) +
   labs(x = "Effect Size", y = "") +
   theme_minimal() +
@@ -399,12 +469,16 @@ ggplot(df, aes(x = effect, y = label, color = group)) +
     plot.background = element_rect(fill = "white", colour = "grey50") # white background
   ) +
   # add a dashed grey vertical line at the point where x = 0
-  geom_vline(xintercept = 0, linetype = 2, colour = "grey60") +
-  # manually add x limits to frame the plot
-  xlim(c(-1, 1.25))
+  geom_vline(xintercept = 0, linetype = 2, colour = "grey60") # +
+# manually add x limits to frame the plot
+# xlim(c(-2, 4))
 
 ggsave(
-  filename = paste0(lubridate::today(), "_DAG-results.png"),
+  filename = paste0(
+    lubridate::today(),
+    # "_DAG-results-Atolls-TopDown.png"
+    "_DAG-results-HighIslands-TopDown.png"
+  ),
   device = "png",
   path = here("Results", "DAG")
 )
