@@ -26,8 +26,8 @@ ReefWideBRUVUVC.DAGtested <- readRDS(here(
   # apply standardisation function
   dplyr::mutate(dplyr::across(where(is.numeric), stdize)) |>
   # subset to high islands, where we believe less healthy shark populations result in a bottom-up system
-  # dplyr::filter(topo %in% c("near atoll", "high barrier")) # High Island; from n=24 to n=11
-  dplyr::filter(topo %in% c("open atoll", "closed atoll")) # Atoll; from n=24 to n=13
+  dplyr::filter(topo %in% c("near atoll", "high barrier")) # High Island; from n=24 to n=11
+# dplyr::filter(topo %in% c("open atoll", "closed atoll")) # Atoll; from n=24 to n=13
 
 # STAN GLM effects ####
 models_list <- list()
@@ -308,8 +308,9 @@ do.call(rbind, intervals_list) |>
     file = here(
       "Results",
       "DAG",
-      # "95pct_intervals_list_HighIslands_BottomUp.csv"
-      "95pct_intervals_list_Atolls_BottomUp.csv"
+      "95pct_intervals_list_HighIslands_BottomUp.csv"
+      # "95pct_intervals_list_Atolls_BottomUp.csv"
+      # "95pct_intervals_list_All_BottomUp.csv"
     )
   )
 
@@ -319,8 +320,9 @@ saveRDS(
   file = here(
     "Results",
     "DAG",
-    # "models_list_HighIslands_BottomUp.Rds"
-    "models_list_Atolls_BottomUp.Rds"
+    "models_list_HighIslands_BottomUp.Rds"
+    # "models_list_Atolls_BottomUp.Rds"
+    # "models_list_All_BottomUp.Rds"
   ),
   compress = "xz"
 )
@@ -333,15 +335,15 @@ library(ggplot2)
 df <- data.frame(
   label = c(
     "Effect of reef sharks on sicklefin lemon sharks",
-    "Effect of piscivores on sicklefin lemon sharks",
     "Effect of reef sharks on transient pelagic sharks",
+    "Effect of piscivores on sicklefin lemon sharks",
     "Effect of piscivores on transient pelagic sharks",
     "Effect of herbivores on reef sharks",
     "Effect of invertivores on reef sharks",
     "Effect of planktivores on reef sharks",
     "Effect of herbivores on piscivores",
     "Effect of planktivores on piscivores",
-    "Effect of insectivores on piscivores",
+    "Effect of invertivores on piscivores",
     "Effect of hard coral on herbivores",
     "Effect of crustose coraline algae on herbivores",
     "Effect of other algae on herbivores"
@@ -503,8 +505,9 @@ ggplot(df, aes(x = effect, y = label, color = group)) +
 ggsave(
   filename = paste0(
     lubridate::today(),
-    # "_DAG-results-HighIslands-BottomUp.png"
-    "_DAG-results-Atolls-BottomUp.png"
+    "_DAG-results-HighIslands-BottomUp.png"
+    # "_DAG-results-Atolls-BottomUp.png"
+    # "_DAG-results-All-BottomUp.png"
   ),
   device = "png",
   path = here("Results", "DAG")

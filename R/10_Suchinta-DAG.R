@@ -26,9 +26,8 @@ ReefWideBRUVUVC.DAGtested <- readRDS(here(
   # apply standardisation function
   dplyr::mutate(dplyr::across(where(is.numeric), stdize)) |>
   # subset to atolls, where we believe healthier shark populations beget top-down trophic cascades
-  # dplyr::filter(topo %in% c("open atoll", "closed atoll")) # Atolls; from n=24 to n=13
-  dplyr::filter(topo %in% c("near atoll", "high barrier")) # High Islands; from n=24 to n=11
-
+  dplyr::filter(topo %in% c("open atoll", "closed atoll")) # Atolls; from n=24 to n=13
+# dplyr::filter(topo %in% c("near atoll", "high barrier")) # High Islands; from n=24 to n=11
 
 # STAN GLM effects ####
 ## sicklefin on reef sharks ####
@@ -56,10 +55,10 @@ intervals_list[[1]] <- as.data.frame(posterior_interval(
   prob = 0.95
 ))
 
-## sicklefin on piscivores ####
+## transient pelagics on reef_sharks ####
 models_list[[2]] <- stan_glm(
-  # sicklefin_piscivores_bayes
-  chi_Piscivore_percent ~ sicklefin_lemon_sharks,
+  # transient_reef_sharks_bayes
+  reef_sharks ~ transient_pelagic_sharks,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
   prior = normal(0, 2.5),
@@ -74,10 +73,10 @@ intervals_list[[2]] <- as.data.frame(posterior_interval(
   prob = 0.95
 ))
 
-## transient pelagics on reef_sharks ####
+## sicklefin on piscivores ####
 models_list[[3]] <- stan_glm(
-  # transient_reef_sharks_bayes
-  reef_sharks ~ transient_pelagic_sharks,
+  # sicklefin_piscivores_bayes
+  chi_Piscivore_percent ~ sicklefin_lemon_sharks,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
   prior = normal(0, 2.5),
@@ -281,8 +280,9 @@ do.call(rbind, intervals_list) |>
     file = here(
       "Results",
       "DAG",
-      # "95pct_intervals_list_Atolls_TopDown.csv"
-      "95pct_intervals_list_HighIslands_TopDown.csv"
+      "95pct_intervals_list_Atolls_TopDown.csv"
+      # "95pct_intervals_list_HighIslands_TopDown.csv"
+      # "95pct_intervals_list_All_TopDown.csv"
     )
   )
 
@@ -293,7 +293,8 @@ saveRDS(
     "Results",
     "DAG",
     # "models_list_Atolls_TopDown.Rds"
-    "models_list_HighIslands_TopDown.Rds"
+    # "models_list_HighIslands_TopDown.Rds"
+    # "models_list_All_TopDown.Rds"
   ),
   compress = "xz"
 )
@@ -306,15 +307,15 @@ library(ggplot2)
 df <- data.frame(
   label = c(
     "Effect of sicklefin lemon sharks on reef sharks",
-    "Effect of sicklefin lemon sharks on piscivores",
     "Effect of transient pelagic sharks on reef sharks",
+    "Effect of sicklefin lemon sharks on piscivores",
     "Effect of transient pelagic sharks on piscivores",
     "Effect of reef sharks on herbivores",
     "Effect of reef sharks on invertivores",
     "Effect of reef sharks on planktivores",
     "Effect of piscivores on herbivores",
     "Effect of piscivores on planktivores",
-    "Effect of piscivores on insectivores",
+    "Effect of piscivores on invertivores",
     "Effect of herbivores on hard coral",
     "Effect of herbivores on crustose coraline algae",
     "Effect of herbivores on other algae"
@@ -382,7 +383,7 @@ df <- data.frame(
     models_list[[13]]$stan_summary[2, 6]
   ),
   seventyfivepct = c(
-    # 25%
+    # 75%
     models_list[[1]]$stan_summary[2, 8],
     models_list[[2]]$stan_summary[2, 8],
     models_list[[3]]$stan_summary[2, 8],
@@ -398,7 +399,7 @@ df <- data.frame(
     models_list[[13]]$stan_summary[2, 8]
   ),
   ninetypct = c(
-    # 25%
+    # 90%
     models_list[[1]]$stan_summary[2, 9],
     models_list[[2]]$stan_summary[2, 9],
     models_list[[3]]$stan_summary[2, 9],
@@ -476,8 +477,9 @@ ggplot(df, aes(x = effect, y = label, color = group)) +
 ggsave(
   filename = paste0(
     lubridate::today(),
-    # "_DAG-results-Atolls-TopDown.png"
-    "_DAG-results-HighIslands-TopDown.png"
+    "_DAG-results-Atolls-TopDown.png"
+    # "_DAG-results-HighIslands-TopDown.png"
+    # "_DAG-results-All-TopDown.png"
   ),
   device = "png",
   path = here("Results", "DAG")

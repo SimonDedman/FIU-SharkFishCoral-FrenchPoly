@@ -27,16 +27,14 @@ resultsdf <- data.frame(
 )
 
 counter <- 1
-for (topo in c("Atolls", "HighIslands")) {
+for (topo in c("Atolls", "HighIslands", "All")) {
   # topo <- "Atolls"
   for (direction in c("TopDown", "BottomUp")) {
     # direction <- "TopDown"
     print(paste0(
       "Model: ",
       counter,
-      "/",
-      length(topo) * length(direction),
-      "; Topography: ",
+      "/6; Topography: ",
       topo,
       "; Direction: ",
       direction

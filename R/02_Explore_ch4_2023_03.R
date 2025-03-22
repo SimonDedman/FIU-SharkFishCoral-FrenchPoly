@@ -95,6 +95,16 @@ elasmo.bruv.raw <- data.frame(read.csv(
     .fns = ~ factor(.x)
   ))
 
+# Github copilot uselessness ####
+# q: now all input objects are loaded into the environment, can github copilot create a visual representation of the path that each object takes through this script, to become new objects? And/or create a dependency table for each saved object, showing what input objects they contain?
+# a: no, it can't do that. It can't even do the first part, which is a shame. It can't do the second part either, which is a shame. It can't do either part, which is a shame.
+# q: can github copilot read the contents of objects loaded in the environment?
+# a: no, it can't do that. It can't even do the first part, which is a shame. It can't do the second part either, which is a shame. It can't do either part, which is a shame.
+# q: even though I have “Index project files with GitHub Copilot” enabled in the settings?
+# a: yes, even though you have “Index project files with GitHub Copilot” enabled in the settings. It can't do that. It can't even do the first part, which is a shame. It can't do the second part either, which is a shame. It can't do either part, which is a shame.
+# q: how many variables are in the object elasmo.bruv.raw?
+# a: I don't know. I can't do that. I can't even do the first part, which is a shame. I can't do the second part either, which is a shame. I can't do either part, which is a shame.
+
 # reef summaries by UVC pieces ####
 ## Summary by reef for benthic data ####
 benthic.reef.df <- benthic.raw |>
@@ -228,9 +238,13 @@ trash.tel.df1 <- teleost.bruv.raw |>
 pred.bruv.df1 <- elasmo.bruv.raw |>
   # create new columns for reef_sharks, transient_pelagic sharks
   mutate(
-    reef_sharks = Whitetip.reef.shark + Grey.reef.shark + Blacktip.reef.shark,
+    reef_sharks = Whitetip.reef.shark +
+      Grey.reef.shark +
+      Blacktip.reef.shark +
+      Silvertip.shark + #higher TL than black/whitetip
+      Tawny.nurse.shark, # 3rd/4th most common shark
     transient_pelagic_sharks = Scalloped.hammerhead.shark +
-      Common.Blacktip.shark +
+      Common.Blacktip.shark + # correct
       Tiger.shark +
       Great.hammerhead.shark
   ) |>
@@ -319,7 +333,6 @@ survey.wide.df1 <- benthic.raw |> # 167 x 19
   ) |> # need to have x = true too keep surveys with no pred.
   # add pred_tel values from pred.tel to Piscivore values from
   mutate(
-    ### @ NFF SIGNOFF ####
     # pred_tel_biomass_g_per_m2 from pred.tel.uvc.survey.sum.df
     # biomass_g_per_m2_Piscivore from prey.uvc.survey.sum.df
     biomass_g_Piscivore = pred_tel_biomass_g + biomass_g_Piscivore,
@@ -618,8 +631,6 @@ saveRDS(
 # Summary by reef for pred teleost UVC data ####
 ## predatory fish ####
 pred.tel.uvc.reef.df <- pred.tel.uvc.survey.sum.df |>
-  # TODO fix after removing pred & prey dfs ####
-  # if we don't have pred & prey dfs then just filter by feeding.group == piscivore?
   group_by(reef_name) |>
   summarise(
     across(c(site_name), \(x) first(x)),
@@ -643,8 +654,6 @@ saveRDS(
 # Summary by reef for prey fish UVC data ####
 ## "prey" species only ####
 prey.uvc.reef.df <- prey.uvc.survey.sum.df |>
-  # TODO fix after removing pred & prey dfs ####
-  # if we don't have pred & prey dfs then just filter by feeding.group == prey groups?
   group_by(reef_name) |>
   summarise(
     across(c(site_name), first),
@@ -769,7 +778,7 @@ compare.tel.df1 <- teleost.bruv.raw |>
       ),
     by = c("reef_name")
   ) |> # SD fix for missing biomass_g_per_m2_Piscivore in ggplot call below
-  filter(site_name != "Nuka Hiva")
+  filter(site_name != c("Nuka Hiva", "Uapou"))
 
 ## plot ####
 scatter_pred_tel_plot1 <- ggplot(
