@@ -1,3 +1,13 @@
+# 2025-03-24 TODOs ####
+# 2. Add trophic levels for sharks
+# 3. (armed with knowledge/confirmations from #2) confirm shark functional grouping re-org with Mike ~L250
+# Add trophic levels for hopefully piscivores, maybe others: confirms FnGps make sense, esp piscivores vs sharks
+# 4. do new fn gps, re-run explore.R
+# 5. re-do all SCMs, redo plots & excel summary sheet, compare loo metrics per-effect-combo across subsets, make text summary bullet points of key results
+# 6. do atoll/HI BRTs, possibly with dubious dataset doubling technique
+# 7. summarise atoll/HI BRT results
+# 8. Is the multi SCM approach legit? AIC comparison, who can we ask? How to formulate the question?
+
 # use SCRIPT PACKAGE WORKFLOW to analyse script and check dependencies to see if I can simplify this script.
 # that's a bigger project than I realised
 
@@ -19,8 +29,8 @@ library(tidyverse)
 # library(ggpubr) # sudo apt install cmake
 # library(rmarkdown)
 # library(esquisse)
-# library(viridis)
-# library(plotly)
+library(viridis)
+library(plotly)
 library(here)
 
 # import all data frames ####
@@ -94,16 +104,6 @@ elasmo.bruv.raw <- data.frame(read.csv(
     .cols = c(geo, isl_grp, archi, Season, bait_type, topo),
     .fns = ~ factor(.x)
   ))
-
-# Github copilot uselessness ####
-# q: now all input objects are loaded into the environment, can github copilot create a visual representation of the path that each object takes through this script, to become new objects? And/or create a dependency table for each saved object, showing what input objects they contain?
-# a: no, it can't do that. It can't even do the first part, which is a shame. It can't do the second part either, which is a shame. It can't do either part, which is a shame.
-# q: can github copilot read the contents of objects loaded in the environment?
-# a: no, it can't do that. It can't even do the first part, which is a shame. It can't do the second part either, which is a shame. It can't do either part, which is a shame.
-# q: even though I have “Index project files with GitHub Copilot” enabled in the settings?
-# a: yes, even though you have “Index project files with GitHub Copilot” enabled in the settings. It can't do that. It can't even do the first part, which is a shame. It can't do the second part either, which is a shame. It can't do either part, which is a shame.
-# q: how many variables are in the object elasmo.bruv.raw?
-# a: I don't know. I can't do that. I can't even do the first part, which is a shame. I can't do the second part either, which is a shame. I can't do either part, which is a shame.
 
 # reef summaries by UVC pieces ####
 ## Summary by reef for benthic data ####
@@ -224,6 +224,7 @@ prey.uvc.survey.sum.df <- fish.uvc.raw |>
 # maxN teleosts per site
 # merged with elasmo.bruv.raw in next block
 # mean maxn per site only for families: lutjanidae scombridae megalopidae carangidae sphyraenidae serranidae lethrinidae
+# @NFF these 4 are in the above 7 tho? ####
 # not for: carangidae sphyraenidae serranidae lethrinidae
 # maxN a & b: 2 ways of measuring maxN based on unknowns. B is a bad approach, ignore.
 # becomes teleost_maxn in pred.bruv.df1 below
@@ -235,6 +236,88 @@ trash.tel.df1 <- teleost.bruv.raw |>
 
 
 ## make pred.df ####
+# Manual lookup against /home/simon/Dropbox/FIU/FinPrint/Data/RFishBaseTrophicLevel.csv from EROS
+# df <- data.frame(
+#   "CommonName" = c(
+#     "Tiger shark",
+#     "Great hammerhead shark",
+#     "Scalloped hammerhead",
+#     "Sicklefin lemon shark",
+#     "Common blacktip shark",
+#     "Silvertip shark",
+#     "Whitetip reef shark",
+#     "Grey reef shark",
+#     "Tawny nurse shark",
+#     "Blacktip reef shark",
+#     "Piscivores",
+#     "Invertivores",
+#     "Planktivores",
+#     "Herbivores"
+#   ),
+#   "ScientificName" = c(
+#     "Galeocerdo cuvier",
+#     "Sphyrna mokarran",
+#     "Sphyrna lewini",
+#     "Negaprion acutidens",
+#     "Carcharhinus limbatus",
+#     "Carcharhinus albimarginatus",
+#     "Triaenodon obesus",
+#     "Carcharhinus amblyrhynchos",
+#     "Nebrius ferrugineus",
+#     "Carcharhinus melanopterus",
+#     "Piscivores",
+#     "Invertivores",
+#     "Planktivores",
+#     "Herbivores"
+#   ),
+#   "Group" = factor(
+#     c(
+#       "TPS",
+#       "TPS",
+#       "TPS",
+#       "NA",
+#       "RS",
+#       "RS",
+#       "RS",
+#       "RS",
+#       "RS",
+#       "RS",
+#       "T",
+#       "T",
+#       "T",
+#       "T"
+#     ),
+#     levels = c("TPS", "NA", "RS", "T")
+#   ),
+#   "TrophicLevel" = c(
+#     4.56,
+#     4.32,
+#     4.08,
+#     4.13,
+#     4.37,
+#     4.21,
+#     4.19,
+#     4.11,
+#     4.1,
+#     3.94,
+#     3.99,
+#     3.39,
+#     2.93,
+#     2.46
+#   )
+# )
+#
+# df$CommonName <- factor(df$CommonName, levels = df$CommonName)
+# library(ggplot2)
+# ggplot(df, aes(x = CommonName, y = TrophicLevel, colour = Group)) +
+#   geom_point() +
+#   theme_minimal() +
+#   theme(
+#     axis.text.x = element_text(angle = 90, hjust = 1),
+#     plot.background = element_rect(fill = "white")
+#   )
+# ggsave(filename = here::here("NFF_data", "FnGpTrophicLevels.png"))
+
 pred.bruv.df1 <- elasmo.bruv.raw |>
   # create new columns for reef_sharks, transient_pelagic sharks
   mutate(
@@ -746,7 +829,7 @@ d3_chi_plot2 <- (plot_ly(
       zaxis = list(title = "CCA + Hard Coral % Cover")
     )
   )
-d3_chi_plot2 # 2025-02-28 doesn't work
+d3_chi_plot2
 
 
 # Compare Bruvs Pred. Teleost BRUVS vs UVC ####
@@ -791,7 +874,7 @@ scatter_pred_tel_plot1 <- ggplot(
   xlab("Pred. Teleost MaxN BRUVS") +
   ylab("Pred. Teleost Biomass (g/m2) UVC") +
   theme(legend.position = "right", plot.title = element_text(hjust = 0.5))
-scatter_pred_tel_plot1 # 2025-02-28 doesn't work
+scatter_pred_tel_plot1
 ggsave(filename = here("NFF_data", "scatter_pred_tel_plot1.png"))
 
 
