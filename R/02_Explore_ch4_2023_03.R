@@ -1,8 +1,7 @@
 # 2025-03-24 TODOs ####
-# 2. Add trophic levels for sharks
 # 3. (armed with knowledge/confirmations from #2) confirm shark functional grouping re-org with Mike ~L250
-# Add trophic levels for hopefully piscivores, maybe others: confirms FnGps make sense, esp piscivores vs sharks
-# 4. do new fn gps, re-run explore.R
+# confirm FnGps make sense, esp piscivores vs sharks
+# 4. do new fn gps ["make pred.df" heading], re-run explore.R
 # 5. re-do all SCMs, redo plots & excel summary sheet, compare loo metrics per-effect-combo across subsets, make text summary bullet points of key results
 # 6. do atoll/HI BRTs, possibly with dubious dataset doubling technique
 # 7. summarise atoll/HI BRT results
@@ -319,20 +318,45 @@ trash.tel.df1 <- teleost.bruv.raw |>
 # ggsave(filename = here::here("NFF_data", "FnGpTrophicLevels.png"))
 
 pred.bruv.df1 <- elasmo.bruv.raw |>
+  # rename sicklefin_lemon_sharks
+  rename(sicklefin_lemon_sharks = Lemon.shark) |>
   # create new columns for reef_sharks, transient_pelagic sharks
   mutate(
+    ### elasmo FnGp choice ####
+
+    # 1. Updated with Common.Blacktip.shark moved to TPS
+    # reef_sharks = Whitetip.reef.shark +
+    #   Grey.reef.shark +
+    #   Blacktip.reef.shark +
+    #   Silvertip.shark + #higher TL than black/whitetip
+    #   Tawny.nurse.shark, # 3rd/4th most common shark
+    # transient_pelagic_sharks = Scalloped.hammerhead.shark +
+    #   Common.Blacktip.shark + # correct: now moved here?
+    #   Tiger.shark +
+    #   Great.hammerhead.shark
+
+    # 2. Si proposal:
+    # >4.25 TL apex: Tiger + GHH + common blacktip
+    # ~4 - 4.25 TL meso: scalloped + sicklefin + other reefs
     reef_sharks = Whitetip.reef.shark +
+      Scalloped.hammerhead.shark +
+      sicklefin_lemon_sharks +
       Grey.reef.shark +
       Blacktip.reef.shark +
       Silvertip.shark + #higher TL than black/whitetip
       Tawny.nurse.shark, # 3rd/4th most common shark
-    transient_pelagic_sharks = Scalloped.hammerhead.shark +
-      Common.Blacktip.shark + # correct
+    transient_pelagic_sharks = Common.Blacktip.shark + # correct: now moved here?
       Tiger.shark +
       Great.hammerhead.shark
+
+    # 3. Mike proposal:
+    # offshore mesos =
+    #   Scalloped.hammerhead.shark +
+    #   Common.Blacktip.shark
+    # Presumably also TPS & RS & SLS remain? Needs another group
+
+    # Both proposals would need to reconfigure the DAGs (sicklefin changed/removed)
   ) |>
-  # rename sicklefin_lemon_sharks
-  rename(sicklefin_lemon_sharks = Lemon.shark) |>
   dplyr::select(
     site_name:reef_name,
     maxn_shark,

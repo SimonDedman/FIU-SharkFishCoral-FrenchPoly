@@ -24,9 +24,9 @@ ReefWideBRUVUVC.DAGtested <- readRDS(here(
   # remove dud column
   dplyr::select(-sum) |>
   # apply standardisation function
-  dplyr::mutate(dplyr::across(where(is.numeric), stdize)) |>
-  # subset to high islands, where we believe less healthy shark populations result in a bottom-up system
-  dplyr::filter(topo %in% c("near atoll", "high barrier")) # High Island; from n=24 to n=11
+  dplyr::mutate(dplyr::across(where(is.numeric), stdize)) # |>
+# subset to high islands, where we believe less healthy shark populations result in a bottom-up system
+# dplyr::filter(topo %in% c("near atoll", "high barrier")) # High Island; from n=24 to n=11
 # dplyr::filter(topo %in% c("open atoll", "closed atoll")) # Atoll; from n=24 to n=13
 
 # STAN GLM effects ####
@@ -303,26 +303,26 @@ intervals_list[[13]] <- as.data.frame(posterior_interval(
 
 # Save 95% credible intervals ####
 do.call(rbind, intervals_list) |>
+  ## FnGp incl/excl SLS ####
+  dplyr::slice(4:6, 10:n()) |> # remove sicklefin lemon sharks which are otherwise doublecounted
   tibble::rownames_to_column("Value") |>
   readr::write_csv(
     file = here(
       "Results",
       "DAG",
-      "95pct_intervals_list_HighIslands_BottomUp.csv"
-      # "95pct_intervals_list_Atolls_BottomUp.csv"
-      # "95pct_intervals_list_All_BottomUp.csv"
+      "95pct_intervals_list_All_BottomUp.csv"
     )
   )
 
 # Save models list ####
 saveRDS(
-  object = models_list,
+  # object = models_list,
+  ## FnGp incl/excl SLS ####
+  object = models_list[c(2, 4:13)],
   file = here(
     "Results",
     "DAG",
-    "models_list_HighIslands_BottomUp.Rds"
-    # "models_list_Atolls_BottomUp.Rds"
-    # "models_list_All_BottomUp.Rds"
+    "models_list_All_BottomUp.Rds"
   ),
   compress = "xz"
 )
@@ -332,26 +332,28 @@ saveRDS(
 library(ggplot2)
 
 # Create the data frame with effect sizes, confidence intervals, and group labels
-df <- data.frame(
+dfBUall <- data.frame(
+  ## FnGp incl/excl SLS ####
   label = c(
-    "Effect of reef sharks on sicklefin lemon sharks",
-    "Effect of reef sharks on transient pelagic sharks",
-    "Effect of piscivores on sicklefin lemon sharks",
-    "Effect of piscivores on transient pelagic sharks",
-    "Effect of herbivores on reef sharks",
-    "Effect of invertivores on reef sharks",
-    "Effect of planktivores on reef sharks",
-    "Effect of herbivores on piscivores",
-    "Effect of planktivores on piscivores",
-    "Effect of invertivores on piscivores",
-    "Effect of hard coral on herbivores",
-    "Effect of crustose coraline algae on herbivores",
-    "Effect of other algae on herbivores"
+    ## Label names irrelevant as unused ####
+    # "Reef sharks on sicklefin lemon sharks",
+    "Reef sharks on transient pelagic sharks",
+    # "Piscivores on sicklefin lemon sharks",
+    "Piscivores on transient pelagic sharks",
+    "Herbivores on reef sharks",
+    "Invertivores on reef sharks",
+    "Planktivores on reef sharks",
+    "Herbivores on piscivores",
+    "Planktivores on piscivores",
+    "Invertivores on piscivores",
+    "Hard coral on herbivores",
+    "Crustose coraline algae on herbivores",
+    "Other algae on herbivores"
   ),
   effect = c(
-    models_list[[1]]$coefficients[2],
+    # models_list[[1]]$coefficients[2],
     models_list[[2]]$coefficients[2],
-    models_list[[3]]$coefficients[2],
+    # models_list[[3]]$coefficients[2],
     models_list[[4]]$coefficients[2],
     models_list[[5]]$coefficients[2],
     models_list[[6]]$coefficients[2],
@@ -364,9 +366,9 @@ df <- data.frame(
     models_list[[13]]$coefficients[2]
   ),
   lower = c(
-    intervals_list[[1]][2, 1],
+    # intervals_list[[1]][2, 1],
     intervals_list[[2]][2, 1],
-    intervals_list[[3]][2, 1],
+    # intervals_list[[3]][2, 1],
     intervals_list[[4]][2, 1],
     intervals_list[[5]][2, 1],
     intervals_list[[6]][2, 1],
@@ -380,9 +382,9 @@ df <- data.frame(
   ),
   tenpct = c(
     # 10%
-    models_list[[1]]$stan_summary[2, 5], # same as models_list[[1]]$stan_summary[2, 5]
+    # models_list[[1]]$stan_summary[2, 5], # same as models_list[[1]]$stan_summary[2, 5]
     models_list[[2]]$stan_summary[2, 5],
-    models_list[[3]]$stan_summary[2, 5],
+    # models_list[[3]]$stan_summary[2, 5],
     models_list[[4]]$stan_summary[2, 5],
     models_list[[5]]$stan_summary[2, 5],
     models_list[[6]]$stan_summary[2, 5],
@@ -396,9 +398,9 @@ df <- data.frame(
   ),
   twentyfivepct = c(
     # 25%
-    models_list[[1]]$stan_summary[2, 6], # same as models_list[[1]]$stan_summary[2, 5]
+    # models_list[[1]]$stan_summary[2, 6], # same as models_list[[1]]$stan_summary[2, 5]
     models_list[[2]]$stan_summary[2, 6],
-    models_list[[3]]$stan_summary[2, 6],
+    # models_list[[3]]$stan_summary[2, 6],
     models_list[[4]]$stan_summary[2, 6],
     models_list[[5]]$stan_summary[2, 6],
     models_list[[6]]$stan_summary[2, 6],
@@ -412,9 +414,9 @@ df <- data.frame(
   ),
   seventyfivepct = c(
     # 25%
-    models_list[[1]]$stan_summary[2, 8],
+    # models_list[[1]]$stan_summary[2, 8],
     models_list[[2]]$stan_summary[2, 8],
-    models_list[[3]]$stan_summary[2, 8],
+    # models_list[[3]]$stan_summary[2, 8],
     models_list[[4]]$stan_summary[2, 8],
     models_list[[5]]$stan_summary[2, 8],
     models_list[[6]]$stan_summary[2, 8],
@@ -428,9 +430,9 @@ df <- data.frame(
   ),
   ninetypct = c(
     # 25%
-    models_list[[1]]$stan_summary[2, 9],
+    # models_list[[1]]$stan_summary[2, 9],
     models_list[[2]]$stan_summary[2, 9],
-    models_list[[3]]$stan_summary[2, 9],
+    # models_list[[3]]$stan_summary[2, 9],
     models_list[[4]]$stan_summary[2, 9],
     models_list[[5]]$stan_summary[2, 9],
     models_list[[6]]$stan_summary[2, 9],
@@ -443,9 +445,9 @@ df <- data.frame(
     models_list[[13]]$stan_summary[2, 9]
   ),
   upper = c(
-    intervals_list[[1]][2, 2],
+    # intervals_list[[1]][2, 2],
     intervals_list[[2]][2, 2],
-    intervals_list[[3]][2, 2],
+    # intervals_list[[3]][2, 2],
     intervals_list[[4]][2, 2],
     intervals_list[[5]][2, 2],
     intervals_list[[6]][2, 2],
@@ -459,7 +461,8 @@ df <- data.frame(
   ),
   group = factor(
     c(
-      rep("Group 1", 4), # sicklefin & transient shark effects
+      # rep("Group 1", 4), # sicklefin & transient shark effects
+      rep("Group 1", 2), # transient shark effects
       rep("Group 2", 3), # reef shark effects
       rep("Group 3", 3), # piscivore effects
       rep("Group 4", 3) # herbivore effects
@@ -469,7 +472,7 @@ df <- data.frame(
 )
 
 # Reverse the order of the labels so the first appears at the top
-df$label <- factor(df$label, levels = rev(df$label))
+dfBUall$label <- factor(dfBUall$label, levels = rev(dfBUall$label))
 
 # Define custom colours for each group
 colors <- c(
@@ -480,7 +483,7 @@ colors <- c(
 )
 
 # Create the plot without a legend or title, ensuring the x-axis is clearly visible
-ggplot(df, aes(x = effect, y = label, color = group)) +
+BUallplot <- ggplot(dfBUall, aes(x = effect, y = label, color = group)) +
   geom_point(size = 3) +
   geom_errorbarh(aes(xmin = lower, xmax = upper), height = 0.1) + # 2.5%, 97.5%
   geom_errorbarh(aes(xmin = tenpct, xmax = ninetypct), height = 0.2) + # 10/90
@@ -493,21 +496,27 @@ ggplot(df, aes(x = effect, y = label, color = group)) +
   theme_minimal() +
   theme(
     legend.position = "none",
+    axis.text.y = element_blank(),
     # Add an x-axis line for clarity (minimal themes sometimes omit it)
     axis.line.x = element_line(color = "black"),
     plot.background = element_rect(fill = "white", colour = "grey50") # white background
   ) +
   # add a dashed grey vertical line at the point where x = 0
-  geom_vline(xintercept = 0, linetype = 2, colour = "grey60") # +
-# manually add x limits to frame the plot
-# xlim(c(-1, 1.25))
+  geom_vline(xintercept = 0, linetype = 2, colour = "grey60") +
+  # define minor and major x axis grid lines
+  scale_x_continuous(
+    breaks = seq(-5, 6, by = 1),
+    minor_breaks = seq(-4.5, 5.5, by = 0.5),
+    limits = c(-4.5, 5.5)
+  )
+BUallplot
 
 ggsave(
   filename = paste0(
     lubridate::today(),
-    "_DAG-results-HighIslands-BottomUp.png"
+    # "_DAG-results-HighIslands-BottomUp.png"
     # "_DAG-results-Atolls-BottomUp.png"
-    # "_DAG-results-All-BottomUp.png"
+    "_DAG-results-All-BottomUp.png"
   ),
   device = "png",
   path = here("Results", "DAG")
