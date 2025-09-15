@@ -5,6 +5,7 @@
 # install.packages("rstanarm")
 library(rstanarm)
 library(here)
+library(tidyverse)
 
 ## make standardisation function ####
 stdize <- function(x) {
@@ -76,7 +77,7 @@ intervals_list[[2]] <- as.data.frame(posterior_interval(
 ## sicklefin on piscivores ####
 models_list[[3]] <- stan_glm(
   # sicklefin_piscivores_bayes
-  chi_Piscivore_percent ~ sicklefin_lemon_sharks,
+  biomass_g_per_m2_Piscivore ~ sicklefin_lemon_sharks,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
   prior = normal(0, 2.5),
@@ -94,7 +95,7 @@ intervals_list[[3]] <- as.data.frame(posterior_interval(
 ## transient pelagics on piscivores ####
 models_list[[4]] <- stan_glm(
   # transient_piscivores_bayes
-  chi_Piscivore_percent ~ transient_pelagic_sharks,
+  biomass_g_per_m2_Piscivore ~ transient_pelagic_sharks,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
   prior = normal(0, 2.5),
@@ -112,7 +113,8 @@ intervals_list[[4]] <- as.data.frame(posterior_interval(
 ## reef_sharks on herbivores ####
 models_list[[5]] <- stan_glm(
   # reef_sharks_herbivores_bayes
-  chi_Herbivore_percent ~ reef_sharks + chi_Piscivore_percent + pop.dens,
+  biomass_g_per_m2_Herbivore ~
+    reef_sharks + biomass_g_per_m2_Piscivore + pop.dens,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
   prior = normal(0, 2.5),
@@ -130,7 +132,8 @@ intervals_list[[5]] <- as.data.frame(posterior_interval(
 ## reef_sharks on invertivores ####
 models_list[[6]] <- stan_glm(
   # reef_sharks_invertivores_bayes
-  chi_Invertivore_percent ~ reef_sharks + chi_Piscivore_percent + pop.dens,
+  biomass_g_per_m2_Invertivore ~
+    reef_sharks + biomass_g_per_m2_Piscivore + pop.dens,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
   prior = normal(0, 2.5),
@@ -148,7 +151,8 @@ intervals_list[[6]] <- as.data.frame(posterior_interval(
 ## reef_sharks on planktivores ####
 models_list[[7]] <- stan_glm(
   # reef_sharks_planktivores_bayes
-  chi_Planktivore_percent ~ reef_sharks + chi_Piscivore_percent + pop.dens,
+  biomass_g_per_m2_Planktivore ~
+    reef_sharks + biomass_g_per_m2_Piscivore + pop.dens,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
   prior = normal(0, 2.5),
@@ -166,7 +170,8 @@ intervals_list[[7]] <- as.data.frame(posterior_interval(
 ## piscivores on herbivores ####
 models_list[[8]] <- stan_glm(
   # piscivore_herbivore_bayes
-  chi_Herbivore_percent ~ chi_Piscivore_percent + pop.dens + reef_sharks,
+  biomass_g_per_m2_Herbivore ~
+    biomass_g_per_m2_Piscivore + pop.dens + reef_sharks,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
   prior = normal(0, 2.5),
@@ -184,7 +189,8 @@ intervals_list[[8]] <- as.data.frame(posterior_interval(
 ## piscivores on planktivores ####
 models_list[[9]] <- stan_glm(
   # piscivore_herbivore_bayes
-  chi_Planktivore_percent ~ chi_Piscivore_percent + pop.dens + reef_sharks,
+  biomass_g_per_m2_Planktivore ~
+    biomass_g_per_m2_Piscivore + pop.dens + reef_sharks,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
   prior = normal(0, 2.5),
@@ -201,7 +207,8 @@ intervals_list[[9]] <- as.data.frame(posterior_interval(
 
 ## piscivores on invertivores ####
 models_list[[10]] <- stan_glm(
-  chi_Invertivore_percent ~ chi_Piscivore_percent + pop.dens + reef_sharks,
+  biomass_g_per_m2_Invertivore ~
+    biomass_g_per_m2_Piscivore + pop.dens + reef_sharks,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
   prior = normal(0, 2.5),
@@ -219,8 +226,8 @@ intervals_list[[10]] <- as.data.frame(posterior_interval(
 ## herbivores on hard_coral ####
 models_list[[11]] <- stan_glm(
   Hard.Coral ~
-    chi_Herbivore_percent +
-      chi_Piscivore_percent +
+    biomass_g_per_m2_Herbivore +
+      biomass_g_per_m2_Piscivore +
       pop.dens +
       reef_sharks +
       Relief,
@@ -240,7 +247,7 @@ intervals_list[[11]] <- as.data.frame(posterior_interval(
 
 ## herbivores on CCA ####
 models_list[[12]] <- stan_glm(
-  CCA ~ chi_Herbivore_percent + pop.dens + Relief,
+  CCA ~ biomass_g_per_m2_Herbivore + pop.dens + Relief,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
   prior = normal(0, 2.5),
@@ -258,7 +265,10 @@ intervals_list[[12]] <- as.data.frame(posterior_interval(
 ## herbivores on other algae ####
 models_list[[13]] <- stan_glm(
   Other.Algae ~
-    chi_Herbivore_percent + chi_Invertivore_percent + pop.dens + Relief,
+    biomass_g_per_m2_Herbivore +
+      biomass_g_per_m2_Invertivore +
+      pop.dens +
+      Relief,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
   prior = normal(0, 2.5),
@@ -276,13 +286,16 @@ intervals_list[[13]] <- as.data.frame(posterior_interval(
 # Save 95% credible intervals ####
 do.call(rbind, intervals_list) |>
   ## FnGp incl/excl SLS ####
-  dplyr::slice(4:6, 10:n()) |> # remove sicklefin lemon sharks which are otherwise doublecounted
+  # dplyr::slice(4:6, 10:n()) |> # remove sicklefin lemon sharks which are otherwise doublecounted
+  dplyr::slice(1:3, 7:9, 13:n()) |> # remove apex sharks which have low n
   tibble::rownames_to_column("Value") |>
   readr::write_csv(
     file = here(
       "Results",
       "DAG",
-      "95pct_intervals_list_All_TopDown.csv"
+      # "95pct_intervals_list_All_TopDown.csv"
+      ## Marquesas ####
+      "95pct_intervals_list_All_TopDown_NoMarquesas.csv"
     )
   )
 
@@ -290,11 +303,14 @@ do.call(rbind, intervals_list) |>
 saveRDS(
   # object = models_list,
   ## FnGp incl/excl SLS ####
-  object = models_list[c(2, 4:13)],
+  # object = models_list[c(2, 4:13)],
+  object = models_list[c(1, 3, 5:13)], # no apex sharks
   file = here(
     "Results",
     "DAG",
-    "models_list_All_TopDown.Rds"
+    # "models_list_All_TopDown.Rds"
+    ## Marquesas ####
+    "models_list_All_TopDown_NoMarquesas.Rds"
   ),
   compress = "xz"
 )
@@ -307,14 +323,20 @@ library(ggplot2)
 dfTDall <- data.frame(
   ## FnGp incl/excl SLS ####
   label = c(
-    ## Label names irrelevant as unused ####
-    # "Sicklefin lemon sharks on reef sharks",
-    "Transient pelagic sharks on reef sharks",
-    # "Sicklefin lemon sharks on piscivores",
-    "Transient pelagic sharks on piscivores",
+    "Sicklefin lemon sharks on reef sharks",
+    # "Transient pelagic sharks on reef sharks",
+    "Sicklefin lemon sharks on piscivores",
+    # "Transient pelagic sharks on piscivores",
     "Reef sharks on herbivores",
     "Reef sharks on invertivores",
     "Reef sharks on planktivores",
+    #
+    # "Apex sharks on meso sharks",
+    # "Apex sharks on piscivores",
+    # "Meso sharks on herbivores",
+    # "Meso sharks on invertivores",
+    # "Meso sharks on planktivores",
+    #
     "Piscivores on herbivores",
     "Piscivores on planktivores",
     "Piscivores on invertivores",
@@ -323,10 +345,10 @@ dfTDall <- data.frame(
     "Herbivores on other algae"
   ),
   effect = c(
-    # models_list[[1]]$coefficients[2],
-    models_list[[2]]$coefficients[2],
-    # models_list[[3]]$coefficients[2],
-    models_list[[4]]$coefficients[2],
+    models_list[[1]]$coefficients[2], # comment out for FnGp incl/excl SLS
+    # models_list[[2]]$coefficients[2], # comment out for FnGp incl/excl Apex sharks
+    models_list[[3]]$coefficients[2], # comment out for FnGp incl/excl SLS
+    # models_list[[4]]$coefficients[2], # comment out for FnGp incl/excl Apex sharks
     models_list[[5]]$coefficients[2],
     models_list[[6]]$coefficients[2],
     models_list[[7]]$coefficients[2],
@@ -338,10 +360,10 @@ dfTDall <- data.frame(
     models_list[[13]]$coefficients[2]
   ),
   lower = c(
-    # intervals_list[[1]][2, 1], # same as models_list[[1]]$stan_summary[2, 4]
-    intervals_list[[2]][2, 1],
-    # intervals_list[[3]][2, 1],
-    intervals_list[[4]][2, 1],
+    intervals_list[[1]][2, 1], # comment out for FnGp incl/excl SLS
+    # intervals_list[[2]][2, 1], # comment out for FnGp incl/excl Apex sharks
+    intervals_list[[3]][2, 1], # comment out for FnGp incl/excl SLS
+    # intervals_list[[4]][2, 1], # comment out for FnGp incl/excl Apex sharks
     intervals_list[[5]][2, 1],
     intervals_list[[6]][2, 1],
     intervals_list[[7]][2, 1],
@@ -354,10 +376,10 @@ dfTDall <- data.frame(
   ),
   tenpct = c(
     # 10%
-    # models_list[[1]]$stan_summary[2, 5], # same as models_list[[1]]$stan_summary[2, 5]
-    models_list[[2]]$stan_summary[2, 5],
-    # models_list[[3]]$stan_summary[2, 5],
-    models_list[[4]]$stan_summary[2, 5],
+    models_list[[1]]$stan_summary[2, 5], # comment out for FnGp incl/excl SLS
+    # models_list[[2]]$stan_summary[2, 5], # comment out for FnGp incl/excl Apex sharks
+    models_list[[3]]$stan_summary[2, 5], # comment out for FnGp incl/excl SLS
+    # models_list[[4]]$stan_summary[2, 5], # comment out for FnGp incl/excl Apex sharks
     models_list[[5]]$stan_summary[2, 5],
     models_list[[6]]$stan_summary[2, 5],
     models_list[[7]]$stan_summary[2, 5],
@@ -370,10 +392,10 @@ dfTDall <- data.frame(
   ),
   twentyfivepct = c(
     # 25%
-    # models_list[[1]]$stan_summary[2, 6], # same as models_list[[1]]$stan_summary[2, 5]
-    models_list[[2]]$stan_summary[2, 6],
-    # models_list[[3]]$stan_summary[2, 6],
-    models_list[[4]]$stan_summary[2, 6],
+    models_list[[1]]$stan_summary[2, 6], # comment out for FnGp incl/excl SLS
+    # models_list[[2]]$stan_summary[2, 6], # comment out for FnGp incl/excl Apex sharks
+    models_list[[3]]$stan_summary[2, 6], # comment out for FnGp incl/excl SLS
+    # models_list[[4]]$stan_summary[2, 6], # comment out for FnGp incl/excl Apex sharks
     models_list[[5]]$stan_summary[2, 6],
     models_list[[6]]$stan_summary[2, 6],
     models_list[[7]]$stan_summary[2, 6],
@@ -386,10 +408,10 @@ dfTDall <- data.frame(
   ),
   seventyfivepct = c(
     # 75%
-    # models_list[[1]]$stan_summary[2, 8],
-    models_list[[2]]$stan_summary[2, 8],
-    # models_list[[3]]$stan_summary[2, 8],
-    models_list[[4]]$stan_summary[2, 8],
+    models_list[[1]]$stan_summary[2, 8], # comment out for FnGp incl/excl SLS
+    # models_list[[2]]$stan_summary[2, 8], # comment out for FnGp incl/excl Apex sharks
+    models_list[[3]]$stan_summary[2, 8], # comment out for FnGp incl/excl SLS
+    # models_list[[4]]$stan_summary[2, 8], # comment out for FnGp incl/excl Apex sharks
     models_list[[5]]$stan_summary[2, 8],
     models_list[[6]]$stan_summary[2, 8],
     models_list[[7]]$stan_summary[2, 8],
@@ -402,10 +424,10 @@ dfTDall <- data.frame(
   ),
   ninetypct = c(
     # 90%
-    # models_list[[1]]$stan_summary[2, 9],
-    models_list[[2]]$stan_summary[2, 9],
-    # models_list[[3]]$stan_summary[2, 9],
-    models_list[[4]]$stan_summary[2, 9],
+    models_list[[1]]$stan_summary[2, 9], # comment out for FnGp incl/excl SLS
+    # models_list[[2]]$stan_summary[2, 9], # comment out for FnGp incl/excl Apex sharks
+    models_list[[3]]$stan_summary[2, 9], # comment out for FnGp incl/excl SLS
+    # models_list[[4]]$stan_summary[2, 9], # comment out for FnGp incl/excl Apex sharks
     models_list[[5]]$stan_summary[2, 9],
     models_list[[6]]$stan_summary[2, 9],
     models_list[[7]]$stan_summary[2, 9],
@@ -417,10 +439,10 @@ dfTDall <- data.frame(
     models_list[[13]]$stan_summary[2, 9]
   ),
   upper = c(
-    # intervals_list[[1]][2, 2], # same as models_list[[1]]$stan_summary[2, 10]
-    intervals_list[[2]][2, 2],
-    # intervals_list[[3]][2, 2],
-    intervals_list[[4]][2, 2],
+    intervals_list[[1]][2, 2], # comment out for FnGp incl/excl SLS
+    # intervals_list[[2]][2, 2], # comment out for FnGp incl/excl Apex sharks
+    intervals_list[[3]][2, 2], # comment out for FnGp incl/excl SLS
+    # intervals_list[[4]][2, 2], # comment out for FnGp incl/excl Apex sharks
     intervals_list[[5]][2, 2],
     intervals_list[[6]][2, 2],
     intervals_list[[7]][2, 2],
@@ -433,8 +455,8 @@ dfTDall <- data.frame(
   ),
   group = factor(
     c(
-      # rep("Group 1", 4), # sicklefin & transient shark effects
-      rep("Group 1", 2), # transient shark effects
+      # rep("Group 1", 4), # sicklefin & transient shark effects  # comment out for FnGp incl/excl SLS
+      rep("Group 1", 2), # transient shark effects # comment out for FnGp incl/excl SLS/Apex
       rep("Group 2", 3), # reef shark effects
       rep("Group 3", 3), # piscivore effects
       rep("Group 4", 3) # herbivore effects
@@ -486,7 +508,9 @@ TDallplot
 ggsave(
   filename = paste0(
     lubridate::today(),
-    "_DAG-results-All-TopDown.png"
+    # "_DAG-results-All-TopDown.png"
+    ## Marquesas ####
+    "_DAG-results-All-TopDown_NoMarquesas.png"
   ),
   device = "png",
   path = here("Results", "DAG")

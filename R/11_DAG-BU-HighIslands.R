@@ -3,8 +3,12 @@
 
 # Load packages ####
 # install.packages("rstanarm")
-library(rstanarm)
+# install.packages("brms")
+library(brms)
+# library(rstanarm)
 library(here)
+library(tidyverse)
+options(future.globals.maxSize = 1.5 * 1024^3) # 1.5 GiB otherwise add_criterion(models_list[[11]], "loo", reloo = TRUE) can run out of memory
 
 ## make standardisation function ####
 stdize <- function(x) {
@@ -32,16 +36,26 @@ ReefWideBRUVUVC.DAGtested <- readRDS(here(
 # STAN GLM effects ####
 models_list <- list()
 ## reef sharks on sicklefin ####
-models_list[[1]] <- stan_glm(
+models_list[[1]] <- brm(
   sicklefin_lemon_sharks ~ reef_sharks,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(), # change if your response is non-continuous
-  prior = normal(0, 2.5), # weakly informative prior for slopes
-  prior_intercept = normal(0, 5), # weakly informative prior for intercept
+  prior = c(
+    set_prior("normal(0, 5)", class = "Intercept"),
+    set_prior("normal(0, 2.5)", class = "b")
+  ), # weakly informative prior for slopes
   chains = 4, # number of MCMC chains
   iter = 2000, # number of iterations per chain
-  seed = 123
+  seed = 123,
+  save_model = here(
+    "Results",
+    "DAG",
+    "brm_models",
+    "HI_BU_1_SLS-RS_model.stan"
+  ),
+  save_pars = save_pars(all = TRUE) # Needed for reloo
 ) # for reproducibility
+models_list[[1]] <- add_criterion(models_list[[1]], "loo", reloo = TRUE)
 ### Summary ####
 # Print a summary of the Bayesian model (includes posterior means, etc.)
 # This is now saved to models_list and extracted later
@@ -55,38 +69,51 @@ intervals_list[[1]] <- as.data.frame(posterior_interval(
 ))
 
 ## reef_sharks on transient pelagics ####
-models_list[[2]] <- stan_glm(
-  transient_pelagic_sharks ~ reef_sharks,
-  data = ReefWideBRUVUVC.DAGtested,
-  family = gaussian(),
-  prior = normal(0, 2.5),
-  prior_intercept = normal(0, 5),
-  chains = 4,
-  iter = 2000,
-  seed = 123
-)
-### 95% credible intervals ####
-intervals_list[[2]] <- as.data.frame(posterior_interval(
-  models_list[[2]],
-  prob = 0.95
-))
+# models_list[[2]] <- brm(
+#   transient_pelagic_sharks ~ reef_sharks,
+#   data = ReefWideBRUVUVC.DAGtested,
+#   family = gaussian(),
+#   prior = c(
+#     set_prior("normal(0, 5)", class = "Intercept"),
+#     set_prior("normal(0, 2.5)", class = "b")
+#   ), # weakly informative prior for slopes
+#   chains = 4,
+#   iter = 2000,
+#   seed = 123,
+#   save_pars = save_pars(all = TRUE) # Needed for reloo
+# )
+# ### 95% credible intervals ####
+# intervals_list[[2]] <- as.data.frame(posterior_interval(
+#   models_list[[2]],
+#   prob = 0.95
+# ))
 
 ## piscivores on sicklefin ####
-models_list[[3]] <- stan_glm(
+models_list[[3]] <- brm(
   sicklefin_lemon_sharks ~
-    chi_Piscivore_percent +
-      chi_Herbivore_percent +
-      chi_Invertivore_percent +
-      chi_Planktivore_percent +
+    biomass_g_per_m2_Piscivore +
+      biomass_g_per_m2_Herbivore +
+      biomass_g_per_m2_Invertivore +
+      biomass_g_per_m2_Planktivore +
       pop.dens,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
-  prior = normal(0, 2.5),
-  prior_intercept = normal(0, 5),
+  prior = c(
+    set_prior("normal(0, 5)", class = "Intercept"),
+    set_prior("normal(0, 2.5)", class = "b")
+  ), # weakly informative prior for slopes
   chains = 4,
   iter = 2000,
-  seed = 123
+  seed = 123,
+  save_model = here(
+    "Results",
+    "DAG",
+    "brm_models",
+    "HI_BU_2_SLS-pisc_model.stan"
+  ),
+  save_pars = save_pars(all = TRUE) # Needed for reloo
 )
+models_list[[3]] <- add_criterion(models_list[[3]], "loo", reloo = TRUE)
 ### 95% credible intervals ####
 intervals_list[[3]] <- as.data.frame(posterior_interval(
   models_list[[3]],
@@ -94,32 +121,35 @@ intervals_list[[3]] <- as.data.frame(posterior_interval(
 ))
 
 ## piscivores on transient pelagics ####
-models_list[[4]] <- stan_glm(
-  # transient_piscivores_bayes
-  transient_pelagic_sharks ~
-    chi_Piscivore_percent +
-      chi_Herbivore_percent +
-      chi_Invertivore_percent +
-      chi_Planktivore_percent +
-      pop.dens,
-  data = ReefWideBRUVUVC.DAGtested,
-  family = gaussian(),
-  prior = normal(0, 2.5),
-  prior_intercept = normal(0, 5),
-  chains = 4,
-  iter = 2000,
-  seed = 123
-)
-### 95% credible intervals ####
-intervals_list[[4]] <- as.data.frame(posterior_interval(
-  models_list[[4]],
-  prob = 0.95
-))
+# models_list[[4]] <- brm(
+#   # transient_piscivores_bayes
+#   transient_pelagic_sharks ~
+#     biomass_g_per_m2_Piscivore +
+#       biomass_g_per_m2_Herbivore +
+#       biomass_g_per_m2_Invertivore +
+#       biomass_g_per_m2_Planktivore +
+#       pop.dens,
+#   data = ReefWideBRUVUVC.DAGtested,
+#   family = gaussian(),
+#   prior = c(
+#     set_prior("normal(0, 5)", class = "Intercept"),
+#     set_prior("normal(0, 2.5)", class = "b")
+#   ), # weakly informative prior for slopes
+#   chains = 4,
+#   iter = 2000,
+#   seed = 123,
+#   save_pars = save_pars(all = TRUE) # Needed for reloo
+# )
+# ### 95% credible intervals ####
+# intervals_list[[4]] <- as.data.frame(posterior_interval(
+#   models_list[[4]],
+#   prob = 0.95
+# ))
 
 ## herbivores on reef_sharks ####
-models_list[[5]] <- stan_glm(
+models_list[[5]] <- brm(
   reef_sharks ~
-    chi_Herbivore_percent +
+    biomass_g_per_m2_Herbivore +
       CCA +
       Hard.Coral +
       Other.Algae +
@@ -127,12 +157,22 @@ models_list[[5]] <- stan_glm(
       Relief,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
-  prior = normal(0, 2.5),
-  prior_intercept = normal(0, 5),
+  prior = c(
+    set_prior("normal(0, 5)", class = "Intercept"),
+    set_prior("normal(0, 2.5)", class = "b")
+  ), # weakly informative prior for slopes
   chains = 4,
   iter = 2000,
-  seed = 123
+  seed = 123,
+  save_model = here(
+    "Results",
+    "DAG",
+    "brm_models",
+    "HI_BU_3_RS-herb_model.stan"
+  ),
+  save_pars = save_pars(all = TRUE) # Needed for reloo
 )
+models_list[[5]] <- add_criterion(models_list[[5]], "loo", reloo = TRUE)
 ### 95% credible intervals ####
 intervals_list[[5]] <- as.data.frame(posterior_interval(
   models_list[[5]],
@@ -140,21 +180,31 @@ intervals_list[[5]] <- as.data.frame(posterior_interval(
 ))
 
 ## invertivores on reef_sharks ####
-models_list[[6]] <- stan_glm(
+models_list[[6]] <- brm(
   reef_sharks ~
-    chi_Invertivore_percent +
+    biomass_g_per_m2_Invertivore +
       ave_npp +
       Other.Algae +
       pop.dens +
       Relief,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
-  prior = normal(0, 2.5),
-  prior_intercept = normal(0, 5),
+  prior = c(
+    set_prior("normal(0, 5)", class = "Intercept"),
+    set_prior("normal(0, 2.5)", class = "b")
+  ), # weakly informative prior for slopes
   chains = 4,
   iter = 2000,
-  seed = 123
+  seed = 123,
+  save_model = here(
+    "Results",
+    "DAG",
+    "brm_models",
+    "HI_BU_4_RS-inv_model.stan"
+  ),
+  save_pars = save_pars(all = TRUE) # Needed for reloo
 )
+models_list[[6]] <- add_criterion(models_list[[6]], "loo", reloo = TRUE)
 ### 95% credible intervals ####
 intervals_list[[6]] <- as.data.frame(posterior_interval(
   models_list[[6]],
@@ -162,20 +212,30 @@ intervals_list[[6]] <- as.data.frame(posterior_interval(
 ))
 
 ## planktivores on reef_sharks ####
-models_list[[7]] <- stan_glm(
+models_list[[7]] <- brm(
   reef_sharks ~
-    chi_Planktivore_percent +
+    biomass_g_per_m2_Planktivore +
       ave_npp +
       pop.dens +
       Relief,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
-  prior = normal(0, 2.5),
-  prior_intercept = normal(0, 5),
+  prior = c(
+    set_prior("normal(0, 5)", class = "Intercept"),
+    set_prior("normal(0, 2.5)", class = "b")
+  ), # weakly informative prior for slopes
   chains = 4,
   iter = 2000,
-  seed = 123
+  seed = 123,
+  save_model = here(
+    "Results",
+    "DAG",
+    "brm_models",
+    "HI_BU_5_RS-plank_model.stan"
+  ),
+  save_pars = save_pars(all = TRUE) # Needed for reloo
 )
+models_list[[7]] <- add_criterion(models_list[[7]], "loo", reloo = TRUE)
 ### 95% credible intervals ####
 intervals_list[[7]] <- as.data.frame(posterior_interval(
   models_list[[7]],
@@ -183,20 +243,30 @@ intervals_list[[7]] <- as.data.frame(posterior_interval(
 ))
 
 ## herbivores on piscivores ####
-models_list[[8]] <- stan_glm(
-  chi_Piscivore_percent ~
-    chi_Herbivore_percent +
-      chi_Invertivore_percent +
-      chi_Planktivore_percent +
+models_list[[8]] <- brm(
+  biomass_g_per_m2_Piscivore ~
+    biomass_g_per_m2_Herbivore +
+      biomass_g_per_m2_Invertivore +
+      biomass_g_per_m2_Planktivore +
       pop.dens,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
-  prior = normal(0, 2.5),
-  prior_intercept = normal(0, 5),
+  prior = c(
+    set_prior("normal(0, 5)", class = "Intercept"),
+    set_prior("normal(0, 2.5)", class = "b")
+  ), # weakly informative prior for slopes
   chains = 4,
   iter = 2000,
-  seed = 123
+  seed = 123,
+  save_model = here(
+    "Results",
+    "DAG",
+    "brm_models",
+    "HI_BU_6_pisc-herb_model.stan"
+  ),
+  save_pars = save_pars(all = TRUE) # Needed for reloo
 )
+models_list[[8]] <- add_criterion(models_list[[8]], "loo", reloo = TRUE)
 ### 95% credible intervals ####
 intervals_list[[8]] <- as.data.frame(posterior_interval(
   models_list[[8]],
@@ -204,20 +274,30 @@ intervals_list[[8]] <- as.data.frame(posterior_interval(
 ))
 
 ## planktivores on piscivores ####
-models_list[[9]] <- stan_glm(
-  chi_Piscivore_percent ~
-    chi_Planktivore_percent +
+models_list[[9]] <- brm(
+  biomass_g_per_m2_Piscivore ~
+    biomass_g_per_m2_Planktivore +
       ave_npp +
       pop.dens +
       Relief,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
-  prior = normal(0, 2.5),
-  prior_intercept = normal(0, 5),
+  prior = c(
+    set_prior("normal(0, 5)", class = "Intercept"),
+    set_prior("normal(0, 2.5)", class = "b")
+  ), # weakly informative prior for slopes
   chains = 4,
   iter = 2000,
-  seed = 123
+  seed = 123,
+  save_model = here(
+    "Results",
+    "DAG",
+    "brm_models",
+    "HI_BU_7_pisc-plank_model.stan"
+  ),
+  save_pars = save_pars(all = TRUE) # Needed for reloo
 )
+models_list[[9]] <- add_criterion(models_list[[9]], "loo", reloo = TRUE)
 ### 95% credible intervals ####
 intervals_list[[9]] <- as.data.frame(posterior_interval(
   models_list[[9]],
@@ -225,20 +305,30 @@ intervals_list[[9]] <- as.data.frame(posterior_interval(
 ))
 
 ## invertivores on piscivores ####
-models_list[[10]] <- stan_glm(
-  chi_Piscivore_percent ~
-    chi_Invertivore_percent +
-      chi_Herbivore_percent +
-      chi_Planktivore_percent +
+models_list[[10]] <- brm(
+  biomass_g_per_m2_Piscivore ~
+    biomass_g_per_m2_Invertivore +
+      biomass_g_per_m2_Herbivore +
+      biomass_g_per_m2_Planktivore +
       pop.dens,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
-  prior = normal(0, 2.5),
-  prior_intercept = normal(0, 5),
+  prior = c(
+    set_prior("normal(0, 5)", class = "Intercept"),
+    set_prior("normal(0, 2.5)", class = "b")
+  ), # weakly informative prior for slopes
   chains = 4,
   iter = 2000,
-  seed = 123
+  seed = 123,
+  save_model = here(
+    "Results",
+    "DAG",
+    "brm_models",
+    "HI_BU_8_pisc-inv_model.stan"
+  ),
+  save_pars = save_pars(all = TRUE) # Needed for reloo
 )
+models_list[[10]] <- add_criterion(models_list[[10]], "loo", reloo = TRUE)
 ### 95% credible intervals ####
 intervals_list[[10]] <- as.data.frame(posterior_interval(
   models_list[[10]],
@@ -246,16 +336,26 @@ intervals_list[[10]] <- as.data.frame(posterior_interval(
 ))
 
 ## hard_coral on herbivores ####
-models_list[[11]] <- stan_glm(
-  chi_Herbivore_percent ~ Hard.Coral,
+models_list[[11]] <- brm(
+  biomass_g_per_m2_Herbivore ~ Hard.Coral,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
-  prior = normal(0, 2.5),
-  prior_intercept = normal(0, 5),
+  prior = c(
+    set_prior("normal(0, 5)", class = "Intercept"),
+    set_prior("normal(0, 2.5)", class = "b")
+  ), # weakly informative prior for slopes
   chains = 4,
   iter = 2000,
-  seed = 123
+  seed = 123,
+  save_model = here(
+    "Results",
+    "DAG",
+    "brm_models",
+    "HI_BU_9_herb-HC_model.stan"
+  ),
+  save_pars = save_pars(all = TRUE) # Needed for reloo
 )
+models_list[[11]] <- add_criterion(models_list[[11]], "loo", reloo = TRUE)
 ### 95% credible intervals ####
 intervals_list[[11]] <- as.data.frame(posterior_interval(
   models_list[[11]],
@@ -263,16 +363,26 @@ intervals_list[[11]] <- as.data.frame(posterior_interval(
 ))
 
 ## CCA on herbivores ####
-models_list[[12]] <- stan_glm(
-  chi_Herbivore_percent ~ CCA,
+models_list[[12]] <- brm(
+  biomass_g_per_m2_Herbivore ~ CCA,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
-  prior = normal(0, 2.5),
-  prior_intercept = normal(0, 5),
+  prior = c(
+    set_prior("normal(0, 5)", class = "Intercept"),
+    set_prior("normal(0, 2.5)", class = "b")
+  ), # weakly informative prior for slopes
   chains = 4,
   iter = 2000,
-  seed = 123
+  seed = 123,
+  save_model = here(
+    "Results",
+    "DAG",
+    "brm_models",
+    "HI_BU_10_herb-CCA_model.stan"
+  ),
+  save_pars = save_pars(all = TRUE) # Needed for reloo
 )
+models_list[[12]] <- add_criterion(models_list[[12]], "loo", reloo = TRUE)
 ### 95% credible intervals ####
 intervals_list[[12]] <- as.data.frame(posterior_interval(
   models_list[[12]],
@@ -280,8 +390,8 @@ intervals_list[[12]] <- as.data.frame(posterior_interval(
 ))
 
 ## other algae on herbivores ####
-models_list[[13]] <- stan_glm(
-  chi_Herbivore_percent ~
+models_list[[13]] <- brm(
+  biomass_g_per_m2_Herbivore ~
     Other.Algae +
       CCA +
       Hard.Coral +
@@ -289,12 +399,22 @@ models_list[[13]] <- stan_glm(
       Relief,
   data = ReefWideBRUVUVC.DAGtested,
   family = gaussian(),
-  prior = normal(0, 2.5),
-  prior_intercept = normal(0, 5),
+  prior = c(
+    set_prior("normal(0, 5)", class = "Intercept"),
+    set_prior("normal(0, 2.5)", class = "b")
+  ), # weakly informative prior for slopes
   chains = 4,
   iter = 2000,
-  seed = 123
+  seed = 123,
+  save_model = here(
+    "Results",
+    "DAG",
+    "brm_models",
+    "HI_BU_11_herb-OA_model.stan"
+  ),
+  save_pars = save_pars(all = TRUE) # Needed for reloo
 )
+models_list[[13]] <- add_criterion(models_list[[13]], "loo", reloo = TRUE)
 ### 95% credible intervals ####
 intervals_list[[13]] <- as.data.frame(posterior_interval(
   models_list[[13]],
@@ -304,12 +424,15 @@ intervals_list[[13]] <- as.data.frame(posterior_interval(
 # Save 95% credible intervals ####
 do.call(rbind, intervals_list) |>
   ## FnGp incl/excl SLS ####
-  dplyr::slice(4:6, 10:n()) |> # remove sicklefin lemon sharks which are otherwise doublecounted
+  # dplyr::slice(4:6, 10:n()) |> # remove sicklefin lemon sharks which are otherwise doublecounted
+  dplyr::slice(1:3, 7:9, 13:n()) |> # remove apex sharks which have low n
   tibble::rownames_to_column("Value") |>
   readr::write_csv(
     file = here(
       "Results",
       "DAG",
+      # "95pct_intervals_list_HighIslands_BottomUp.csv"
+      ## Marquesas ####
       "95pct_intervals_list_HighIslands_BottomUp.csv"
     )
   )
@@ -318,10 +441,13 @@ do.call(rbind, intervals_list) |>
 saveRDS(
   # object = models_list,
   ## FnGp incl/excl SLS ####
-  object = models_list[c(2, 4:13)],
+  # object = models_list[c(2, 4:13)],
+  object = models_list[c(1, 3, 5:13)], # no apex sharks
   file = here(
     "Results",
     "DAG",
+    # "models_list_HighIslands_BottomUp.Rds"
+    ## Marquesas ####
     "models_list_HighIslands_BottomUp.Rds"
   ),
   compress = "xz"
@@ -335,21 +461,11 @@ library(ggplot2)
 dfBUhighisland <- data.frame(
   ## FnGp incl/excl SLS ####
   label = c(
-    # # "Reef sharks on sicklefin lemon sharks",
-    # "Reef sharks on transient pelagic sharks",
-    # # "Piscivores on sicklefin lemon sharks",
-    # "Piscivores on transient pelagic sharks",
-    # "Herbivores on reef sharks",
-    # "Invertivores on reef sharks",
-    # "Planktivores on reef sharks",
-    #
-    # "Reef sharks on sicklefin lemon sharks",
-    "Meso sharks on apex sharks",
-    # "Piscivores on sicklefin lemon sharks",
-    "Piscivores on apex sharks",
-    "Herbivores on meso sharks",
-    "Invertivores on meso sharks",
-    "Planktivores on meso sharks",
+    "Reef sharks on sicklefin lemon sharks",
+    "Piscivores on sicklefin lemon sharks",
+    "Herbivores on reef sharks",
+    "Invertivores on reef sharks",
+    "Planktivores on reef sharks",
     "Herbivores on piscivores",
     "Planktivores on piscivores",
     "Invertivores on piscivores",
@@ -358,25 +474,22 @@ dfBUhighisland <- data.frame(
     "Other algae on herbivores"
   ),
   effect = c(
-    # models_list[[1]]$coefficients[2],
-    models_list[[2]]$coefficients[2],
-    # models_list[[3]]$coefficients[2],
-    models_list[[4]]$coefficients[2],
-    models_list[[5]]$coefficients[2],
-    models_list[[6]]$coefficients[2],
-    models_list[[7]]$coefficients[2],
-    models_list[[8]]$coefficients[2],
-    models_list[[9]]$coefficients[2],
-    models_list[[10]]$coefficients[2],
-    models_list[[11]]$coefficients[2],
-    models_list[[12]]$coefficients[2],
-    models_list[[13]]$coefficients[2]
+    fixef(models_list[[1]])[2, "Estimate"], # comment out for FnGp incl/excl SLS
+    fixef(models_list[[3]])[2, "Estimate"], # comment out for FnGp incl/excl SLS
+    fixef(models_list[[5]])[2, "Estimate"],
+    fixef(models_list[[6]])[2, "Estimate"],
+    fixef(models_list[[7]])[2, "Estimate"],
+    fixef(models_list[[8]])[2, "Estimate"],
+    fixef(models_list[[9]])[2, "Estimate"],
+    fixef(models_list[[10]])[2, "Estimate"],
+    fixef(models_list[[11]])[2, "Estimate"],
+    fixef(models_list[[12]])[2, "Estimate"],
+    fixef(models_list[[13]])[2, "Estimate"]
   ),
   lower = c(
-    # intervals_list[[1]][2, 1],
-    intervals_list[[2]][2, 1],
-    # intervals_list[[3]][2, 1],
-    intervals_list[[4]][2, 1],
+    # 2.5%
+    intervals_list[[1]][2, 1], # comment out for FnGp incl/excl SLS
+    intervals_list[[3]][2, 1], # comment out for FnGp incl/excl SLS
     intervals_list[[5]][2, 1],
     intervals_list[[6]][2, 1],
     intervals_list[[7]][2, 1],
@@ -387,75 +500,10 @@ dfBUhighisland <- data.frame(
     intervals_list[[12]][2, 1],
     intervals_list[[13]][2, 1]
   ),
-  tenpct = c(
-    # 10%
-    # models_list[[1]]$stan_summary[2, 5], # same as models_list[[1]]$stan_summary[2, 5]
-    models_list[[2]]$stan_summary[2, 5],
-    # models_list[[3]]$stan_summary[2, 5],
-    models_list[[4]]$stan_summary[2, 5],
-    models_list[[5]]$stan_summary[2, 5],
-    models_list[[6]]$stan_summary[2, 5],
-    models_list[[7]]$stan_summary[2, 5],
-    models_list[[8]]$stan_summary[2, 5],
-    models_list[[9]]$stan_summary[2, 5],
-    models_list[[10]]$stan_summary[2, 5],
-    models_list[[11]]$stan_summary[2, 5],
-    models_list[[12]]$stan_summary[2, 5],
-    models_list[[13]]$stan_summary[2, 5]
-  ),
-  twentyfivepct = c(
-    # 25%
-    # models_list[[1]]$stan_summary[2, 6], # same as models_list[[1]]$stan_summary[2, 5]
-    models_list[[2]]$stan_summary[2, 6],
-    # models_list[[3]]$stan_summary[2, 6],
-    models_list[[4]]$stan_summary[2, 6],
-    models_list[[5]]$stan_summary[2, 6],
-    models_list[[6]]$stan_summary[2, 6],
-    models_list[[7]]$stan_summary[2, 6],
-    models_list[[8]]$stan_summary[2, 6],
-    models_list[[9]]$stan_summary[2, 6],
-    models_list[[10]]$stan_summary[2, 6],
-    models_list[[11]]$stan_summary[2, 6],
-    models_list[[12]]$stan_summary[2, 6],
-    models_list[[13]]$stan_summary[2, 6]
-  ),
-  seventyfivepct = c(
-    # 25%
-    # models_list[[1]]$stan_summary[2, 8],
-    models_list[[2]]$stan_summary[2, 8],
-    # models_list[[3]]$stan_summary[2, 8],
-    models_list[[4]]$stan_summary[2, 8],
-    models_list[[5]]$stan_summary[2, 8],
-    models_list[[6]]$stan_summary[2, 8],
-    models_list[[7]]$stan_summary[2, 8],
-    models_list[[8]]$stan_summary[2, 8],
-    models_list[[9]]$stan_summary[2, 8],
-    models_list[[10]]$stan_summary[2, 8],
-    models_list[[11]]$stan_summary[2, 8],
-    models_list[[12]]$stan_summary[2, 8],
-    models_list[[13]]$stan_summary[2, 8]
-  ),
-  ninetypct = c(
-    # 25%
-    # models_list[[1]]$stan_summary[2, 9],
-    models_list[[2]]$stan_summary[2, 9],
-    # models_list[[3]]$stan_summary[2, 9],
-    models_list[[4]]$stan_summary[2, 9],
-    models_list[[5]]$stan_summary[2, 9],
-    models_list[[6]]$stan_summary[2, 9],
-    models_list[[7]]$stan_summary[2, 9],
-    models_list[[8]]$stan_summary[2, 9],
-    models_list[[9]]$stan_summary[2, 9],
-    models_list[[10]]$stan_summary[2, 9],
-    models_list[[11]]$stan_summary[2, 9],
-    models_list[[12]]$stan_summary[2, 9],
-    models_list[[13]]$stan_summary[2, 9]
-  ),
   upper = c(
-    # intervals_list[[1]][2, 2],
-    intervals_list[[2]][2, 2],
-    # intervals_list[[3]][2, 2],
-    intervals_list[[4]][2, 2],
+    # 97.5%
+    intervals_list[[1]][2, 2], # comment out for FnGp incl/excl SLS
+    intervals_list[[3]][2, 2], # comment out for FnGp incl/excl SLS
     intervals_list[[5]][2, 2],
     intervals_list[[6]][2, 2],
     intervals_list[[7]][2, 2],
@@ -468,8 +516,7 @@ dfBUhighisland <- data.frame(
   ),
   group = factor(
     c(
-      # rep("Group 1", 4), # sicklefin & transient shark effects
-      rep("Group 1", 2), # transient shark effects
+      rep("Group 1", 2), # transient shark effects # comment out for FnGp incl/excl SLS/Apex
       rep("Group 2", 3), # reef shark effects
       rep("Group 3", 3), # piscivore effects
       rep("Group 4", 3) # herbivore effects
@@ -499,11 +546,6 @@ BUhighislandplot <- ggplot(
 ) +
   geom_point(size = 3) +
   geom_errorbarh(aes(xmin = lower, xmax = upper), height = 0.1) + # 2.5%, 97.5%
-  geom_errorbarh(aes(xmin = tenpct, xmax = ninetypct), height = 0.2) + # 10/90
-  geom_errorbarh(
-    aes(xmin = twentyfivepct, xmax = seventyfivepct),
-    height = 0.3
-  ) + # 25/75
   scale_color_manual(values = colors) +
   labs(x = "Effect Size", y = "") +
   theme_minimal() +
@@ -526,10 +568,20 @@ BUhighislandplot
 ggsave(
   filename = paste0(
     lubridate::today(),
+    # "_DAG-results-HighIslands-BottomUp.png"
+    ## Marquesas ####
     "_DAG-results-HighIslands-BottomUp.png"
-    # "_DAG-results-Atolls-BottomUp.png"
-    # "_DAG-results-All-BottomUp.png"
   ),
   device = "png",
   path = here("Results", "DAG")
+)
+
+saveRDS(
+  object = BUhighislandplot,
+  file = here(
+    "Results",
+    "DAG",
+    "BUhighislandplot.Rds"
+  ),
+  compress = "xz"
 )

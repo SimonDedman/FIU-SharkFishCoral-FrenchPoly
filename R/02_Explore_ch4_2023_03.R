@@ -1,11 +1,7 @@
 # 2025-03-24 TODOs ####
-# 3. (armed with knowledge/confirmations from #2) confirm shark functional grouping re-org with Mike ~L250
-# confirm FnGps make sense, esp piscivores vs sharks
-# 4. do new fn gps ["make pred.df" heading], re-run explore.R
-# 5. re-do all SCMs, redo plots & excel summary sheet, compare loo metrics per-effect-combo across subsets, make text summary bullet points of key results
 # 6. do atoll/HI BRTs, possibly with dubious dataset doubling technique
 # 7. summarise atoll/HI BRT results
-# 8. Is the multi SCM approach legit? AIC comparison, who can we ask? How to formulate the question?
+# 8. Is the multi SCM approach legit? AIC comparison, who can we ask? How to formulate the question? Robin @ Stanford, Beth Babcock,
 
 # use SCRIPT PACKAGE WORKFLOW to analyse script and check dependencies to see if I can simplify this script.
 # that's a bigger project than I realised
@@ -31,6 +27,7 @@ library(tidyverse)
 library(viridis)
 library(plotly)
 library(here)
+library(cowplot)
 
 # import all data frames ####
 ## import site order ####
@@ -103,6 +100,63 @@ elasmo.bruv.raw <- data.frame(read.csv(
     .cols = c(geo, isl_grp, archi, Season, bait_type, topo),
     .fns = ~ factor(.x)
   ))
+
+### shark species maxns ####
+# elasmo.bruv.raw |>
+#   select(site_name:reef_name, topo, archi, Whitetip.reef.shark:Tiger.shark) |>
+#   mutate(
+#     topo = ifelse(
+#       topo %in% c("near atoll", "high barrier"),
+#       "HighIsland",
+#       "Atoll"
+#     )
+#   ) |>
+#   # group_by(topo) |>
+#   group_by(archi) |>
+#   summarise(
+#     across(
+#       Whitetip.reef.shark:Tiger.shark,
+#       \(x) sum(x, na.rm = TRUE)
+#     )
+#   ) |>
+#   pivot_longer(
+#     cols = Whitetip.reef.shark:Tiger.shark,
+#     names_to = "species",
+#     values_to = "maxN"
+#   ) |>
+#   mutate(
+#     species = factor(
+#       species,
+#       levels = pick(everything()) |> # dplyr, replaces cur_data() depreciated in v1.0.0
+#         arrange(desc(maxN)) |>
+#         pull(species) |>
+#         unique()
+#     )
+#   ) |>
+#   ggplot() +
+#   # create a column plot with species on the x-axis in order of highest to lowest maxn (which is already its factor levels) and maxN on the y-axis
+#   geom_bar(aes(x = species, y = maxN), stat = "identity") +
+#   # facet by topo
+#   # facet_wrap(~topo, ncol = 2) +
+#   facet_wrap(~archi, ncol = 2) +
+#   # add the maxn value above each bar
+#   geom_text(aes(x = species, y = maxN, label = maxN), vjust = -0.5) +
+#   # set Y axis ticks every 250
+#   scale_y_continuous(breaks = seq(0, 2750, by = 250)) +
+#   theme_cowplot() +
+#   theme(
+#     axis.text.x = element_text(angle = 90, hjust = 1),
+#     plot.background = element_rect(fill = "white"),
+#     # add horizontal grid lines every 250
+#     panel.grid.major.y = element_line(colour = "grey", linewidth = 0.5)
+#   ) +
+#   ggsave(
+#     # filename = here("NFF_data", "shark_maxN.png"),
+#     # filename = here("NFF_data", "shark_maxN_byTopo.png"),
+#     filename = here("NFF_data", "shark_maxN_byArchi.png"),
+#     width = 12,
+#     height = 8
+#   )
 
 # reef summaries by UVC pieces ####
 ## Summary by reef for benthic data ####
@@ -293,12 +347,12 @@ trash.tel.df1 <- teleost.bruv.raw |>
 #     4.32,
 #     4.08,
 #     4.13,
-#     4.37,
-#     4.21,
-#     4.19,
-#     4.11,
-#     4.1,
-#     3.94,
+# 4.37,
+# 4.21,
+# 4.19,
+# 4.11,
+# 4.1,
+# 3.94,
 #     3.99,
 #     3.39,
 #     2.93,
@@ -322,7 +376,7 @@ pred.bruv.df1 <- elasmo.bruv.raw |>
   rename(sicklefin_lemon_sharks = Lemon.shark) |>
   # create new columns for reef_sharks, transient_pelagic sharks
   mutate(
-    ### elasmo FnGp choice ####
+    ### >Elasmo FnGp choice ####
 
     # 1. Updated with Common.Blacktip.shark moved to TPS
     # reef_sharks = Whitetip.reef.shark +
@@ -338,22 +392,29 @@ pred.bruv.df1 <- elasmo.bruv.raw |>
     # 2. Si proposal:
     # >4.25 TL apex: Tiger + GHH + common blacktip
     # ~4 - 4.25 TL meso: scalloped + sicklefin + other reefs
+
+    # reef_sharks = Whitetip.reef.shark +
+    #   Scalloped.hammerhead.shark +
+    #   sicklefin_lemon_sharks +
+    #   Grey.reef.shark +
+    #   Blacktip.reef.shark +
+    #   Silvertip.shark + #higher TL than black/whitetip
+    #   Tawny.nurse.shark, # 3rd/4th most common shark
+    # transient_pelagic_sharks = Common.Blacktip.shark + # correct: now moved here?
+    #   Tiger.shark +
+    #   Great.hammerhead.shark
+
+    # 3. Mike Si agreement:
     reef_sharks = Whitetip.reef.shark +
-      Scalloped.hammerhead.shark +
-      sicklefin_lemon_sharks +
       Grey.reef.shark +
       Blacktip.reef.shark +
-      Silvertip.shark + #higher TL than black/whitetip
-      Tawny.nurse.shark, # 3rd/4th most common shark
-    transient_pelagic_sharks = Common.Blacktip.shark + # correct: now moved here?
-      Tiger.shark +
+      Silvertip.shark + # higher TL than black/whitetip
+      Tawny.nurse.shark + # 3rd/4th most common shark
+      Common.Blacktip.shark,
+    # sicklefin on their own.
+    transient_pelagic_sharks = Tiger.shark +
       Great.hammerhead.shark
-
-    # 3. Mike proposal:
-    # offshore mesos =
-    #   Scalloped.hammerhead.shark +
-    #   Common.Blacktip.shark
-    # Presumably also TPS & RS & SLS remain? Needs another group
+    # DON'T run apex - too low N, but create group to avoid breaking things in scripts
 
     # Both proposals would need to reconfigure the DAGs (sicklefin changed/removed)
   ) |>
@@ -704,11 +765,12 @@ saveRDS(
 )
 
 ## remove marquesas ####
-# THIS IS WHAT WE WANT FOR BRT ####
-reef.df2 <- reef.df1 |>
+# THIS IS WHAT WE WANT FOR BRT/DAG ####
+reef.df2 <- reef.df1 |> # 28 observations
   filter(
+    ### Marquesas removal ####
     site_name != "Nuka Hiva",
-    site_name != "Uapou"
+    site_name != "Uapou", # 24 observations
   ) |>
   droplevels()
 write_csv(reef.df2, here("NFF_data", "ch4_reef_wide_df2.csv"))
@@ -953,20 +1015,20 @@ get_box_plot <- function(expvar) {
   ggplot2::ggplot(reef.df2) +
     geom_boxplot(mapping = aes(x = IslandAtoll, y = .data[[expvar]])) +
     theme_minimal() %+replace%
-      theme(
-        axis.text = element_text(size = rel(2)),
-        axis.text.x = element_text(angle = 90), # , vjust = 1, hjust = 1 # rotate axis labels
-        title = element_text(size = rel(2)),
-        legend.text = element_text(size = rel(1.5)),
-        legend.position.inside = c(0.03, 0.98),
-        legend.direction = "horizontal",
-        legend.title = element_blank(),
-        panel.grid.minor = element_blank(), # remove mid value x & y axis gridlines
-        panel.background = element_rect(fill = "white", colour = "grey50"), # white background
-        plot.background = element_rect(fill = "white", colour = "grey50"), # white background
-        strip.text.x = element_text(size = rel(2)),
-        panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)
-      )
+    theme(
+      axis.text = element_text(size = rel(2)),
+      axis.text.x = element_text(angle = 90), # , vjust = 1, hjust = 1 # rotate axis labels
+      title = element_text(size = rel(2)),
+      legend.text = element_text(size = rel(1.5)),
+      legend.position.inside = c(0.03, 0.98),
+      legend.direction = "horizontal",
+      legend.title = element_blank(),
+      panel.grid.minor = element_blank(), # remove mid value x & y axis gridlines
+      panel.background = element_rect(fill = "white", colour = "grey50"), # white background
+      plot.background = element_rect(fill = "white", colour = "grey50"), # white background
+      strip.text.x = element_text(size = rel(2)),
+      panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)
+    )
   ggsave(
     filename = paste0(today(), "_IslandAtoll-", expvar, ".png"),
     device = "png",
@@ -986,6 +1048,103 @@ for (expvars in c(
   "log_Planktivore",
   "log_Herbivore",
   "log_Invertivore",
-  "log_piscivore"
-))
+  "log_piscivore",
+  "transient_pelagic_sharks",
+  "sicklefin_lemon_sharks",
+  "reef_sharks"
+)) {
   get_box_plot(expvars)
+}
+
+# Get means
+tmp <- reef.df2 |>
+  group_by(IslandAtoll) |>
+  summarise(across(where(is.numeric), \(x) mean(x, na.rm = TRUE)))
+
+
+# 2025-08-26 check independence of Other Algae proportions ####
+devtools::install_github("tpq/propr")
+library(propr)
+# read in Excel sheet
+otheralgae <- readxl::read_excel(
+  here::here("NFF_data", "BenthicSurveyDataSheets", "Algae_breakdown_2025_07.xlsx"),
+  sheet = "Sheet1"
+) |>
+  dplyr::rename(
+    Other.Algae = `Other Algae`,
+    Fleshy.Macroalgae = `Fleshy Macroalgae`,
+    Turf.Algae = Turf
+  ) |>
+  dplyr::filter(is.na(FilterOut)) |>
+  dplyr::select(UniqueID, Fleshy.Macroalgae, Turf.Algae)
+# dplyr::select(
+#   Fleshy_Macroalgae,
+#   Turf_Algae
+# ) # |>
+# filter out rows with NA
+# tidyr::drop_na() # |>
+# mutate across Fleshy Macroalgae and Turf, dividing by 100
+# dplyr::mutate(across(c(Fleshy_Macroalgae, Turf_Algae), ~ .x / 100))
+
+benthos <- readr::read_csv(here::here("NFF_data", "fixed_bethic_uvc_final_2023_02_26.csv")) |>
+  dplyr::left_join(otheralgae, by = "UniqueID") |>
+  dplyr::mutate(
+    OAdiff = Other.Algae - (Fleshy.Macroalgae + Turf.Algae),
+    AllBenthos = Sand + Rubble + Pavement + CCA + Hard.Coral + Soft.Coral + Invert + Fleshy.Macroalgae + Turf.Algae
+  ) |>
+  tidyr::drop_na() |>
+  dplyr::filter(UniqueID != "NUK2_4") |> # FM & Turf don't add to OA total
+  dplyr::select(Sand, Rubble, Pavement, CCA, Fleshy.Macroalgae, Turf.Algae, Hard.Coral, Soft.Coral, Invert)
+
+pr <- propr(
+  counts = benthos, # rows as samples, like it should be
+  metric = "rho", # or "phi", "phs", "vlr"
+  ivar = "clr", # or can use another gene as reference, by giving the name or index
+  alpha = NA, # use to handle zeros
+  p = 100 # used for permutation tests
+)
+getResults(pr) # for just FM vs Turf w/o other columns
+#    Partner              Pair      lrv metric alpha propr Zeros
+# Turf_Algae Fleshy_Macroalgae 4.923679    rho    NA    -1   101
+
+# ρ = –1: perfect anti-proportionality: when one increases, the other decreases in strict lockstep.
+# i.e. not independent. Should only use one in analyses.
+
+getResults(pr) |>
+  dplyr::filter(Partner == "Turf.Algae" & Pair == "Fleshy.Macroalgae")
+#    Partner              Pair      lrv metric alpha      propr Zeros
+# Turf.Algae Fleshy.Macroalgae 5.255934    rho    NA -0.3576253    90
+# turf and fleshy are somewhat anti-proportional,
+# vary in mildly opposing directions relative to the whole benthic cover.
+# Is consistent with ecological expectation: at higher cover, they squeeze each other out, but at lower levels they can vary more independently.
+
+heatmap_df <- reshape2::melt(pr@matrix, varnames = c("Var1", "Var2"), value.name = "propr")
+# Keep only lower triangle (unique pairs, no diagonals)
+heatmap_df <- subset(
+  heatmap_df,
+  as.numeric(factor(Var1, levels = colnames(pr@matrix))) >
+    as.numeric(factor(Var2, levels = colnames(pr@matrix)))
+)
+
+ggplot2::ggplot(heatmap_df, ggplot2::aes(Var1, Var2, fill = propr)) +
+  ggplot2::geom_tile() +
+  ggplot2::geom_text(ggplot2::aes(label = round(propr, 2)), size = 3) + # overlay labels
+  ggplot2::scale_fill_gradient2(low = "red", mid = "white", high = "blue", midpoint = 0) +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(
+    axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+    panel.background = ggplot2::element_rect(fill = "white", colour = "grey50"), # white background
+    plot.background = ggplot2::element_rect(fill = "white", colour = "grey50"), # white background
+    # strip.text.x = ggplot2::element_text(size = rel(2)),
+    panel.border = ggplot2::element_rect(colour = "black", fill = NA, linewidth = 1)
+  ) +
+  ggplot2::labs(x = "", y = "", fill = "Propr (rho)")
+
+ggplot2::ggsave(
+  filename = paste0(lubridate::today(), "_benthic_proportions_heatmap.png"),
+  device = "png",
+  path = here::here("Results", "Boxplots"),
+  width = 8,
+  height = 8,
+  units = "in"
+)

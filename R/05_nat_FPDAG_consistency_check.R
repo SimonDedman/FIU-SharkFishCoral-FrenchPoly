@@ -11,9 +11,10 @@ rm(list = ls())
 # wd <- "/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/NFF Data code/"
 # setwd(wd)
 
-
 # DOWNLOAD THE DAG ####
-DAG <- dagitty('dag {
+# MUST USE SINGLE QUOTES
+DAG <- dagitty(
+  'dag {
 ave_npp [pos="-0.927,0.696"]
 ave_temp [pos="-0.890,1.097"]
 bed_shear_stress [latent,pos="-0.963,1.079"]
@@ -125,7 +126,8 @@ turbidity -> hard_coral
 turbidity -> other_algae
 wave_exposure -> bed_shear_stress
 zooplankton -> planktivores
-}')
+}'
+)
 
 names(DAG)
 
@@ -144,13 +146,14 @@ str(name_match)
 # REPLACE NAMES #####
 var_names <- data.frame(current_name = colnames(dat))
 
-var_names$corrected_name <- FindReplace(var_names,
-                                        "current_name",
-                                        name_match,
-                                        from = "name_in_data",
-                                        to = "name_in_dag",
-                                        exact = T,
-                                        vector = F
+var_names$corrected_name <- FindReplace(
+  var_names,
+  "current_name",
+  name_match,
+  from = "name_in_data",
+  to = "name_in_dag",
+  exact = T,
+  vector = F
 )
 
 colnames(dat) <- as.character(var_names$corrected_name$current_name)
@@ -187,7 +190,6 @@ for (i in 1:ncol(num_vars)) {
 
 # N didn't actually look through to see if anything needs to be transformed...
 
-
 # TRANSFORM DATA ######
 
 ## Function to standardize ####
@@ -197,9 +199,11 @@ for (i in 1:ncol(num_vars)) {
 # } # Sometimes do sd*2 in this...because MacNeil does it in his code...no better reason
 # ddat[, 3:29] <- lapply(ddat[, 3:29], stdize)
 
-
 # check % of data which NAs ####
-nacheck <- sapply(ddat, function(x) paste(round(sum(is.na(x)) / length(x), 2) * 100, "%", sep = ""))
+nacheck <- sapply(
+  ddat,
+  function(x) paste(round(sum(is.na(x)) / length(x), 2) * 100, "%", sep = "")
+)
 nacheck[which(nacheck != "0%")]
 # browser 18%. Is marked as latent in dag import.
 # Just browser...it will be angry so we remove rows with NA...
@@ -228,7 +232,8 @@ noquote(InDagNotData)
 
 # Reload DAG omitting latent variables & browser ####
 # paste full dag from above then manually remove InDagNotData entries. Shrink console.
-DAG <- dagitty('dag {
+DAG <- dagitty(
+  'dag {
 ave_npp [pos="-0.927,0.696"]
 ave_temp [pos="-0.890,1.097"]
 crustose_coraline_algae [pos="-0.923,0.349"]
@@ -286,7 +291,8 @@ sicklefin_lemon_sharks -> piscivores
 sicklefin_lemon_sharks -> reef_sharks
 transient_pelagic_sharks -> piscivores
 transient_pelagic_sharks -> reef_sharks
-}')
+}'
+)
 
 # CREATE FAKE VARIABLES ####
 # The test won't work with missing variables so will need to create some fake ones for now
@@ -315,14 +321,13 @@ transient_pelagic_sharks -> reef_sharks
 # identical(colnames(ddat), names(DAG))
 # names(DAG)[!names(DAG) %in% names(ddat)] # Gucci
 
-
 # EVALUATE THE D-SEPARATION IMPLICATIONS OF THE DAG ####
-test <- dagitty::localTests(x = DAG,
-                            data = ddat,
-                            abbreviate.names = FALSE)
-write.csv(x = test,
-          file = here("Nat_resources", "dag_inconsistencies_all.csv"),
-          row.names = TRUE)
+test <- dagitty::localTests(x = DAG, data = ddat, abbreviate.names = FALSE)
+write.csv(
+  x = test,
+  file = here("Nat_resources", "dag_inconsistencies_all.csv"),
+  row.names = TRUE
+)
 
 
 # SUBSET DATA BASED ON CORRELATION VALUE OR P VALUE ####
@@ -331,54 +336,57 @@ testf2 <- subset(test, estimate >= 0.3 | estimate <= -0.3)
 testf2 <- testf2[rev(order(abs(testf2$estimate))), ] # Sort test results by effect size
 
 # SHOW THE INDEPENDENCIES THAT FAILED ####
-write.csv(x = testf2,
-          file = here("Nat_resources", "dag_inconsistencies.csv"),
-          row.names = TRUE)
+write.csv(
+  x = testf2,
+  file = here("Nat_resources", "dag_inconsistencies.csv"),
+  row.names = TRUE
+)
 dev.off()
 dagitty::plotLocalTestResults(head(testf2, 20)) # Plot 20 results with largest effect size
 
 # Save ddat for analysis stage ####
-write.csv(x = ddat,
-          file = here("Nat_resources", "ReefWideBRUVUVC-DAGtested.csv"),
-          row.names = FALSE)
-
-
+write.csv(
+  x = ddat,
+  file = here("Nat_resources", "ReefWideBRUVUVC-DAGtested.csv"),
+  row.names = FALSE
+)
 
 
 # DAG for BU arrows up ####
-dag {
-  ave_npp [pos="-0.929,0.701"]
-  ave_temp [pos="-0.883,1.029"]
-  bed_shear_stress [latent,pos="-0.963,1.079"]
-  coral_recruitment [latent,pos="-1.179,0.495"]
-  coral_spawning [latent,pos="-1.212,0.819"]
-  crown_of_thorns [latent,pos="-1.147,-0.199"]
-  crustose_coraline_algae [pos="-0.922,0.295"]
-  cyclones [latent,pos="-1.113,1.307"]
-  depth [latent,pos="-0.838,1.489"]
-  emerged_land_area [pos="-0.883,1.585"]
-  hard_coral [exposure,pos="-1.023,-0.240"]
-  herbivores [pos="-0.909,-0.746"]
-  invert [latent,pos="-1.099,-0.065"]
-  invertivores [pos="-1.108,-0.673"]
-  island_geomorphology [pos="-0.970,1.724"]
-  lagoon_size [pos="-1.086,1.471"]
-  latitude [pos="-1.104,1.716"]
-  light [latent,pos="-0.765,1.037"]
-  nutrient_run_off [latent,pos="-1.076,1.247"]
-  offshore_prey [latent,pos="-1.185,-1.199"]
-  other_algae [pos="-0.825,0.260"]
-  other_offshore_prey_proxies [latent,pos="-1.219,-1.030"]
-  piscivores [pos="-0.880,-1.502"]
-  planktivores [pos="-1.203,-0.701"]
-  pop_dens [pos="-0.789,-0.360"]
-  reef_sharks [outcome,pos="-1.024,-1.445"]
-  relief [pos="-1.123,0.674"]
-  sicklefin_lemon_sharks [pos="-1.095,-2.097"]
-  transient_pelagic_sharks [pos="-0.933,-2.078"]
-  turbidity [latent,pos="-0.773,0.592"]
-  wave_exposure [latent,pos="-0.953,1.322"]
-  zooplankton [pos="-1.191,-0.011"]
+dag
+{
+  ave_npp[pos = "-0.929,0.701"]
+  ave_temp[pos = "-0.883,1.029"]
+  bed_shear_stress[latent, pos = "-0.963,1.079"]
+  coral_recruitment[latent, pos = "-1.179,0.495"]
+  coral_spawning[latent, pos = "-1.212,0.819"]
+  crown_of_thorns[latent, pos = "-1.147,-0.199"]
+  crustose_coraline_algae[pos = "-0.922,0.295"]
+  cyclones[latent, pos = "-1.113,1.307"]
+  depth[latent, pos = "-0.838,1.489"]
+  emerged_land_area[pos = "-0.883,1.585"]
+  hard_coral[exposure, pos = "-1.023,-0.240"]
+  herbivores[pos = "-0.909,-0.746"]
+  invert[latent, pos = "-1.099,-0.065"]
+  invertivores[pos = "-1.108,-0.673"]
+  island_geomorphology[pos = "-0.970,1.724"]
+  lagoon_size[pos = "-1.086,1.471"]
+  latitude[pos = "-1.104,1.716"]
+  light[latent, pos = "-0.765,1.037"]
+  nutrient_run_off[latent, pos = "-1.076,1.247"]
+  offshore_prey[latent, pos = "-1.185,-1.199"]
+  other_algae[pos = "-0.825,0.260"]
+  other_offshore_prey_proxies[latent, pos = "-1.219,-1.030"]
+  piscivores[pos = "-0.880,-1.502"]
+  planktivores[pos = "-1.203,-0.701"]
+  pop_dens[pos = "-0.789,-0.360"]
+  reef_sharks[outcome, pos = "-1.024,-1.445"]
+  relief[pos = "-1.123,0.674"]
+  sicklefin_lemon_sharks[pos = "-1.095,-2.097"]
+  transient_pelagic_sharks[pos = "-0.933,-2.078"]
+  turbidity[latent, pos = "-0.773,0.592"]
+  wave_exposure[latent, pos = "-0.953,1.322"]
+  zooplankton[pos = "-1.191,-0.011"]
   ave_npp -> crustose_coraline_algae
   ave_npp -> hard_coral
   ave_npp -> offshore_prey
@@ -478,7 +486,8 @@ turbidity
 wave_exposure
 zooplankton
 
-DAG <- dagitty('dag {
+DAG <- dagitty(
+  'dag {
   ave_npp [pos="-0.927,0.696"]
   ave_temp [exposure,pos="-0.890,1.097"]
   crustose_coraline_algae [pos="-0.923,0.349"]
@@ -536,16 +545,17 @@ DAG <- dagitty('dag {
   sicklefin_lemon_sharks -> reef_sharks
   transient_pelagic_sharks -> piscivores
   transient_pelagic_sharks -> reef_sharks
-}')
+}'
+)
 
 
 # EVALUATE THE D-SEPARATION IMPLICATIONS OF THE DAG
-test <- dagitty::localTests(x = DAG,
-                            data = ddat,
-                            abbreviate.names = FALSE)
-write.csv(x = test,
-          file = here("Nat_resources", "dag_inconsistencies_all.csv"),
-          row.names = TRUE)
+test <- dagitty::localTests(x = DAG, data = ddat, abbreviate.names = FALSE)
+write.csv(
+  x = test,
+  file = here("Nat_resources", "dag_inconsistencies_all.csv"),
+  row.names = TRUE
+)
 
 
 ## SUBSET DATA BASED ON CORRELATION VALUE OR P VALUE ####
@@ -554,15 +564,16 @@ testf2 <- subset(test, estimate >= 0.3 | estimate <= -0.3)
 testf2 <- testf2[rev(order(abs(testf2$estimate))), ] # Sort test results by effect size
 
 ## SHOW THE INDEPENDENCIES THAT FAILED ####
-write.csv(x = testf2,
-          file = here("Nat_resources", "dag_inconsistencies_ave-temp-reefsharks.csv"),
-          row.names = TRUE)
+write.csv(
+  x = testf2,
+  file = here("Nat_resources", "dag_inconsistencies_ave-temp-reefsharks.csv"),
+  row.names = TRUE
+)
 dev.off()
 dagitty::plotLocalTestResults(head(testf2, 20)) # Plot 20 results with largest effect size
 
 # 2024-09-03 SST/reef_sharks linear model ####
-sst.lm <- lm(formula = reef_sharks ~ ave_temp,
-             data = dat)
+sst.lm <- lm(formula = reef_sharks ~ ave_temp, data = dat)
 summary(sst.lm)
 # Residuals:
 #      Min       1Q   Median       3Q      Max
@@ -582,8 +593,6 @@ plot(sst.lm)
 
 
 library(ggplot2)
-ggplot(data = dat,
-       aes(x = ave_temp,
-           y = reef_sharks)) +
+ggplot(data = dat, aes(x = ave_temp, y = reef_sharks)) +
   geom_point() +
   stat_smooth(method = "lm")
