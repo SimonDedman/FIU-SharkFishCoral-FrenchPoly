@@ -296,7 +296,7 @@ transient_pelagic_sharks -> reef_sharks
 
 # CREATE FAKE VARIABLES ####
 # The test won't work with missing variables so will need to create some fake ones for now
-# Suchinta recommends against this, and itr's obviated by doing the trimmed DAG
+# Suchinta recommends against this, and it's obviated by doing the trimmed DAG
 # ddat$`bed_shear_stress` <- runif(n = nrow(ddat), 0, 1)
 # # ddat$`browser` <- runif(n = nrow(ddat), 0, 1) # browser added, observed with 5 NAs, marked as unobserved and adding fake data. Added this to the 5 NAs instead
 # ddat$`cloud_cover` <- runif(n = nrow(ddat), 0, 1)

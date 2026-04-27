@@ -2,20 +2,10 @@
 # For SCMs with 2 topographies and 2 directions from scripts 10_Suchinta-DAG.R & 11_Si-DAG-bottomup.R
 # Simon Dedman, 2025-03-20 simondedman@gmail.com
 
-# USE SPLINE MODELS ####
-# Set to TRUE to use spline models from 11_DAG-TDBU-AtollHI-Collated_studentFam.R
-# Set to FALSE to use original Gaussian models from 11_DAG-TDBU-AtollHI-Collated.R
-use_spline <- TRUE
-
 library(here)
 library(loo)
 library(brms)
 library(tidyverse)
-options(future.globals.maxSize = 1.5 * 1024^3) # 1.5 GiB otherwise add_criterion can run out of memory
-
-
-# Set file suffix based on model type ####
-file_suffix <- ifelse(use_spline, "_spline", "")
 
 # pull raw data for reef names
 rawdata <- readRDS(here(
@@ -116,7 +106,7 @@ for (topo in c(
     loopmodelslist <- readRDS(here(
       "Results",
       "DAG",
-      paste0("models_list_", topo, "_", direction, file_suffix, ".Rds")
+      paste0("models_list_", topo, "_", direction, ".Rds")
     ))
     # Fails across OSes ####
     # If created on linux, won't open in windows.
@@ -202,7 +192,7 @@ readr::write_csv(
   here(
     "Results",
     "DAG",
-    paste0("loo_results", file_suffix, ".csv")
+    "loo_results.csv"
   )
 )
 
@@ -213,7 +203,7 @@ resultsdf |>
   write_csv(here(
     "Results",
     "DAG",
-    paste0("loo_results_summary", file_suffix, ".csv")
+    "loo_results_summary.csv"
   ))
 
 # Save posteriors list: "Compare posteriors" later.
@@ -222,7 +212,7 @@ posteriors_list |>
     here(
       "Results",
       "DAG",
-      paste0("posteriors_list", file_suffix, ".Rds")
+      "posteriors_list.Rds"
     )
   )
 
@@ -232,7 +222,7 @@ bayesR2_list |>
     here(
       "Results",
       "DAG",
-      paste0("bayesR2_list", file_suffix, ".Rds")
+      "bayesR2_list.Rds"
     )
   )
 
@@ -294,10 +284,7 @@ bayesR2 <- data.frame(
     everything(),
     posterior_interval
   )
-write_csv(
-  bayesR2,
-  here("Results", "DAG", paste0("bayesR2", file_suffix, ".csv"))
-)
+write_csv(bayesR2, here("Results", "DAG", "bayesR2.csv"))
 
 bayesR2 |>
   group_by(topo, direction) |>
@@ -305,11 +292,7 @@ bayesR2 |>
     BayesR2 = mean(BayesR2),
     posterior_interval = mean(posterior_interval)
   ) |>
-  write_csv(here(
-    "Results",
-    "DAG",
-    paste0("bayesR2summary", file_suffix, ".csv")
-  ))
+  write_csv(here("Results", "DAG", "bayesR2summary.csv"))
 
 ## Loo Bayes R2 ggplot, direction facet ####
 ggplot(
@@ -364,24 +347,24 @@ ggplot(
     x = "Model (relationship)"
   ) + # labels flipped due to coord flip
   theme_minimal() %+replace%
-    theme(
-      panel.border = element_blank(), # remove plot border
-      panel.grid.major.y = element_blank(),
-      panel.grid.minor.x = element_blank(),
-      plot.background = element_rect(fill = "white", colour = "white"), # white background, hide border
-      legend.position = c(0.95, 1),
-      legend.justification = c("right", "top"),
-      legend.spacing.y = unit(0.01, "cm"),
-      legend.key.spacing = unit(0.01, "cm"),
-      legend.margin = margin(unit(0.01, "cm")),
-      legend.direction = "horizontal",
-      legend.text.position = "right",
-      legend.title = element_blank(),
-      legend.background = element_rect(fill = "white", colour = "white"),
-      axis.text = element_text(size = 10),
-      legend.text = element_text(size = 10),
-      strip.text.x = element_text(size = 10)
-    )
+  theme(
+    panel.border = element_blank(), # remove plot border
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    plot.background = element_rect(fill = "white", colour = "white"), # white background, hide border
+    legend.position = c(0.95, 1),
+    legend.justification = c("right", "top"),
+    legend.spacing.y = unit(0.01, "cm"),
+    legend.key.spacing = unit(0.01, "cm"),
+    legend.margin = margin(unit(0.01, "cm")),
+    legend.direction = "horizontal",
+    legend.text.position = "right",
+    legend.title = element_blank(),
+    legend.background = element_rect(fill = "white", colour = "white"),
+    axis.text = element_text(size = 10),
+    legend.text = element_text(size = 10),
+    strip.text.x = element_text(size = 10)
+  )
 # Save plot
 ggsave(
   here(
@@ -389,9 +372,7 @@ ggsave(
     "DAG",
     paste0(
       today(),
-      "_BayesR2_facetDirection",
-      file_suffix,
-      ".png"
+      "_BayesR2_facetDirection.png"
     )
   ),
   width = 8,
@@ -424,6 +405,8 @@ bayesR2 |>
   dplyr::pull()
 
 
+
+
 ## Loo Bayes R2 ggplot, topo facet ####
 ggplot(
   bayesR2 |>
@@ -442,17 +425,15 @@ ggplot(
             dplyr::pull(),
           times = 4
         ),
-        levels = rev(
-          bayesR2 |>
-            # replace " on " with " - " in model column entries
-            dplyr::mutate(model = gsub(" on ", " - ", model)) |>
-            dplyr::filter(
-              topo == "Atolls",
-              direction == "TopDown"
-            ) |>
-            dplyr::select(model) |>
-            dplyr::pull()
-        )
+        levels = rev(bayesR2 |>
+          # replace " on " with " - " in model column entries
+          dplyr::mutate(model = gsub(" on ", " - ", model)) |>
+          dplyr::filter(
+            topo == "Atolls",
+            direction == "TopDown"
+          ) |>
+          dplyr::select(model) |>
+          dplyr::pull())
       )
     ),
   aes(
@@ -490,40 +471,29 @@ ggplot(
     values = c("TopDown" = "#F8766D", "BottomUp" = "#1b9e77")
   ) +
   scale_linewidth_discrete(range = c(0.4, 1.4)) +
-  guides(
-    colour = guide_legend(nrow = 1),
-    linewidth = guide_legend(nrow = 1)
-  ) +
   labs(
     y = "Bayesian R² (model explanatory power)",
-    x = "" # "Model (relationship)"
+    x = "Model (relationship)"
   ) + # labels flipped due to coord flip
-  scale_y_continuous(expand = expansion(mult = c(0.05, 0.01))) + # shrink right edge space
-  theme_minimal() + # %+replace%
+  theme_minimal() %+replace%
   theme(
     panel.border = element_blank(), # remove plot border
     panel.grid.major.y = element_blank(),
     panel.grid.minor.x = element_blank(),
     plot.background = element_rect(fill = "white", colour = "white"), # white background, hide border
-    plot.margin = margin(t = 5, r = 5, b = 5, l = 0, unit = "pt"),
-    # legend.position = c(1.01, 1.01),
-    legend.position = c(-0.57, 1.035),
-    # legend.justification = c("right", "top"),
-    legend.justification = c("left", "top"),
+    legend.position = c(0.95, 1),
+    legend.justification = c("right", "top"),
     legend.spacing.y = unit(0.01, "cm"),
-    legend.spacing.x = unit(0.01, "cm"),
     legend.key.spacing = unit(0.01, "cm"),
     legend.margin = margin(unit(0.01, "cm")),
     legend.direction = "horizontal",
     legend.text.position = "right",
     legend.title = element_blank(),
     legend.background = element_rect(fill = "white", colour = "white"),
-    legend.box = "horizontal",
     axis.text = element_text(size = 10),
     legend.text = element_text(size = 10),
-    strip.text.x = element_text(size = 10, hjust = 1)
-  ) +
-  theme_sub_axis_left(text = element_text(margin = margin_auto(-14))) # shrink gap between left axis labels and Y axis. new in ggplot4
+    strip.text.x = element_text(size = 10)
+  )
 # Save plot
 ggsave(
   here(
@@ -531,12 +501,10 @@ ggsave(
     "DAG",
     paste0(
       today(),
-      "_BayesR2_facetTopo",
-      file_suffix,
-      ".png"
+      "_BayesR2_facetTopo.png"
     )
   ),
-  width = 6,
+  width = 8,
   height = 8
 )
 
@@ -549,7 +517,6 @@ ggplot(
     ymin = Q2.5,
     ymax = Q97.5,
     colour = factor(direction, levels = c("TopDown", "BottomUp")),
-    fill = factor(direction, levels = c("TopDown", "BottomUp")),
     group = interaction(
       topo,
       factor(direction, levels = c("TopDown", "BottomUp"))
@@ -572,32 +539,29 @@ ggplot(
   scale_colour_manual(
     values = c("TopDown" = "#F8766D", "BottomUp" = "#1b9e77")
   ) +
-  scale_fill_manual(
-    values = c("TopDown" = "#ffd6c8", "BottomUp" = "#9fd1c2")
-  ) +
   labs(
     y = "Bayesian R² (model explanatory power)",
     x = "Island geomorphology",
   ) + # labels flipped due to coord flip
   theme_minimal() %+replace%
-    theme(
-      panel.border = element_blank(), # remove plot border
-      panel.grid.major.y = element_blank(),
-      panel.grid.minor.x = element_blank(),
-      plot.background = element_rect(fill = "white", colour = "white"), # white background, hide border
-      legend.position = c(0.95, 1),
-      legend.justification = c("right", "top"),
-      legend.spacing.y = unit(0.01, "cm"),
-      legend.key.spacing = unit(0.01, "cm"),
-      legend.margin = margin(unit(0.01, "cm")),
-      legend.direction = "horizontal",
-      legend.text.position = "right",
-      legend.title = element_blank(),
-      legend.background = element_rect(fill = "white", colour = "white"),
-      axis.text = element_text(size = 20),
-      legend.text = element_text(size = 20),
-      axis.title = element_text(size = 20)
-    )
+  theme(
+    panel.border = element_blank(), # remove plot border
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    plot.background = element_rect(fill = "white", colour = "white"), # white background, hide border
+    legend.position = c(0.95, 1),
+    legend.justification = c("right", "top"),
+    legend.spacing.y = unit(0.01, "cm"),
+    legend.key.spacing = unit(0.01, "cm"),
+    legend.margin = margin(unit(0.01, "cm")),
+    legend.direction = "horizontal",
+    legend.text.position = "right",
+    legend.title = element_blank(),
+    legend.background = element_rect(fill = "white", colour = "white"),
+    axis.text = element_text(size = 20),
+    legend.text = element_text(size = 20),
+    axis.title = element_text(size = 20)
+  )
 # Save plot
 ggsave(
   here(
@@ -605,9 +569,7 @@ ggsave(
     "DAG",
     paste0(
       today(),
-      "_BayesR2boxplots",
-      file_suffix,
-      ".png"
+      "_BayesR2boxplots.png"
     )
   ),
   width = 8,
@@ -618,43 +580,6 @@ ggsave(
 # Calculate posteriors per model/relationship ####
 slope_summary_df <- data.frame()
 
-# Helper function to extract effect estimates from models
-# For linear models: extracts fixed effect coefficient
-# For spline models: extracts smooth term SD estimate
-extract_effect_estimate <- function(model) {
-  fe <- brms::fixef(model)
-
-  # Check if this is a spline model (only has Intercept as fixed effect)
-  if (nrow(fe) == 1) {
-    # Spline model - extract smooth term information
-    smooth_pars <- as.data.frame(summary(model)$splines)
-    if (nrow(smooth_pars) > 0) {
-      return(list(
-        predictor = "smooth_term",
-        estimate = smooth_pars[1, "Estimate"],
-        lower = smooth_pars[1, "l-95% CI"],
-        upper = smooth_pars[1, "u-95% CI"]
-      ))
-    } else {
-      return(list(
-        predictor = "intercept_only",
-        estimate = 0,
-        lower = 0,
-        upper = 0
-      ))
-    }
-  } else {
-    # Linear model - extract fixed effect coefficient
-    predictor_name <- rownames(fe)[2] # [1] is Intercept
-    return(list(
-      predictor = predictor_name,
-      estimate = fe[predictor_name, "Estimate"],
-      lower = fe[predictor_name, "Q2.5"],
-      upper = fe[predictor_name, "Q97.5"]
-    ))
-  }
-}
-
 for (topo in c("Atolls", "HighIslands")) {
   for (direction in c("TopDown", "BottomUp")) {
     message(paste("Extracting slope posteriors for", topo, direction))
@@ -662,14 +587,16 @@ for (topo in c("Atolls", "HighIslands")) {
     model_path <- here(
       "Results",
       "DAG",
-      paste0("models_list_", topo, "_", direction, file_suffix, ".Rds")
+      paste0("models_list_", topo, "_", direction, ".Rds")
     )
     models <- readRDS(model_path)
 
     for (i in seq_along(models)) {
       model <- models[[i]]
-      # Extract effect estimate (handles both linear and spline models)
-      effect_info <- extract_effect_estimate(model)
+      # Get posterior summary for all fixed effects
+      fe <- brms::fixef(model)
+      # Extract the first predictor only (the causal one)
+      predictor_name <- rownames(fe)[2] # [1] is Intercept
 
       slope_summary_df <- rbind(
         slope_summary_df,
@@ -677,10 +604,10 @@ for (topo in c("Atolls", "HighIslands")) {
           topo = topo,
           direction = direction,
           model_index = i,
-          predictor = effect_info$predictor,
-          slope_mean = effect_info$estimate,
-          slope_lower = effect_info$lower,
-          slope_upper = effect_info$upper
+          predictor = predictor_name,
+          slope_mean = fe[predictor_name, "Estimate"],
+          slope_lower = fe[predictor_name, "Q2.5"],
+          slope_upper = fe[predictor_name, "Q97.5"]
         )
       )
     }
@@ -691,7 +618,7 @@ for (topo in c("Atolls", "HighIslands")) {
 
 readr::write_csv(
   slope_summary_df,
-  here("Results", "DAG", paste0("model_slope_posteriors", file_suffix, ".csv"))
+  here("Results", "DAG", "model_slope_posteriors.csv")
 )
 
 slope_summary_df |>
@@ -717,9 +644,7 @@ slope_summary_df |>
   ) +
   geom_pointrange(position = position_dodge(width = 0.6)) +
   scale_shape_manual(values = c("BottomUp" = 24, "TopDown" = 25)) +
-  scale_colour_manual(
-    values = c("Atolls" = "#1f77b4", "HighIslands" = "#ff7f0e")
-  ) +
+  scale_colour_manual(values = c("Atolls" = "#1f77b4", "HighIslands" = "#ff7f0e")) +
   labs(
     x = "Relationship",
     y = "Standardized coefficient (mean ± 95% CI)",
@@ -731,25 +656,25 @@ slope_summary_df |>
   #   axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.25)
   #       )
   theme_minimal() %+replace%
-    theme(
-      axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.25),
-      panel.border = element_blank(), # remove plot border
-      panel.grid.major.y = element_blank(),
-      panel.grid.minor.x = element_blank(),
-      plot.background = element_rect(fill = "white", colour = "white"), # white background, hide border
-      legend.position = c(0.95, 1),
-      legend.justification = c("right", "top"),
-      legend.spacing.y = unit(0.01, "cm"),
-      legend.key.spacing = unit(0.01, "cm"),
-      legend.margin = margin(unit(0.01, "cm")),
-      legend.direction = "horizontal",
-      legend.text.position = "right",
-      legend.title = element_blank(),
-      legend.background = element_rect(fill = "white", colour = "white"),
-      axis.text = element_text(size = 12),
-      legend.text = element_text(size = 20),
-      axis.title = element_text(size = 20)
-    )
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.25),
+    panel.border = element_blank(), # remove plot border
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    plot.background = element_rect(fill = "white", colour = "white"), # white background, hide border
+    legend.position = c(0.95, 1),
+    legend.justification = c("right", "top"),
+    legend.spacing.y = unit(0.01, "cm"),
+    legend.key.spacing = unit(0.01, "cm"),
+    legend.margin = margin(unit(0.01, "cm")),
+    legend.direction = "horizontal",
+    legend.text.position = "right",
+    legend.title = element_blank(),
+    legend.background = element_rect(fill = "white", colour = "white"),
+    axis.text = element_text(size = 12),
+    legend.text = element_text(size = 20),
+    axis.title = element_text(size = 20)
+  )
 # Save plot
 ggsave(
   here(
@@ -757,9 +682,7 @@ ggsave(
     "DAG",
     paste0(
       today(),
-      "_slope_posteriors",
-      file_suffix,
-      ".png"
+      "_slope_posteriors.png"
     )
   ),
   width = 10,
@@ -897,10 +820,7 @@ comp <- bind_rows(
     )
   ) |>
   dplyr::select(-n)
-write_csv(
-  comp,
-  here("Results", "DAG", paste0("loo_compare_results", file_suffix, ".csv"))
-)
+write_csv(comp, here("Results", "DAG", "loo_compare_results.csv"))
 
 
 # compare elpd_loo (higher is better) for TopDown vs BottomUp (direction) models
@@ -941,7 +861,7 @@ loo_compare_results_summary |>
   write_csv(here(
     "Results",
     "DAG",
-    paste0("loo_compare_results_summary", file_suffix, ".csv")
+    "loo_compare_results_summary.csv"
   ))
 
 # Save summary only where stacking weights are fine
@@ -956,7 +876,7 @@ loo_compare_results_summary |>
   write_csv(here(
     "Results",
     "DAG",
-    paste0("loo_compare_results_summary_stackweightsfine", file_suffix, ".csv")
+    "loo_compare_results_summary_stackweightsfine.csv"
   ))
 
 # Which links reverse direction of support across topo
@@ -980,7 +900,7 @@ write_csv(
   here(
     "Results",
     "DAG",
-    paste0("best_direction_per_topo", file_suffix, ".csv")
+    "best_direction_per_topo.csv"
   )
 )
 
@@ -1006,7 +926,7 @@ best_direction_per_topo |>
     here(
       "Results",
       "DAG",
-      paste0("best_direction_per_topo_sign", file_suffix, ".csv")
+      "best_direction_per_topo_sign.csv"
     )
   )
 
@@ -1016,7 +936,7 @@ stacking_results |>
   write_csv(here(
     "Results",
     "DAG",
-    paste0("loo_model_weights_means", file_suffix, ".csv")
+    "loo_model_weights_means.csv"
   ))
 
 
@@ -1046,13 +966,12 @@ elpd_obs_df <- bind_rows(
         str_replace_all("[._]", " ") |>
         str_replace_all("cca", "crustose coraline algae") |>
         str_squish() |>
-        (\(x) {
-          case_when(
-            x %in% c("piscivore", "invertivore", "herbivore", "planktivore") ~
-              paste0(x, "s"),
-            TRUE ~ x
-          )
-        })(),
+        (\(x)
+        case_when(
+          x %in% c("piscivore", "invertivore", "herbivore", "planktivore") ~
+            paste0(x, "s"),
+          TRUE ~ x
+        ))(),
       .names = "{.col}"
     ),
     predictors = predictors |> str_to_sentence(),
@@ -1080,7 +999,7 @@ elpd_obs_df |>
   write_csv(here(
     "Results",
     "DAG",
-    paste0("elpd_sw_topo_direction_reef_model", file_suffix, ".csv")
+    "elpd_sw_topo_direction_reef_model.csv"
   ))
 
 # widen by direction
@@ -1136,7 +1055,7 @@ elpd_obs_df |>
   write_csv(here(
     "Results",
     "DAG",
-    paste0("elpd_sw_topo_model", file_suffix, ".csv")
+    "elpd_sw_topo_model.csv"
   ))
 
 # weight elpd by stacking weight & widen by direction
@@ -1176,7 +1095,7 @@ elpd_obs_df |>
   write_csv(here(
     "Results",
     "DAG",
-    paste0("elpd_sw_topo_model_weighted", file_suffix, ".csv")
+    "elpd_sw_topo_model_weighted.csv"
   ))
 
 
@@ -1240,7 +1159,7 @@ write_csv(
   here(
     "Results",
     "DAG",
-    paste0("elpd_sw_topo_direction_reef", file_suffix, ".csv")
+    "elpd_sw_topo_direction_reef.csv"
   )
 )
 
@@ -1289,9 +1208,7 @@ ggsave(
     "DAG",
     paste0(
       today(),
-      "_stacking_weights",
-      file_suffix,
-      ".png"
+      "_stacking_weights.png"
     )
   ),
   width = 10,
@@ -1336,9 +1253,7 @@ ggsave(
     "DAG",
     paste0(
       today(),
-      "_elpd_loo_by_model_direction",
-      file_suffix,
-      ".png"
+      "_elpd_loo_by_model_direction.png"
     )
   ),
   width = 10,
@@ -1458,7 +1373,7 @@ final_preds |>
   write_csv(here(
     "Results",
     "DAG",
-    paste0("posterior_predictions", file_suffix, ".csv")
+    "posterior_predictions.csv"
   ))
 
 # Strong predictive support only: credible intervals not overlapping zero
@@ -1467,7 +1382,7 @@ final_preds |>
   write_csv(here(
     "Results",
     "DAG",
-    paste0("posterior_predictions_credible", file_suffix, ".csv")
+    "posterior_predictions_credible.csv"
   ))
 
 
@@ -1481,7 +1396,7 @@ final_preds |>
   write_csv(here(
     "Results",
     "DAG",
-    paste0("posterior_predictions_summary", file_suffix, ".csv")
+    "posterior_predictions_summary.csv"
   ))
 # topo        direction      mean_effect  prop_strong
 # Atolls      BottomUp       0.129        1
@@ -1507,7 +1422,7 @@ prediction_diffs |>
   write_csv(here(
     "Results",
     "DAG",
-    paste0("posterior_prediction_diffs", file_suffix, ".csv")
+    "posterior_prediction_diffs.csv"
   ))
 
 # join elpd & sw to posteriors
@@ -1528,7 +1443,7 @@ elpd_post_obs |>
   write_csv(here(
     "Results",
     "DAG",
-    paste0("elpd_sw_topo_direction_reef_posterior", file_suffix, ".csv")
+    "elpd_sw_topo_direction_reef_posterior.csv"
   ))
 
 # weight ELPD by stacking weight
@@ -1569,11 +1484,7 @@ write_csv(
   here(
     "Results",
     "DAG",
-    paste0(
-      "elpd_sw_topo_direction_reef_posterior_weighted",
-      file_suffix,
-      ".csv"
-    )
+    "elpd_sw_topo_direction_reef_posterior_weighted.csv"
   )
 )
 
@@ -1634,11 +1545,7 @@ elpd_post_obs_class |>
   write_csv(here(
     "Results",
     "DAG",
-    paste0(
-      "elpd_sw_topo_direction_reef_posterior_classification",
-      file_suffix,
-      ".csv"
-    )
+    "elpd_sw_topo_direction_reef_posterior_classification.csv"
   ))
 
 elpd_post_obs_class |>
@@ -1660,11 +1567,7 @@ elpd_post_obs_class |>
   write_csv(here(
     "Results",
     "DAG",
-    paste0(
-      "elpd_sw_topo_direction_reef_posterior_classification_summary",
-      file_suffix,
-      ".csv"
-    )
+    "elpd_sw_topo_direction_reef_posterior_classification_summary.csv"
   ))
 
 
@@ -1689,10 +1592,10 @@ ggplot(
     x = "<-- HighIslands        Reef Name        Atolls -->"
   ) + # labels flipped due to coord flip
   theme_minimal() %+replace%
-    theme(
-      panel.border = element_blank(), # remove plot border
-      plot.background = element_rect(fill = "white", colour = "white") # white background, hide border
-    )
+  theme(
+    panel.border = element_blank(), # remove plot border
+    plot.background = element_rect(fill = "white", colour = "white") # white background, hide border
+  )
 
 # Save plot
 ggsave(
@@ -1701,9 +1604,7 @@ ggsave(
     "DAG",
     paste0(
       today(),
-      "_posterior_predictions",
-      file_suffix,
-      ".png"
+      "_posterior_predictions.png"
     )
   ),
   width = 16,
@@ -1788,7 +1689,7 @@ for (topo in c("Atolls", "HighIslands")) {
     filename = here(
       "Results",
       "DAG",
-      paste0("violin_elpd_diff_", topo, file_suffix, ".png")
+      paste0("violin_elpd_diff_", topo, ".png")
     ),
     plot = g,
     width = 6,
@@ -1799,7 +1700,7 @@ for (topo in c("Atolls", "HighIslands")) {
 # Save summary table
 readr::write_csv(
   elpd_pointwise_summary,
-  here("Results", "DAG", paste0("elpd_pointwise_summary", file_suffix, ".csv"))
+  here("Results", "DAG", "elpd_pointwise_summary.csv")
 )
 
 
@@ -1826,26 +1727,10 @@ resultssum <- elpd_post_obs_weight |>
   )
 
 ## 4 panel ####
-TDhighislandplot <- readRDS(here(
-  "Results",
-  "DAG",
-  paste0("TDhighislandplot", file_suffix, ".Rds")
-))
-TDatollplot <- readRDS(here(
-  "Results",
-  "DAG",
-  paste0("TDatollplot", file_suffix, ".Rds")
-))
-BUhighislandplot <- readRDS(here(
-  "Results",
-  "DAG",
-  paste0("BUhighislandplot", file_suffix, ".Rds")
-))
-BUatollplot <- readRDS(here(
-  "Results",
-  "DAG",
-  paste0("BUatollplot", file_suffix, ".Rds")
-))
+TDhighislandplot <- readRDS(here("Results", "DAG", "TDhighislandplot.Rds"))
+TDatollplot <- readRDS(here("Results", "DAG", "TDatollplot.Rds"))
+BUhighislandplot <- readRDS(here("Results", "DAG", "BUhighislandplot.Rds"))
+BUatollplot <- readRDS(here("Results", "DAG", "BUatollplot.Rds"))
 
 plot_grid(
   TDhighislandplot,
@@ -1890,106 +1775,229 @@ ggsave(
     "DAG",
     paste0(
       today(),
-      "_loo_plots_4panel",
-      file_suffix,
-      ".png"
+      "_loo_plots_4panel.png"
     )
   ),
   width = 16,
   height = 8
 )
 
+# ALL BELOW HERE NOW DEFUNCT 2025-05-09 ####
 
-# Plot BayesR2 bars per group, FIg7?####
-# open /home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/Results/DAG/bayesR2.xlsx
-# sheet: piv.Gp.Means, cells A7:E11
-bayesR2_df <- readxl::read_excel(
-  here(
-    "Results",
-    "DAG",
-    "bayesR2.xlsx"
-  ),
-  range = "piv.Gp.Means!A9:E11",
-  col_names = c(
-    "Rownames",
-    "Atolls: Top Down",
-    "Atolls: Bottom Up",
-    "High Islands: Top Down",
-    "High Islands: Bottom Up"
-  )
-) |>
-  # convert "Rownames" column to row names
-  column_to_rownames(var = "Rownames") |>
-  # pivot longer
-  rownames_to_column(var = "Category") |>
-  pivot_longer(
-    cols = -Category,
-    names_to = "Group",
-    values_to = "ycentred"
-  ) |>
-  # split Group into Topology and Direction
-  separate(
-    Group,
-    into = c("Topology", "Direction"),
-    sep = ": "
-  )
-
-library(ggh4x)
-
-bayesR2_df$Category <- factor(
-  bayesR2_df$Category,
-  levels = c("Large Meso", "Meso", "Basal")
-)
-bayesR2_df$Direction <- factor(
-  bayesR2_df$Direction,
-  levels = c("Top Down", "Bottom Up")
-)
-
-ggplot(bayesR2_df, aes(x = Direction, y = ycentred, fill = Category)) +
-  geom_col(position = position_dodge(width = 0.8), width = 0.7) +
-  facet_nested(
-    . ~ Topology + Direction,
-    scales = "free_x",
-    switch = "x",
-    nest_line = element_line(),
-    strip = strip_nested(size = "variable")
-  ) +
-  scale_fill_manual(
-    values = c(
-      "Large Meso" = "#F8766D",
-      "Meso" = "#619CFF",
-      "Basal" = "#00BA38"
-    )
-  ) +
-  scale_y_continuous(breaks = seq(-0.4, 0.4, by = 0.1)) +
-  labs(x = "", y = expression(Mean ~ Bayes ~ R^2)) +
-  theme_minimal() +
-  theme(
-    strip.placement = "outside",
-    axis.text.x = element_blank(),
-    axis.ticks.x = element_blank(),
-    axis.text.y = element_text(size = rel(1.5)),
-    axis.title.y = element_text(size = rel(1.5)),
-    strip.text = element_text(size = rel(1.3)),
-    legend.position = c(0.45, 0.85),
-    legend.justification = c(0, 1),
-    legend.text = element_text(size = rel(1.3)),
-    legend.title = element_text(size = rel(1.3)),
-    legend.background = element_rect(fill = "white", colour = NA)
-  )
-
-ggplot2::ggsave(
-  filename = paste0(today(), "_bayesR2groupsColplot.png"),
-  plot = last_plot(),
-  device = "png",
-  path = here(
-    "Results",
-    "DAG"
-  ),
-  scale = 2,
-  width = 4 * 480,
-  height = 4 * 480,
-  units = "px",
-  dpi = 300,
-  limitsize = TRUE
-)
+# # Once both sets of models (AS-MS & TPS-SLS-RS) are run, compare them ####
+# # Compare pairwise links across models
+# TPSSLSRS <- read_csv(here("Results", "DAG", "loo_results_TPS-SLS-RS.csv")) |>
+#   mutate(combo = "TPS-SLS-RS") |>
+#   select(combo, topo, direction, model, elpd_loo)
+#
+# ASMS <- read_csv(here("Results", "DAG", "loo_results_AS-MS.csv")) |>
+#   mutate(combo = "AS-MS") |>
+#   select(combo, topo, direction, model, elpd_loo)
+# # rbind both dfs
+# alltests <- rbind(TPSSLSRS, ASMS) |>
+#   rename(TDmodel = model) |>
+#   # pivot wider from combo, topo, direction to elpd_loo
+#   pivot_wider(names_from = c(combo, topo, direction), values_from = elpd_loo)
+# alltests$BUmodel <- alltests$TDmodel[c(14:26, rep(NA, 13))]
+# alltests$`AS-MS_All_BottomUp`[1:13] <- alltests$`AS-MS_All_BottomUp`[14:26]
+# alltests$`AS-MS_HighIslands_BottomUp`[
+#   1:13
+# ] <- alltests$`AS-MS_HighIslands_BottomUp`[14:26]
+# alltests$`AS-MS_Atolls_BottomUp`[1:13] <- alltests$`AS-MS_Atolls_BottomUp`[
+#   14:26
+# ]
+# alltests$`TPS-SLS-RS_All_BottomUp`[1:13] <- alltests$`TPS-SLS-RS_All_BottomUp`[
+#   14:26
+# ]
+# alltests$`TPS-SLS-RS_HighIslands_BottomUp`[
+#   1:13
+# ] <- alltests$`TPS-SLS-RS_HighIslands_BottomUp`[14:26]
+# alltests$`TPS-SLS-RS_Atolls_BottomUp`[
+#   1:13
+# ] <- alltests$`TPS-SLS-RS_Atolls_BottomUp`[14:26]
+# alltests <- alltests[-c(14:26), ]
+#
+#
+# # Once both sets of models (SLS-RS-All & SLS-RS-NoMarquesas) are run, compare them ####
+# # Compare pairwise links across models
+# TPSSLSRS <- read_csv(here("Results", "DAG", "loo_results_SLS-RS.csv")) |>
+#   mutate(combo = "All") |>
+#   select(combo, topo, direction, model, elpd_loo)
+#
+# ASMS <- read_csv(here(
+#   "Results",
+#   "DAG",
+#   "loo_results_SLS-RS.csv"
+# )) |>
+#   mutate(combo = "NoMarquesas") |>
+#   select(combo, topo, direction, model, elpd_loo)
+#
+# # rbind both dfs
+# alltests <- rbind(TPSSLSRS, ASMS) |>
+#   rename(TDmodel = model) |>
+#   # pivot wider from combo, topo, direction to elpd_loo
+#   pivot_wider(names_from = c(combo, topo, direction), values_from = elpd_loo)
+# alltests$BUmodel <- alltests$TDmodel[c(12:22, rep(NA, 11))]
+# alltests$`All_Atolls_BottomUp`[1:11] <- alltests$`All_Atolls_BottomUp`[12:22]
+# alltests$`All_HighIslands_BottomUp`[
+#   1:11
+# ] <- alltests$`All_HighIslands_BottomUp`[12:22]
+# alltests$`All_All_BottomUp`[1:11] <- alltests$`All_All_BottomUp`[12:22]
+# alltests$`NoMarquesas_Atolls_BottomUp`[
+#   1:11
+# ] <- alltests$`NoMarquesas_Atolls_BottomUp`[12:22]
+# alltests$`NoMarquesas_HighIslands_BottomUp`[
+#   1:11
+# ] <- alltests$`NoMarquesas_HighIslands_BottomUp`[12:22]
+# alltests$`NoMarquesas_All_BottomUp`[
+#   1:11
+# ] <- alltests$`NoMarquesas_All_BottomUp`[12:22]
+# alltests <- alltests[-c(12:22), ]
+#
+#
+# ## HighIslands BottomUp only ####
+# HIBU <- alltests |>
+#   select(
+#     BUmodel,
+#     `TPS-SLS-RS_HighIslands_BottomUp`,
+#     `AS-MS_HighIslands_BottomUp`
+#   ) |>
+#   mutate(
+#     diff = `TPS-SLS-RS_HighIslands_BottomUp` - `AS-MS_HighIslands_BottomUp`,
+#     # round all numbers to 3 decimal places
+#     across(where(is.numeric), \(x) round(x, digits = 3))
+#   ) |>
+#   # Rename columns to remove "_HighIslands_BottomUp"
+#   rename(
+#     `TPS-SLS-RS` = `TPS-SLS-RS_HighIslands_BottomUp`,
+#     `AS-MS` = `AS-MS_HighIslands_BottomUp`
+#   )
+#
+#
+# ## All tests synthesis: TPS-SLS-RS vs AS-MS ####
+# alltests <- alltests |>
+#   mutate(
+#     `TPS-SLS-RS_Atolls` = ifelse(
+#       `TPS-SLS-RS_Atolls_TopDown` < `TPS-SLS-RS_Atolls_BottomUp`,
+#       "TD",
+#       "BU"
+#     ),
+#     `TPS-SLS-RS_HighIslands` = ifelse(
+#       `TPS-SLS-RS_HighIslands_TopDown` < `TPS-SLS-RS_HighIslands_BottomUp`,
+#       "TD",
+#       "BU"
+#     ),
+#     `TPS-SLS-RS_All` = ifelse(
+#       `TPS-SLS-RS_All_TopDown` < `TPS-SLS-RS_All_BottomUp`,
+#       "TD",
+#       "BU"
+#     ),
+#     `AS-MS_Atolls` = ifelse(
+#       `AS-MS_Atolls_TopDown` < `AS-MS_Atolls_BottomUp`,
+#       "TD",
+#       "BU"
+#     ),
+#     `AS-MS_HighIslands` = ifelse(
+#       `AS-MS_HighIslands_TopDown` < `AS-MS_HighIslands_BottomUp`,
+#       "TD",
+#       "BU"
+#     ),
+#     `AS-MS_All` = ifelse(
+#       `AS-MS_All_TopDown` < `AS-MS_All_BottomUp`,
+#       "TD",
+#       "BU"
+#     ),
+#     # if same, report "BothTD" or "BothBU" depending on values, else "Diff", unless contains NA in which case NA
+#     Atolls = ifelse(
+#       `TPS-SLS-RS_Atolls` == `AS-MS_Atolls`,
+#       ifelse(`TPS-SLS-RS_Atolls` == "TD", "BothTD", "BothBU"),
+#       "Diff"
+#     ),
+#     HighIslands = ifelse(
+#       `TPS-SLS-RS_HighIslands` == `AS-MS_HighIslands`,
+#       ifelse(`TPS-SLS-RS_HighIslands` == "TD", "BothTD", "BothBU"),
+#       "Diff"
+#     ),
+#     All = ifelse(
+#       `TPS-SLS-RS_All` == `AS-MS_All`,
+#       ifelse(`TPS-SLS-RS_All` == "TD", "BothTD", "BothBU"),
+#       "Diff"
+#     ),
+#     BothReefs = ifelse(
+#       Atolls == HighIslands,
+#       ifelse(Atolls == "BothTD", "BothTD", "BothBU"),
+#       "Diff"
+#     )
+#   ) |>
+#   select(TDmodel, BUmodel, Atolls, HighIslands, BothReefs, everything())
+#
+# write_csv(
+#   alltests,
+#   here("Results", "DAG", "loo_results_comparison_TPS-SLS-RS_AS-MS.csv")
+# )
+#
+#
+# ## All tests synthesis: All vs NoMarquesas ####
+# alltests <- alltests |>
+#   mutate(
+#     `All_Atolls` = ifelse(
+#       `All_Atolls_TopDown` < `All_Atolls_BottomUp`,
+#       "TD",
+#       "BU"
+#     ),
+#     `All_HighIslands` = ifelse(
+#       `All_HighIslands_TopDown` < `All_HighIslands_BottomUp`,
+#       "TD",
+#       "BU"
+#     ),
+#     `All_All` = ifelse(
+#       `All_All_TopDown` < `All_All_BottomUp`,
+#       "TD",
+#       "BU"
+#     ),
+#     `NoMarquesas_Atolls` = ifelse(
+#       `NoMarquesas_Atolls_TopDown` < `NoMarquesas_Atolls_BottomUp`,
+#       "TD",
+#       "BU"
+#     ),
+#     `NoMarquesas_HighIslands` = ifelse(
+#       `NoMarquesas_HighIslands_TopDown` < `NoMarquesas_HighIslands_BottomUp`,
+#       "TD",
+#       "BU"
+#     ),
+#     `NoMarquesas_All` = ifelse(
+#       `NoMarquesas_All_TopDown` < `NoMarquesas_All_BottomUp`,
+#       "TD",
+#       "BU"
+#     ),
+#     # if same, report "BothTD" or "BothBU" depending on values, else "Diff", unless contains NA in which case NA
+#     Atolls = ifelse(
+#       `All_Atolls` == `NoMarquesas_Atolls`,
+#       ifelse(`All_Atolls` == "TD", "BothTD", "BothBU"),
+#       "Diff"
+#     ),
+#     HighIslands = ifelse(
+#       `All_HighIslands` == `NoMarquesas_HighIslands`,
+#       ifelse(`All_HighIslands` == "TD", "BothTD", "BothBU"),
+#       "Diff"
+#     ),
+#     All = ifelse(
+#       `All_All` == `NoMarquesas_All`,
+#       ifelse(`All_All` == "TD", "BothTD", "BothBU"),
+#       "Diff"
+#     ),
+#     BothReefs = ifelse(
+#       Atolls == HighIslands,
+#       ifelse(Atolls == "BothTD", "BothTD", "BothBU"),
+#       "Diff"
+#     )
+#   ) |>
+#   select(TDmodel, BUmodel, everything()) # Atolls, HighIslands, BothReefs,
+#
+# write_csv(
+#   alltests,
+#   here("Results", "DAG", "loo_results_comparison_All.csv")
+# )
+#
+# # Quick view:
+# tmp <- alltests |> select(TDmodel, BUmodel, All_Atolls:BothReefs)

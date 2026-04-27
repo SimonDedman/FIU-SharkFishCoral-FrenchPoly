@@ -11,6 +11,14 @@
 
 # loo plots: I could add the elpdloo score above each dot, so we can see which relationships are driving the panel average elpdloo scores
 
+# USE SPLINE MODELS ####
+# Set to TRUE to use spline models from 11_DAG-TDBU-AtollHI-Collated_studentFam.R
+# Set to FALSE to use original Gaussian models from 11_DAG-TDBU-AtollHI-Collated.R
+use_spline <- TRUE
+
+# Set file suffix based on model type ####
+file_suffix <- ifelse(use_spline, "_spline", "")
+
 # Select scenario ####
 scenario <- "atolls" # "atolls" or "high_islands"
 # scenario <- "high_islands" # "atolls" or "high_islands"
@@ -219,7 +227,7 @@ extents <- edge_data |>
 stacking_results <- read_csv(here(
   "Results",
   "DAG",
-  "loo_compare_results.csv"
+  paste0("loo_compare_results", file_suffix, ".csv")
 )) |>
   # convert stack_weight_weak values from "Weak" (<0.05) and "Fine" (>= 0.05) to 1 and 2
   mutate(
@@ -230,8 +238,7 @@ stacking_results <- read_csv(here(
     )
   )
 
-bayesR2 <- read_csv(here("Results", "DAG", "bayesR2.csv"))
-bayesR2summary <- read_csv(here("Results", "DAG", "bayesR2summary.csv")) # NEVER USED
+bayesR2 <- read_csv(here("Results", "DAG", paste0("bayesR2", file_suffix, ".csv")))
 # stacking_results replace stacking_weight with r2 and stack_weight_weak with post_int_width
 
 stacking_results |>
@@ -257,7 +264,7 @@ stacking_results |>
 effect_size_df <- read_csv(here(
   "Results",
   "DAG",
-  "loo_compare_results.csv"
+  paste0("loo_compare_results", file_suffix, ".csv")
 )) |> # Load your effect size data
   # convert elpd_loo to weighted using stacking weights
   # mutate(
@@ -616,7 +623,7 @@ ggplot() +
   # Scale the linewidth based on the absolute effect size
   scale_linewidth_continuous(
     range = c(arrow_size_min, arrow_size_max),
-    limits = c(0, effect_range[2]) # Start response 0 for size mapping
+    limits = c(0, effect_range[2]) # Start response 0 for size mapping. Should always be 0:1
   ) +
 
   ## Edge Labels ####
@@ -706,15 +713,6 @@ ggplot() +
           round(mean(stacking_weight), 3)
         )
       ),
-    # data = stackweights |>
-    #   filter(
-    #     direction == "TopDown",
-    #     if (scenario == "atolls") {
-    #       topo == "Atolls"
-    #     } else if (scenario == "high_islands") {
-    #       topo == "HighIslands"
-    #     }
-    #   ),
     aes(
       x = extents$xmin + 0.95 * (extents$xmax - extents$xmin), # rightmost point, brought in a little
       y = extents$ymin + 1 * (extents$ymax - extents$ymin), # bottommost point, brought in a little
@@ -735,15 +733,6 @@ ggplot() +
           round(mean(stacking_weight), 3)
         )
       ),
-    # data = stackweights |>
-    #   filter(
-    #     direction == "BottomUp",
-    #     if (scenario == "atolls") {
-    #       topo == "Atolls"
-    #     } else if (scenario == "high_islands") {
-    #       topo == "HighIslands"
-    #     }
-    #   ),
     aes(
       x = extents$xmin + 0.95 * (extents$xmax - extents$xmin), # rightmost point, brought in a little
       y = extents$ymin + 0.97 * (extents$ymax - extents$ymin), # bottommost point, brought in a little
@@ -790,8 +779,8 @@ ggsave(
     "DAG",
     ifelse(
       scenario == "atolls",
-      paste0(today(), "_DAG_Atolls.png"),
-      paste0(today(), "_DAG_HighIslands.png")
+      paste0(today(), "_DAG_Atolls", file_suffix, ".png"),
+      paste0(today(), "_DAG_HighIslands", file_suffix, ".png")
     )
   ),
   dpi = 300,
