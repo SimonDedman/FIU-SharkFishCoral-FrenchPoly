@@ -1,9 +1,43 @@
-# 2025-03-31 Simon Dedman; lookup species against TL for different teleost groups
-# Piscivores, Invertivores, Herbivores, Planktivores
+# 02_trophic_levels.R
+# Mean trophic levels per fish functional group, derived from FishBase.
+#
+# Author: Simon Dedman <simondedman@gmail.com>
+# Created: 2025-03-31
+# Updated: 2026-04 (renamed from 01_Teleost_FnGp_TrophLev.R)
+#
+# Purpose:
+#   Compute mean trophic level (TL) for each of the four prey functional
+#   groups used in the analysis:
+#     * Piscivores  (7 predator-teleost families: Lutjanidae, Scombridae,
+#                    Megalopidae, Carangidae, Sphyraenidae, Serranidae,
+#                    Lethrinidae)
+#     * Invertivores
+#     * Herbivores
+#     * Planktivores
+#   The piscivore TL is computed as the mean of family-level means
+#   pulled from FishBase ecology tables; prey-group TLs are computed
+#   per-species from the project's UVC species list, joined to FishBase
+#   ecology, and averaged within each functional group. Output values
+#   are pasted into the static FnGpTrophicLevels.png lookup table in
+#   01_data_prep.R (SM Fig 32).
+#
+# Inputs:
+#   - FishBase API: tables `species`, `families`, `ecology`
+#   - NFF_data/fish.spp.list.fn.gps.fixed.csv (project UVC species list
+#     with assigned functional groups)
+#
+# Outputs:
+#   - Console: mean TL by family (3.99 mean for piscivore families)
+#   - Console: mean TL by OfficialFnGp (Piscivore 3.86, Invertivore
+#     3.39, Planktivore 2.93, Herbivore 2.46)
+#
+# Packages:
+#   rfishbase, tidyverse, here
 
 # remotes::install_github("ropensci/rfishbase")
 library(rfishbase)
 library(tidyverse)
+library(here)
 fb_tables(server = c("fishbase"), version = "latest")
 spptmp <- head(fb_tbl("species"))
 famtmp <- head(fb_tbl("families"))

@@ -1,33 +1,73 @@
-# 2025-03-24 TODOs ####
-# 6. do atoll/HI BRTs, possibly with dubious dataset doubling technique
-# 7. summarise atoll/HI BRT results
-# 8. Is the multi SCM approach legit? AIC comparison, who can we ask? How to formulate the question? Robin @ Stanford, Beth Babcock,
+# 01_data_prep.R
+# Raw to reef-aggregated analysis tables.
+#
+# Author: Simon Dedman <simondedman@gmail.com>
+# Created: 2023-03 (originally 02_Explore_ch4_2023_03.R)
+# Updated: 2026-04 (renamed to 01_data_prep.R; teleost-MaxN merge,
+#                   compare.tel.df1 diagnostic, and Other Algae
+#                   independence check removed or relocated to
+#                   08_supplementary_plots.R; FnGpTrophicLevels.png
+#                   ggsave block reactivated for SM Fig 32)
+# Co-authors / development:
+#   - Naomi F. Farabaugh (raw-data preprocessing into the wide.df1.*
+#     CSVs read here; ORCID 0000-0002-7839-7453)
+#
+# Purpose:
+#   Take per-survey, per-species records from benthic UVC, fish UVC,
+#   and shark BRUV surveys and aggregate them to reef level for the
+#   24-reef analysis dataset (n=13 atolls, n=11 high islands;
+#   Marquesas excluded). Produces the canonical analysis tables read
+#   by every subsequent script: ch4_reef_wide_df2.RData and its atoll
+#   and high-island subsets. Also generates SM Fig 32 (functional
+#   group trophic levels) from the manually-curated trophic-level
+#   lookup table.
+#
+# Inputs (all in NFF_data/):
+#   - site_order_df.csv                          (site ordering metadata)
+#   - fixed_bethic_uvc_final_2023_02_26.csv      (raw benthic UVC)
+#   - fish.spp.list.fn.gps.fixed.csv             (fish species list with
+#                                                 functional groups)
+#   - wide.df1.ch3.60min.2023.01.csv             (shark BRUV maxN per
+#                                                 species per set,
+#                                                 60-min time-cap)
+#
+# Processing:
+#   1. Aggregate benthic UVC to per-survey then per-reef level
+#      (mean of CCA, Hard.Coral, Other.Algae, Soft.Coral, Invert,
+#      Sand, Rubble, Pavement; chi_benthos_percent = (CCA + HC) / 100).
+#   2. Aggregate shark BRUV by reef: reef_sharks (sum of grey, blacktip,
+#      whitetip, silvertip, tawny, blacktip-reef), sicklefin_lemon_sharks,
+#      transient_pelagic_sharks (tigers + hammerheads), maxn_shark.
+#   3. Aggregate fish UVC biomass by functional group per reef
+#      (biomass_g_per_m2_{Piscivore,Herbivore,Invertivore,Planktivore}).
+#   4. Merge benthic, shark, and fish components into survey.wide.df1,
+#      then survey.wide.df2 (one row per UVC survey), then reef.df1,
+#      then reef.df2 (one row per reef, n=24 after Marquesas removed).
+#   5. Subset reef.df2 by topology to ch4_atoll_reef_wide_df2 (n=13)
+#      and ch4_island_reef_wide_df2 (n=11).
+#   6. Generate SM Fig 32 from the manually-curated trophic-level
+#      lookup (see fn_gp_trophic_df below).
+#
+# Outputs (all in NFF_data/):
+#   - benthic_sum_reef_2023_02_26.csv + .RData
+#   - ch4_survey_wide_df1.csv, survey.wide.df1.RData
+#   - ch4_survey_wide_df2.csv, survey.wide.df2.RData
+#   - {island,atoll}.ch4_survey_wide_df{1,2}.csv,
+#     {island,atoll}.survey.wide.df{1,2}.RData
+#   - ch4_reef_wide_df1.csv, ch4_reef_wide_df1.RData
+#   - ch4_reef_wide_df2.csv, ch4_reef_wide_df2.RData (MAIN OUTPUT)
+#   - ch4_atoll_reef_wide_df2.csv, ch4_atoll_reef_wide_df2.RData
+#   - ch4_island_reef_wide_df2.csv, ch4_island_reef_wide_df2.RData
+#   - FnGpTrophicLevels.png                      (SM Fig 32)
+#
+# Packages:
+#   tidyverse (ggplot2, dplyr, readr, stringr, etc.),
+#   plotly (3D benthic-cover plot near end of script),
+#   here
 
-# use SCRIPT PACKAGE WORKFLOW to analyse script and check dependencies to see if I can simplify this script.
-# that's a bigger project than I realised
-
-# setwd("~/Documents/My Documents/FinPrint French Poly/Analysis/Ch 4 Rethink Prelim") ## Change to appropriate working directory ##
-# setwd("/home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/NFF Data code/")
 library(tidyverse)
-# library(MASS)
-# library(vegan)
-# library(reshape)
-# library(doBy)
-# library(utils)
-# library(RcmdrMisc)
-# library(ResourceSelection)
-# library(boot)
-# library(ggplot2)
-# library(gplots)
-# library(rstatix)
-# library(ape)
-# library(ggpubr) # sudo apt install cmake
-# library(rmarkdown)
-# library(esquisse)
-library(viridis)
 library(plotly)
 library(here)
-library(cowplot)
 
 # import all data frames ####
 ## import site order ####
@@ -998,5 +1038,3 @@ for (expvars in c(
 tmp <- reef.df2 |>
   group_by(IslandAtoll) |>
   summarise(across(where(is.numeric), \(x) mean(x, na.rm = TRUE)))
-
-

@@ -1,10 +1,64 @@
-# loo (leave one out) expected log pointwise predictive density metrics
-# For SCMs with 2 topographies and 2 directions from scripts 10_Suchinta-DAG.R & 11_Si-DAG-bottomup.R
-# Simon Dedman, 2025-03-20 simondedman@gmail.com
+# 06_DAG_results.R
+# Bayesian SCM model comparison and results visualisation.
+#
+# Author: Simon Dedman <simondedman@gmail.com>
+# Created: 2025-03-20
+# Updated: 2026-04 (renamed from
+#                   12_DAG-SCMs_Atoll-Vs-HighIsland_TopDown-vs-BottomUp.R)
+#
+# Purpose:
+#   Process the four model lists fitted by 05_DAG_bayesian_fits.R
+#   (Atolls/HighIslands x TopDown/BottomUp), compute model-comparison
+#   metrics, and render the main and supplementary figures derived
+#   from those fits:
+#     * leave-one-out expected log pointwise predictive density
+#       (LOO-PSIS / elpd) per model and per topology x direction
+#     * Bayesian R^2 distributions and group means (Main Fig 2,
+#       SM Fig 15)
+#     * top-down vs bottom-up R^2 comparison faceted by topology
+#       (Main Fig 3)
+#     * posterior intervals, slope posteriors, stacking weights,
+#       posterior predictions
+#
+# Toggle:
+#   use_spline = TRUE  -> reads/writes the *_spline.* file family
+#                         (canonical Student-t + cubic shrinkage spline
+#                         fits; this is what the manuscript reports)
+#   use_spline = FALSE -> reads/writes the legacy Gaussian-linear
+#                         outputs (retained for transparency; archived
+#                         by the consolidation in 2026-04)
+#
+# Inputs (when use_spline = TRUE):
+#   - NFF_data/ch4_reef_wide_df2.RData
+#   - Results/DAG/models_list_<Atolls|HighIslands>_<BottomUp|TopDown>_spline.Rds
+#   - Results/DAG/posteriors_list_spline.Rds
+#
+# Outputs (in Results/DAG/, *_spline-suffixed when use_spline = TRUE):
+#   - bayesR2_spline.csv, bayesR2_list_spline.Rds, bayesR2summary_spline.csv
+#   - 95pct_intervals_list_<Atolls|HighIslands>_<TopDown|BottomUp>_spline.csv
+#   - elpd_pointwise_summary_spline.csv,
+#     elpd_sw_topo_direction_reef_*_spline.csv,
+#     elpd_sw_topo_model_*_spline.csv
+#   - loo_compare_results_spline.csv,
+#     loo_compare_results_summary_spline.csv,
+#     loo_compare_results_summary_stackweightsfine_spline.csv
+#   - best_direction_per_topo_spline.csv,
+#     best_direction_per_topo_sign_spline.csv
+#   - 2025-10-20_BayesR2boxplots_spline.png (Main Fig 2 candidate),
+#     2026-02-11_BayesR2_facetTopo_spline.png (Main Fig 3 candidate),
+#     2025-12-02_bayesR2groupsColplot.png,
+#     2025-10-17_loo_plots_4panel_spline.png,
+#     2025-10-17_posterior_predictions_spline.png,
+#     2025-10-17_slope_posteriors_spline.png,
+#     2025-10-17_stacking_weights_spline.png
+#
+# Packages:
+#   here, loo, brms, tidyverse
 
 # USE SPLINE MODELS ####
-# Set to TRUE to use spline models from 11_DAG-TDBU-AtollHI-Collated_studentFam.R
-# Set to FALSE to use original Gaussian models from 11_DAG-TDBU-AtollHI-Collated.R
+# Set to TRUE to use spline / Student-t fits from 05_DAG_bayesian_fits.R.
+# Set to FALSE to read the legacy Gaussian-linear outputs (retained for
+# transparency in Results/DAG/oldversions/).
 use_spline <- TRUE
 
 library(here)

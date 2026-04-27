@@ -1,3 +1,41 @@
+# 03_BRT_models.R
+# Boosted Regression Tree (BRT) models for fish biomass and benthic
+# cover responses, run separately for the full reef set, atolls only,
+# and high islands only.
+#
+# Author: Simon Dedman <simondedman@gmail.com>
+# Created: 2024-01
+# Updated: 2026-04 (renamed from 03_BRT_runs.R)
+#
+# Purpose:
+#   Fit gbm.auto BRT models for five response variables:
+#     * chi_benthos_percent  (= (CCA + Hard.Coral) / 100)
+#     * log_Planktivore, log_Herbivore, log_Invertivore, log_piscivore
+#       (log1p-transformed biomass per m^2 by functional group)
+#   Each is fit against a common set of explanatory variables:
+#     ave_temp, ave_npp, topo, pop.dens, isl_grp, lagoon.size,
+#     maxn_shark, Relief, and the four log-biomass groups (when not
+#     the response). Models are run for each of three subsets of
+#     reefs: all (n=24), atolls (n=13), high islands (n=11). gbm.auto
+#     produces partial-dependence plots (Main Fig 1), diagnostic plots
+#     (SM Figs 10-13), and relative-influence summaries.
+#
+# Inputs:
+#   - NFF_data/ch4_reef_wide_df2.RData         (n=24 reefs)
+#   - NFF_data/ch4_island_reef_wide_df2.RData  (n=11 high islands)
+#   - NFF_data/ch4_atoll_reef_wide_df2.RData   (n=13 atolls)
+#
+# Outputs:
+#   - Results/BRT/All/<response>/         (BRT diagnostics, partial
+#                                          dependence plots, fitted
+#                                          model objects per response,
+#                                          relative-influence bar charts)
+#   - Results/BRT/HighIslands/<response>/
+#   - Results/BRT/Atolls/<response>/
+#
+# Packages:
+#   tidyverse, gbm.auto, here
+
 library(tidyverse)
 # remotes::install_github("SimonDedman/gbm.auto")
 library(gbm.auto)
@@ -281,7 +319,7 @@ gbm.auto(
   alerts = FALSE,
   pngtype = if (Sys.info()["sysname"] == "Darwin") "quartz" else "cairo-png"
 )
-# FROMHERE ####
+
 dir.create(here("Results", "BRT", "Atolls", "Loop"))
 gbm.loop(
   samples = tmp,

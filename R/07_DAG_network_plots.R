@@ -1,19 +1,42 @@
-# TODO
-# high islands: balance of arrows is 'nicer', whereas in atolls, arrows are all blown out by the huge (good) model results response planktivores which makes everything else less obvious.
-## have arrows sized in proportion to only the other arrow in the pair?
-## e.g. SLS vs RS, TD vs BU, arrows go driver/response same places, 1 red 1 blue. Scale those values to each other, and do that for everything.
-## But disallows cross-pair comparisons
-## but if we keep as is, currently atolls are blown out by 2 big BU scores response planktivores which makes sense, but we're saying atolls are TD because most results are TD
-
-# FWIW I dicked around with the values to make higher numbers be better.  I can go back to the originals, but I figure 'proportion of 1' is intuitive for most people
-
-# Spatial tweaks: input from other people?
-
-# loo plots: I could add the elpdloo score above each dot, so we can see which relationships are driving the panel average elpdloo scores
+# 07_DAG_network_plots.R
+# Render the DAG network figure showing posterior-weighted edge
+# strengths from the Bayesian SCM fits.
+#
+# Author: Simon Dedman <simondedman@gmail.com>
+# Created: 2025-09
+# Updated: 2026-04 (renamed from 13_DAG-network-plot.R)
+#
+# Purpose:
+#   Produces the publication-grade DAG figure (Main Fig 4 in the
+#   manuscript): nodes for sharks, fish functional groups, benthic
+#   categories, and key environmental drivers; edges drawn with
+#   thickness proportional to standardised effect size, colour
+#   proportional to direction (positive/negative), and labels for
+#   credible-interval-significant relationships only. The same DAG
+#   layout is used for both Atoll and High Islands scenarios, switched
+#   via the `scenario` toggle below.
+#
+# Toggles:
+#   use_spline = TRUE/FALSE    file suffix for spline vs Gaussian fits
+#   scenario   = "atolls"      OR "high_islands"
+#
+# Inputs:
+#   - Results/DAG/loo_compare_results_summary_stackweightsfine<suffix>.csv
+#   - Results/DAG/bayesR2<suffix>.csv
+#   - Results/DAG/95pct_intervals_list_<scenario>_<TopDown|BottomUp><suffix>.csv
+#     (effect-size + posterior interval table)
+#
+# Outputs:
+#   - Results/DAG/<date>_DAG_<Atolls|HighIslands><suffix>.png
+#     (Main Fig 4 panels; SM Fig 14)
+#
+# Packages:
+#   dagitty, ggdag, tidyverse, ggrepel, here, igraph, tidygraph,
+#   ggraph, reporter
 
 # USE SPLINE MODELS ####
-# Set to TRUE to use spline models from 11_DAG-TDBU-AtollHI-Collated_studentFam.R
-# Set to FALSE to use original Gaussian models from 11_DAG-TDBU-AtollHI-Collated.R
+# Set to TRUE to use spline / Student-t fits from 05_DAG_bayesian_fits.R.
+# Set to FALSE to use the legacy Gaussian-linear fits.
 use_spline <- TRUE
 
 # Set file suffix based on model type ####
@@ -21,12 +44,10 @@ file_suffix <- ifelse(use_spline, "_spline", "")
 
 # Select scenario ####
 scenario <- "atolls" # "atolls" or "high_islands"
-# scenario <- "high_islands" # "atolls" or "high_islands"
+# scenario <- "high_islands"
 
 # Load Libraries and Input Data ####
-# install.packages(c("dagitty", "ggdag", "ggplot2", "dplyr", "ggrepel"))
 library(dagitty)
-# devtools::install_github("r-causal/ggdag")
 library(ggdag)
 library(tidyverse)
 library(ggrepel) # For potentially better label placement
@@ -238,7 +259,11 @@ stacking_results <- read_csv(here(
     )
   )
 
-bayesR2 <- read_csv(here("Results", "DAG", paste0("bayesR2", file_suffix, ".csv")))
+bayesR2 <- read_csv(here(
+  "Results",
+  "DAG",
+  paste0("bayesR2", file_suffix, ".csv")
+))
 # stacking_results replace stacking_weight with r2 and stack_weight_weak with post_int_width
 
 stacking_results |>

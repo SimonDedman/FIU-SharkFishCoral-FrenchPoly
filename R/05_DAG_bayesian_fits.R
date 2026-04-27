@@ -1,6 +1,13 @@
 # 05_DAG_bayesian_fits.R
 # Bayesian Structural Causal Models for top-down vs bottom-up forcing.
 #
+# Author: Simon Dedman <simondedman@gmail.com>
+# Created: 2025-03 (predecessor scripts); consolidated 2025-09
+# Updated: 2025-10 (spline / Student-t reformulation)
+# Co-authors / development:
+#   - Suchinta Arif (Dalhousie; DAG-based Bayesian SCM framework;
+#     ORCID 0000-0001-8381-3071)
+#
 # Purpose:
 #   Fit a list of 11 brms models per (topology x trophic direction) scenario,
 #   covering the full set of pairwise relationships specified in the DAG. The
@@ -36,19 +43,15 @@
 #   `add_criterion(loo, reloo = TRUE)` which triggers refits where Pareto-k
 #   diagnostics are poor.
 #
-# Method development:
-#   DAG-based Bayesian SCM framework adapted from Suchinta Arif's
-#   2025-03-14 development draft (and earlier).
+# Packages:
+#   brms, here, tidyverse
 #
 # DAG sources:
 #   TD DAG: https://dagitty.net/dags.html?id=7bBT4Rqj
 #   BU DAG: https://dagitty.net/dags.html?id=GBrpiZXW
 
 # Load packages ####
-# install.packages("rstanarm")
-# install.packages("brms")
 library(brms)
-# library(rstanarm)
 library(here)
 library(tidyverse)
 options(future.globals.maxSize = 1.5 * 1024^3) # 1.5 GiB otherwise add_criterion can run out of memory
@@ -76,7 +79,11 @@ base_data <- readRDS(here("NFF_data", "ch4_reef_wide_df2.RData")) |>
   dplyr::mutate(dplyr::across(where(is.numeric), stdize))
 
 # Create output directory ####
-dir.create(here("Results", "DAG", "brm_models"), showWarnings = FALSE, recursive = TRUE)
+dir.create(
+  here("Results", "DAG", "brm_models"),
+  showWarnings = FALSE,
+  recursive = TRUE
+)
 
 # Main nested loop ####
 for (topo_name in names(topo_types)) {
@@ -95,7 +102,11 @@ for (topo_name in names(topo_types)) {
       dplyr::filter(topo %in% topo_types[[topo_name]])
 
     # Define prefix for file naming ####
-    prefix <- paste0(ifelse(topo_name == "Atoll", "Atoll", "HI"), "_", trophic_dir)
+    prefix <- paste0(
+      ifelse(topo_name == "Atoll", "Atoll", "HI"),
+      "_",
+      trophic_dir
+    )
 
     # Initialize storage lists ####
     models_list <- list()
@@ -117,16 +128,28 @@ for (topo_name in names(topo_types)) {
         chains = 4,
         iter = 2000,
         seed = 123,
-        save_model = here("Results", "DAG", "brm_models", paste0(prefix, "_1_RS-SLS_spline.stan")),
+        save_model = here(
+          "Results",
+          "DAG",
+          "brm_models",
+          paste0(prefix, "_1_RS-SLS_spline.stan")
+        ),
         save_pars = save_pars(all = TRUE)
       )
       models_list[[1]] <- add_criterion(models_list[[1]], "loo", reloo = TRUE)
       print(models_list[[1]])
-      intervals_list[[1]] <- as.data.frame(posterior_interval(models_list[[1]], prob = 0.95))
+      intervals_list[[1]] <- as.data.frame(posterior_interval(
+        models_list[[1]],
+        prob = 0.95
+      ))
 
       ## Model 3: sicklefin on piscivores ####
       models_list[[3]] <- brm(
-        biomass_g_per_m2_Piscivore ~ s(sicklefin_lemon_sharks, k = 3, bs = "cs"),
+        biomass_g_per_m2_Piscivore ~ s(
+          sicklefin_lemon_sharks,
+          k = 3,
+          bs = "cs"
+        ),
         data = ReefWideBRUVUVC.DAGtested,
         family = student(),
         prior = c(
@@ -136,15 +159,25 @@ for (topo_name in names(topo_types)) {
         chains = 4,
         iter = 2000,
         seed = 123,
-        save_model = here("Results", "DAG", "brm_models", paste0(prefix, "_2_pisc-SLS_spline.stan")),
+        save_model = here(
+          "Results",
+          "DAG",
+          "brm_models",
+          paste0(prefix, "_2_pisc-SLS_spline.stan")
+        ),
         save_pars = save_pars(all = TRUE)
       )
       models_list[[3]] <- add_criterion(models_list[[3]], "loo", reloo = TRUE)
-      intervals_list[[3]] <- as.data.frame(posterior_interval(models_list[[3]], prob = 0.95))
+      intervals_list[[3]] <- as.data.frame(posterior_interval(
+        models_list[[3]],
+        prob = 0.95
+      ))
 
       ## Model 5: reef_sharks on herbivores ####
       models_list[[5]] <- brm(
-        biomass_g_per_m2_Herbivore ~ s(reef_sharks, k = 3, bs = "cs") + s(biomass_g_per_m2_Piscivore, k = 3, bs = "cs") + s(pop.dens, k = 3, bs = "cs"),
+        biomass_g_per_m2_Herbivore ~ s(reef_sharks, k = 3, bs = "cs") +
+          s(biomass_g_per_m2_Piscivore, k = 3, bs = "cs") +
+          s(pop.dens, k = 3, bs = "cs"),
         data = ReefWideBRUVUVC.DAGtested,
         family = student(),
         prior = c(
@@ -154,15 +187,25 @@ for (topo_name in names(topo_types)) {
         chains = 4,
         iter = 2000,
         seed = 123,
-        save_model = here("Results", "DAG", "brm_models", paste0(prefix, "_3_herb-RS_spline.stan")),
+        save_model = here(
+          "Results",
+          "DAG",
+          "brm_models",
+          paste0(prefix, "_3_herb-RS_spline.stan")
+        ),
         save_pars = save_pars(all = TRUE)
       )
       models_list[[5]] <- add_criterion(models_list[[5]], "loo", reloo = TRUE)
-      intervals_list[[5]] <- as.data.frame(posterior_interval(models_list[[5]], prob = 0.95))
+      intervals_list[[5]] <- as.data.frame(posterior_interval(
+        models_list[[5]],
+        prob = 0.95
+      ))
 
       ## Model 6: reef_sharks on invertivores ####
       models_list[[6]] <- brm(
-        biomass_g_per_m2_Invertivore ~ s(reef_sharks, k = 3, bs = "cs") + s(biomass_g_per_m2_Piscivore, k = 3, bs = "cs") + s(pop.dens, k = 3, bs = "cs"),
+        biomass_g_per_m2_Invertivore ~ s(reef_sharks, k = 3, bs = "cs") +
+          s(biomass_g_per_m2_Piscivore, k = 3, bs = "cs") +
+          s(pop.dens, k = 3, bs = "cs"),
         data = ReefWideBRUVUVC.DAGtested,
         family = student(),
         prior = c(
@@ -172,15 +215,25 @@ for (topo_name in names(topo_types)) {
         chains = 4,
         iter = 2000,
         seed = 123,
-        save_model = here("Results", "DAG", "brm_models", paste0(prefix, "_4_inv-RS_spline.stan")),
+        save_model = here(
+          "Results",
+          "DAG",
+          "brm_models",
+          paste0(prefix, "_4_inv-RS_spline.stan")
+        ),
         save_pars = save_pars(all = TRUE)
       )
       models_list[[6]] <- add_criterion(models_list[[6]], "loo", reloo = TRUE)
-      intervals_list[[6]] <- as.data.frame(posterior_interval(models_list[[6]], prob = 0.95))
+      intervals_list[[6]] <- as.data.frame(posterior_interval(
+        models_list[[6]],
+        prob = 0.95
+      ))
 
       ## Model 7: reef_sharks on planktivores ####
       models_list[[7]] <- brm(
-        biomass_g_per_m2_Planktivore ~ s(reef_sharks, k = 3, bs = "cs") + s(biomass_g_per_m2_Piscivore, k = 3, bs = "cs") + s(pop.dens, k = 3, bs = "cs"),
+        biomass_g_per_m2_Planktivore ~ s(reef_sharks, k = 3, bs = "cs") +
+          s(biomass_g_per_m2_Piscivore, k = 3, bs = "cs") +
+          s(pop.dens, k = 3, bs = "cs"),
         data = ReefWideBRUVUVC.DAGtested,
         family = student(),
         prior = c(
@@ -190,15 +243,29 @@ for (topo_name in names(topo_types)) {
         chains = 4,
         iter = 2000,
         seed = 123,
-        save_model = here("Results", "DAG", "brm_models", paste0(prefix, "_5_plank-RS_spline.stan")),
+        save_model = here(
+          "Results",
+          "DAG",
+          "brm_models",
+          paste0(prefix, "_5_plank-RS_spline.stan")
+        ),
         save_pars = save_pars(all = TRUE)
       )
       models_list[[7]] <- add_criterion(models_list[[7]], "loo", reloo = TRUE)
-      intervals_list[[7]] <- as.data.frame(posterior_interval(models_list[[7]], prob = 0.95))
+      intervals_list[[7]] <- as.data.frame(posterior_interval(
+        models_list[[7]],
+        prob = 0.95
+      ))
 
       ## Model 8: piscivores on herbivores ####
       models_list[[8]] <- brm(
-        biomass_g_per_m2_Herbivore ~ s(biomass_g_per_m2_Piscivore, k = 3, bs = "cs") + s(pop.dens, k = 3, bs = "cs") + s(reef_sharks, k = 3, bs = "cs"),
+        biomass_g_per_m2_Herbivore ~ s(
+          biomass_g_per_m2_Piscivore,
+          k = 3,
+          bs = "cs"
+        ) +
+          s(pop.dens, k = 3, bs = "cs") +
+          s(reef_sharks, k = 3, bs = "cs"),
         data = ReefWideBRUVUVC.DAGtested,
         family = student(),
         prior = c(
@@ -208,15 +275,29 @@ for (topo_name in names(topo_types)) {
         chains = 4,
         iter = 2000,
         seed = 123,
-        save_model = here("Results", "DAG", "brm_models", paste0(prefix, "_6_herb-pisc_spline.stan")),
+        save_model = here(
+          "Results",
+          "DAG",
+          "brm_models",
+          paste0(prefix, "_6_herb-pisc_spline.stan")
+        ),
         save_pars = save_pars(all = TRUE)
       )
       models_list[[8]] <- add_criterion(models_list[[8]], "loo", reloo = TRUE)
-      intervals_list[[8]] <- as.data.frame(posterior_interval(models_list[[8]], prob = 0.95))
+      intervals_list[[8]] <- as.data.frame(posterior_interval(
+        models_list[[8]],
+        prob = 0.95
+      ))
 
       ## Model 9: piscivores on planktivores ####
       models_list[[9]] <- brm(
-        biomass_g_per_m2_Planktivore ~ s(biomass_g_per_m2_Piscivore, k = 3, bs = "cs") + s(pop.dens, k = 3, bs = "cs") + s(reef_sharks, k = 3, bs = "cs"),
+        biomass_g_per_m2_Planktivore ~ s(
+          biomass_g_per_m2_Piscivore,
+          k = 3,
+          bs = "cs"
+        ) +
+          s(pop.dens, k = 3, bs = "cs") +
+          s(reef_sharks, k = 3, bs = "cs"),
         data = ReefWideBRUVUVC.DAGtested,
         family = student(),
         prior = c(
@@ -226,15 +307,29 @@ for (topo_name in names(topo_types)) {
         chains = 4,
         iter = 2000,
         seed = 123,
-        save_model = here("Results", "DAG", "brm_models", paste0(prefix, "_7_plank-pisc_spline.stan")),
+        save_model = here(
+          "Results",
+          "DAG",
+          "brm_models",
+          paste0(prefix, "_7_plank-pisc_spline.stan")
+        ),
         save_pars = save_pars(all = TRUE)
       )
       models_list[[9]] <- add_criterion(models_list[[9]], "loo", reloo = TRUE)
-      intervals_list[[9]] <- as.data.frame(posterior_interval(models_list[[9]], prob = 0.95))
+      intervals_list[[9]] <- as.data.frame(posterior_interval(
+        models_list[[9]],
+        prob = 0.95
+      ))
 
       ## Model 10: piscivores on invertivores ####
       models_list[[10]] <- brm(
-        biomass_g_per_m2_Invertivore ~ s(biomass_g_per_m2_Piscivore, k = 3, bs = "cs") + s(pop.dens, k = 3, bs = "cs") + s(reef_sharks, k = 3, bs = "cs"),
+        biomass_g_per_m2_Invertivore ~ s(
+          biomass_g_per_m2_Piscivore,
+          k = 3,
+          bs = "cs"
+        ) +
+          s(pop.dens, k = 3, bs = "cs") +
+          s(reef_sharks, k = 3, bs = "cs"),
         data = ReefWideBRUVUVC.DAGtested,
         family = student(),
         prior = c(
@@ -244,15 +339,27 @@ for (topo_name in names(topo_types)) {
         chains = 4,
         iter = 2000,
         seed = 123,
-        save_model = here("Results", "DAG", "brm_models", paste0(prefix, "_8_inv-pisc_spline.stan")),
+        save_model = here(
+          "Results",
+          "DAG",
+          "brm_models",
+          paste0(prefix, "_8_inv-pisc_spline.stan")
+        ),
         save_pars = save_pars(all = TRUE)
       )
       models_list[[10]] <- add_criterion(models_list[[10]], "loo", reloo = TRUE)
-      intervals_list[[10]] <- as.data.frame(posterior_interval(models_list[[10]], prob = 0.95))
+      intervals_list[[10]] <- as.data.frame(posterior_interval(
+        models_list[[10]],
+        prob = 0.95
+      ))
 
       ## Model 11: herbivores on hard_coral ####
       models_list[[11]] <- brm(
-        Hard.Coral ~ s(biomass_g_per_m2_Herbivore, k = 3, bs = "cs") + s(biomass_g_per_m2_Piscivore, k = 3, bs = "cs") + s(pop.dens, k = 3, bs = "cs") + s(reef_sharks, k = 3, bs = "cs") + s(Relief, k = 3, bs = "cs"),
+        Hard.Coral ~ s(biomass_g_per_m2_Herbivore, k = 3, bs = "cs") +
+          s(biomass_g_per_m2_Piscivore, k = 3, bs = "cs") +
+          s(pop.dens, k = 3, bs = "cs") +
+          s(reef_sharks, k = 3, bs = "cs") +
+          s(Relief, k = 3, bs = "cs"),
         data = ReefWideBRUVUVC.DAGtested,
         family = student(),
         prior = c(
@@ -262,15 +369,25 @@ for (topo_name in names(topo_types)) {
         chains = 4,
         iter = 2000,
         seed = 123,
-        save_model = here("Results", "DAG", "brm_models", paste0(prefix, "_9_HC-herb_spline.stan")),
+        save_model = here(
+          "Results",
+          "DAG",
+          "brm_models",
+          paste0(prefix, "_9_HC-herb_spline.stan")
+        ),
         save_pars = save_pars(all = TRUE)
       )
       models_list[[11]] <- add_criterion(models_list[[11]], "loo", reloo = TRUE)
-      intervals_list[[11]] <- as.data.frame(posterior_interval(models_list[[11]], prob = 0.95))
+      intervals_list[[11]] <- as.data.frame(posterior_interval(
+        models_list[[11]],
+        prob = 0.95
+      ))
 
       ## Model 12: herbivores on CCA ####
       models_list[[12]] <- brm(
-        CCA ~ s(biomass_g_per_m2_Herbivore, k = 3, bs = "cs") + s(pop.dens, k = 3, bs = "cs") + s(Relief, k = 3, bs = "cs"),
+        CCA ~ s(biomass_g_per_m2_Herbivore, k = 3, bs = "cs") +
+          s(pop.dens, k = 3, bs = "cs") +
+          s(Relief, k = 3, bs = "cs"),
         data = ReefWideBRUVUVC.DAGtested,
         family = student(),
         prior = c(
@@ -280,15 +397,26 @@ for (topo_name in names(topo_types)) {
         chains = 4,
         iter = 2000,
         seed = 123,
-        save_model = here("Results", "DAG", "brm_models", paste0(prefix, "_10_CCA-herb_spline.stan")),
+        save_model = here(
+          "Results",
+          "DAG",
+          "brm_models",
+          paste0(prefix, "_10_CCA-herb_spline.stan")
+        ),
         save_pars = save_pars(all = TRUE)
       )
       models_list[[12]] <- add_criterion(models_list[[12]], "loo", reloo = TRUE)
-      intervals_list[[12]] <- as.data.frame(posterior_interval(models_list[[12]], prob = 0.95))
+      intervals_list[[12]] <- as.data.frame(posterior_interval(
+        models_list[[12]],
+        prob = 0.95
+      ))
 
       ## Model 13: herbivores on other algae ####
       models_list[[13]] <- brm(
-        Other.Algae ~ s(biomass_g_per_m2_Herbivore, k = 3, bs = "cs") + s(biomass_g_per_m2_Invertivore, k = 3, bs = "cs") + s(pop.dens, k = 3, bs = "cs") + s(Relief, k = 3, bs = "cs"),
+        Other.Algae ~ s(biomass_g_per_m2_Herbivore, k = 3, bs = "cs") +
+          s(biomass_g_per_m2_Invertivore, k = 3, bs = "cs") +
+          s(pop.dens, k = 3, bs = "cs") +
+          s(Relief, k = 3, bs = "cs"),
         data = ReefWideBRUVUVC.DAGtested,
         family = student(),
         prior = c(
@@ -298,13 +426,21 @@ for (topo_name in names(topo_types)) {
         chains = 4,
         iter = 2000,
         seed = 123,
-        save_model = here("Results", "DAG", "brm_models", paste0(prefix, "_11_OA-herb_spline.stan")),
+        save_model = here(
+          "Results",
+          "DAG",
+          "brm_models",
+          paste0(prefix, "_11_OA-herb_spline.stan")
+        ),
         save_pars = save_pars(all = TRUE)
       )
       models_list[[13]] <- add_criterion(models_list[[13]], "loo", reloo = TRUE)
-      intervals_list[[13]] <- as.data.frame(posterior_interval(models_list[[13]], prob = 0.95))
+      intervals_list[[13]] <- as.data.frame(posterior_interval(
+        models_list[[13]],
+        prob = 0.95
+      ))
 
-      # Labels for TD plots ####
+      ## Labels for TD plots ####
       plot_labels <- c(
         "Sicklefin lemon sharks on reef sharks",
         "Sicklefin lemon sharks on piscivores",
@@ -333,17 +469,32 @@ for (topo_name in names(topo_types)) {
         chains = 4,
         iter = 2000,
         seed = 123,
-        save_model = here("Results", "DAG", "brm_models", paste0(prefix, "_1_SLS-RS_spline.stan")),
+        save_model = here(
+          "Results",
+          "DAG",
+          "brm_models",
+          paste0(prefix, "_1_SLS-RS_spline.stan")
+        ),
         save_pars = save_pars(all = TRUE)
       )
       models_list[[1]] <- add_criterion(models_list[[1]], "loo", reloo = TRUE)
       print(models_list[[1]])
-      intervals_list[[1]] <- as.data.frame(posterior_interval(models_list[[1]], prob = 0.95))
+      intervals_list[[1]] <- as.data.frame(posterior_interval(
+        models_list[[1]],
+        prob = 0.95
+      ))
 
       ## Model 3: piscivores on sicklefin ####
       models_list[[3]] <- brm(
-        sicklefin_lemon_sharks ~ s(biomass_g_per_m2_Piscivore, k = 3, bs = "cs") + s(biomass_g_per_m2_Herbivore, k = 3, bs = "cs") +
-          s(biomass_g_per_m2_Invertivore, k = 3, bs = "cs") + s(biomass_g_per_m2_Planktivore, k = 3, bs = "cs") + s(pop.dens, k = 3, bs = "cs"),
+        sicklefin_lemon_sharks ~ s(
+          biomass_g_per_m2_Piscivore,
+          k = 3,
+          bs = "cs"
+        ) +
+          s(biomass_g_per_m2_Herbivore, k = 3, bs = "cs") +
+          s(biomass_g_per_m2_Invertivore, k = 3, bs = "cs") +
+          s(biomass_g_per_m2_Planktivore, k = 3, bs = "cs") +
+          s(pop.dens, k = 3, bs = "cs"),
         data = ReefWideBRUVUVC.DAGtested,
         family = student(),
         prior = c(
@@ -353,15 +504,28 @@ for (topo_name in names(topo_types)) {
         chains = 4,
         iter = 2000,
         seed = 123,
-        save_model = here("Results", "DAG", "brm_models", paste0(prefix, "_2_SLS-pisc_spline.stan")),
+        save_model = here(
+          "Results",
+          "DAG",
+          "brm_models",
+          paste0(prefix, "_2_SLS-pisc_spline.stan")
+        ),
         save_pars = save_pars(all = TRUE)
       )
       models_list[[3]] <- add_criterion(models_list[[3]], "loo", reloo = TRUE)
-      intervals_list[[3]] <- as.data.frame(posterior_interval(models_list[[3]], prob = 0.95))
+      intervals_list[[3]] <- as.data.frame(posterior_interval(
+        models_list[[3]],
+        prob = 0.95
+      ))
 
       ## Model 5: herbivores on reef_sharks ####
       models_list[[5]] <- brm(
-        reef_sharks ~ s(biomass_g_per_m2_Herbivore, k = 3, bs = "cs") + s(CCA, k = 3, bs = "cs") + s(Hard.Coral, k = 3, bs = "cs") + s(Other.Algae, k = 3, bs = "cs") + s(pop.dens, k = 3, bs = "cs") + s(Relief, k = 3, bs = "cs"),
+        reef_sharks ~ s(biomass_g_per_m2_Herbivore, k = 3, bs = "cs") +
+          s(CCA, k = 3, bs = "cs") +
+          s(Hard.Coral, k = 3, bs = "cs") +
+          s(Other.Algae, k = 3, bs = "cs") +
+          s(pop.dens, k = 3, bs = "cs") +
+          s(Relief, k = 3, bs = "cs"),
         data = ReefWideBRUVUVC.DAGtested,
         family = student(),
         prior = c(
@@ -371,15 +535,27 @@ for (topo_name in names(topo_types)) {
         chains = 4,
         iter = 2000,
         seed = 123,
-        save_model = here("Results", "DAG", "brm_models", paste0(prefix, "_3_RS-herb_spline.stan")),
+        save_model = here(
+          "Results",
+          "DAG",
+          "brm_models",
+          paste0(prefix, "_3_RS-herb_spline.stan")
+        ),
         save_pars = save_pars(all = TRUE)
       )
       models_list[[5]] <- add_criterion(models_list[[5]], "loo", reloo = TRUE)
-      intervals_list[[5]] <- as.data.frame(posterior_interval(models_list[[5]], prob = 0.95))
+      intervals_list[[5]] <- as.data.frame(posterior_interval(
+        models_list[[5]],
+        prob = 0.95
+      ))
 
       ## Model 6: invertivores on reef_sharks ####
       models_list[[6]] <- brm(
-        reef_sharks ~ s(biomass_g_per_m2_Invertivore, k = 3, bs = "cs") + s(ave_npp, k = 3, bs = "cs") + s(Other.Algae, k = 3, bs = "cs") + s(pop.dens, k = 3, bs = "cs") + s(Relief, k = 3, bs = "cs"),
+        reef_sharks ~ s(biomass_g_per_m2_Invertivore, k = 3, bs = "cs") +
+          s(ave_npp, k = 3, bs = "cs") +
+          s(Other.Algae, k = 3, bs = "cs") +
+          s(pop.dens, k = 3, bs = "cs") +
+          s(Relief, k = 3, bs = "cs"),
         data = ReefWideBRUVUVC.DAGtested,
         family = student(),
         prior = c(
@@ -389,15 +565,26 @@ for (topo_name in names(topo_types)) {
         chains = 4,
         iter = 2000,
         seed = 123,
-        save_model = here("Results", "DAG", "brm_models", paste0(prefix, "_4_RS-inv_spline.stan")),
+        save_model = here(
+          "Results",
+          "DAG",
+          "brm_models",
+          paste0(prefix, "_4_RS-inv_spline.stan")
+        ),
         save_pars = save_pars(all = TRUE)
       )
       models_list[[6]] <- add_criterion(models_list[[6]], "loo", reloo = TRUE)
-      intervals_list[[6]] <- as.data.frame(posterior_interval(models_list[[6]], prob = 0.95))
+      intervals_list[[6]] <- as.data.frame(posterior_interval(
+        models_list[[6]],
+        prob = 0.95
+      ))
 
       ## Model 7: planktivores on reef_sharks ####
       models_list[[7]] <- brm(
-        reef_sharks ~ s(biomass_g_per_m2_Planktivore, k = 3, bs = "cs") + s(ave_npp, k = 3, bs = "cs") + s(pop.dens, k = 3, bs = "cs") + s(Relief, k = 3, bs = "cs"),
+        reef_sharks ~ s(biomass_g_per_m2_Planktivore, k = 3, bs = "cs") +
+          s(ave_npp, k = 3, bs = "cs") +
+          s(pop.dens, k = 3, bs = "cs") +
+          s(Relief, k = 3, bs = "cs"),
         data = ReefWideBRUVUVC.DAGtested,
         family = student(),
         prior = c(
@@ -407,16 +594,30 @@ for (topo_name in names(topo_types)) {
         chains = 4,
         iter = 2000,
         seed = 123,
-        save_model = here("Results", "DAG", "brm_models", paste0(prefix, "_5_RS-plank_spline.stan")),
+        save_model = here(
+          "Results",
+          "DAG",
+          "brm_models",
+          paste0(prefix, "_5_RS-plank_spline.stan")
+        ),
         save_pars = save_pars(all = TRUE)
       )
       models_list[[7]] <- add_criterion(models_list[[7]], "loo", reloo = TRUE)
-      intervals_list[[7]] <- as.data.frame(posterior_interval(models_list[[7]], prob = 0.95))
+      intervals_list[[7]] <- as.data.frame(posterior_interval(
+        models_list[[7]],
+        prob = 0.95
+      ))
 
       ## Model 8: herbivores on piscivores ####
       models_list[[8]] <- brm(
-        biomass_g_per_m2_Piscivore ~ s(biomass_g_per_m2_Herbivore, k = 3, bs = "cs") + s(biomass_g_per_m2_Invertivore, k = 3, bs = "cs") +
-          s(biomass_g_per_m2_Planktivore, k = 3, bs = "cs") + s(pop.dens, k = 3, bs = "cs"),
+        biomass_g_per_m2_Piscivore ~ s(
+          biomass_g_per_m2_Herbivore,
+          k = 3,
+          bs = "cs"
+        ) +
+          s(biomass_g_per_m2_Invertivore, k = 3, bs = "cs") +
+          s(biomass_g_per_m2_Planktivore, k = 3, bs = "cs") +
+          s(pop.dens, k = 3, bs = "cs"),
         data = ReefWideBRUVUVC.DAGtested,
         family = student(),
         prior = c(
@@ -426,15 +627,30 @@ for (topo_name in names(topo_types)) {
         chains = 4,
         iter = 2000,
         seed = 123,
-        save_model = here("Results", "DAG", "brm_models", paste0(prefix, "_6_pisc-herb_spline.stan")),
+        save_model = here(
+          "Results",
+          "DAG",
+          "brm_models",
+          paste0(prefix, "_6_pisc-herb_spline.stan")
+        ),
         save_pars = save_pars(all = TRUE)
       )
       models_list[[8]] <- add_criterion(models_list[[8]], "loo", reloo = TRUE)
-      intervals_list[[8]] <- as.data.frame(posterior_interval(models_list[[8]], prob = 0.95))
+      intervals_list[[8]] <- as.data.frame(posterior_interval(
+        models_list[[8]],
+        prob = 0.95
+      ))
 
       ## Model 9: planktivores on piscivores ####
       models_list[[9]] <- brm(
-        biomass_g_per_m2_Piscivore ~ s(biomass_g_per_m2_Planktivore, k = 3, bs = "cs") + s(ave_npp, k = 3, bs = "cs") + s(pop.dens, k = 3, bs = "cs") + s(Relief, k = 3, bs = "cs"),
+        biomass_g_per_m2_Piscivore ~ s(
+          biomass_g_per_m2_Planktivore,
+          k = 3,
+          bs = "cs"
+        ) +
+          s(ave_npp, k = 3, bs = "cs") +
+          s(pop.dens, k = 3, bs = "cs") +
+          s(Relief, k = 3, bs = "cs"),
         data = ReefWideBRUVUVC.DAGtested,
         family = student(),
         prior = c(
@@ -444,16 +660,30 @@ for (topo_name in names(topo_types)) {
         chains = 4,
         iter = 2000,
         seed = 123,
-        save_model = here("Results", "DAG", "brm_models", paste0(prefix, "_7_pisc-plank_spline.stan")),
+        save_model = here(
+          "Results",
+          "DAG",
+          "brm_models",
+          paste0(prefix, "_7_pisc-plank_spline.stan")
+        ),
         save_pars = save_pars(all = TRUE)
       )
       models_list[[9]] <- add_criterion(models_list[[9]], "loo", reloo = TRUE)
-      intervals_list[[9]] <- as.data.frame(posterior_interval(models_list[[9]], prob = 0.95))
+      intervals_list[[9]] <- as.data.frame(posterior_interval(
+        models_list[[9]],
+        prob = 0.95
+      ))
 
       ## Model 10: invertivores on piscivores ####
       models_list[[10]] <- brm(
-        biomass_g_per_m2_Piscivore ~ s(biomass_g_per_m2_Invertivore, k = 3, bs = "cs") + s(biomass_g_per_m2_Herbivore, k = 3, bs = "cs") +
-          s(biomass_g_per_m2_Planktivore, k = 3, bs = "cs") + s(pop.dens, k = 3, bs = "cs"),
+        biomass_g_per_m2_Piscivore ~ s(
+          biomass_g_per_m2_Invertivore,
+          k = 3,
+          bs = "cs"
+        ) +
+          s(biomass_g_per_m2_Herbivore, k = 3, bs = "cs") +
+          s(biomass_g_per_m2_Planktivore, k = 3, bs = "cs") +
+          s(pop.dens, k = 3, bs = "cs"),
         data = ReefWideBRUVUVC.DAGtested,
         family = student(),
         prior = c(
@@ -463,11 +693,19 @@ for (topo_name in names(topo_types)) {
         chains = 4,
         iter = 2000,
         seed = 123,
-        save_model = here("Results", "DAG", "brm_models", paste0(prefix, "_8_pisc-inv_spline.stan")),
+        save_model = here(
+          "Results",
+          "DAG",
+          "brm_models",
+          paste0(prefix, "_8_pisc-inv_spline.stan")
+        ),
         save_pars = save_pars(all = TRUE)
       )
       models_list[[10]] <- add_criterion(models_list[[10]], "loo", reloo = TRUE)
-      intervals_list[[10]] <- as.data.frame(posterior_interval(models_list[[10]], prob = 0.95))
+      intervals_list[[10]] <- as.data.frame(posterior_interval(
+        models_list[[10]],
+        prob = 0.95
+      ))
 
       ## Model 11: hard_coral on herbivores ####
       models_list[[11]] <- brm(
@@ -481,11 +719,19 @@ for (topo_name in names(topo_types)) {
         chains = 4,
         iter = 2000,
         seed = 123,
-        save_model = here("Results", "DAG", "brm_models", paste0(prefix, "_9_herb-HC_spline.stan")),
+        save_model = here(
+          "Results",
+          "DAG",
+          "brm_models",
+          paste0(prefix, "_9_herb-HC_spline.stan")
+        ),
         save_pars = save_pars(all = TRUE)
       )
       models_list[[11]] <- add_criterion(models_list[[11]], "loo", reloo = TRUE)
-      intervals_list[[11]] <- as.data.frame(posterior_interval(models_list[[11]], prob = 0.95))
+      intervals_list[[11]] <- as.data.frame(posterior_interval(
+        models_list[[11]],
+        prob = 0.95
+      ))
 
       ## Model 12: CCA on herbivores ####
       models_list[[12]] <- brm(
@@ -499,15 +745,27 @@ for (topo_name in names(topo_types)) {
         chains = 4,
         iter = 2000,
         seed = 123,
-        save_model = here("Results", "DAG", "brm_models", paste0(prefix, "_10_herb-CCA_spline.stan")),
+        save_model = here(
+          "Results",
+          "DAG",
+          "brm_models",
+          paste0(prefix, "_10_herb-CCA_spline.stan")
+        ),
         save_pars = save_pars(all = TRUE)
       )
       models_list[[12]] <- add_criterion(models_list[[12]], "loo", reloo = TRUE)
-      intervals_list[[12]] <- as.data.frame(posterior_interval(models_list[[12]], prob = 0.95))
+      intervals_list[[12]] <- as.data.frame(posterior_interval(
+        models_list[[12]],
+        prob = 0.95
+      ))
 
       ## Model 13: other algae on herbivores ####
       models_list[[13]] <- brm(
-        biomass_g_per_m2_Herbivore ~ s(Other.Algae, k = 3, bs = "cs") + s(CCA, k = 3, bs = "cs") + s(Hard.Coral, k = 3, bs = "cs") + s(pop.dens, k = 3, bs = "cs") + s(Relief, k = 3, bs = "cs"),
+        biomass_g_per_m2_Herbivore ~ s(Other.Algae, k = 3, bs = "cs") +
+          s(CCA, k = 3, bs = "cs") +
+          s(Hard.Coral, k = 3, bs = "cs") +
+          s(pop.dens, k = 3, bs = "cs") +
+          s(Relief, k = 3, bs = "cs"),
         data = ReefWideBRUVUVC.DAGtested,
         family = student(),
         prior = c(
@@ -517,13 +775,21 @@ for (topo_name in names(topo_types)) {
         chains = 4,
         iter = 2000,
         seed = 123,
-        save_model = here("Results", "DAG", "brm_models", paste0(prefix, "_11_herb-OA_spline.stan")),
+        save_model = here(
+          "Results",
+          "DAG",
+          "brm_models",
+          paste0(prefix, "_11_herb-OA_spline.stan")
+        ),
         save_pars = save_pars(all = TRUE)
       )
       models_list[[13]] <- add_criterion(models_list[[13]], "loo", reloo = TRUE)
-      intervals_list[[13]] <- as.data.frame(posterior_interval(models_list[[13]], prob = 0.95))
+      intervals_list[[13]] <- as.data.frame(posterior_interval(
+        models_list[[13]],
+        prob = 0.95
+      ))
 
-      # Labels for BU plots (note: direction reversed) ####
+      ## Labels for BU plots (note: direction reversed) ####
       if (topo_name == "Atoll") {
         plot_labels <- c(
           "Sicklefin lemon sharks on reef sharks",
@@ -560,13 +826,27 @@ for (topo_name in names(topo_types)) {
       dplyr::slice(1:3, 7:9, 13:n()) |>
       tibble::rownames_to_column("Value") |>
       readr::write_csv(
-        file = here("Results", "DAG", paste0("95pct_intervals_list_", topo_file, "_", direction_file, "_spline.csv"))
+        file = here(
+          "Results",
+          "DAG",
+          paste0(
+            "95pct_intervals_list_",
+            topo_file,
+            "_",
+            direction_file,
+            "_spline.csv"
+          )
+        )
       )
 
     # Save models list ####
     saveRDS(
       object = models_list[c(1, 3, 5:13)],
-      file = here("Results", "DAG", paste0("models_list_", topo_file, "_", direction_file, "_spline.Rds")),
+      file = here(
+        "Results",
+        "DAG",
+        paste0("models_list_", topo_file, "_", direction_file, "_spline.Rds")
+      ),
       compress = "xz"
     )
 
@@ -654,7 +934,10 @@ for (topo_name in names(topo_types)) {
     )
 
     # Create the plot
-    analysis_plot <- ggplot(plot_df, aes(x = effect, y = label, color = group)) +
+    analysis_plot <- ggplot(
+      plot_df,
+      aes(x = effect, y = label, color = group)
+    ) +
       geom_point(size = 3) +
       geom_errorbarh(aes(xmin = lower, xmax = upper), height = 0.1) +
       scale_color_manual(values = colors) +
@@ -662,7 +945,11 @@ for (topo_name in names(topo_types)) {
       theme_minimal() +
       theme(
         legend.position = "none",
-        axis.text.y = if (trophic_dir == "TD" && topo_name == "Atoll") element_blank() else element_text(),
+        axis.text.y = if (trophic_dir == "TD" && topo_name == "Atoll") {
+          element_blank()
+        } else {
+          element_text()
+        },
         axis.line.x = element_line(color = "black"),
         plot.background = element_rect(fill = "white", colour = "grey50")
       ) +
@@ -677,7 +964,14 @@ for (topo_name in names(topo_types)) {
 
     # Save plot as PNG
     ggsave(
-      filename = paste0(lubridate::today(), "_DAG-results-", topo_name, "-", trophic_dir, "_spline.png"),
+      filename = paste0(
+        lubridate::today(),
+        "_DAG-results-",
+        topo_name,
+        "-",
+        trophic_dir,
+        "_spline.png"
+      ),
       plot = analysis_plot,
       device = "png",
       path = here("Results", "DAG")
@@ -686,7 +980,15 @@ for (topo_name in names(topo_types)) {
     # Save plot as RDS
     saveRDS(
       object = analysis_plot,
-      file = here("Results", "DAG", paste0(trophic_dir, ifelse(topo_name == "Atoll", "atoll", "highisland"), "plot_spline.Rds")),
+      file = here(
+        "Results",
+        "DAG",
+        paste0(
+          trophic_dir,
+          ifelse(topo_name == "Atoll", "atoll", "highisland"),
+          "plot_spline.Rds"
+        )
+      ),
       compress = "xz"
     )
 

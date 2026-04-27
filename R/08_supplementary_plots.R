@@ -1,6 +1,107 @@
-# loo (leave one out) expected log pointwise predictive density metrics
-# For SCMs with 2 topographies and 2 directions from scripts 10_Suchinta-DAG.R & 11_Si-DAG-bottomup.R
-# Simon Dedman, 2025-03-20 simondedman@gmail.com
+# 08_supplementary_plots.R
+# Supplementary-material figures, raw-data summaries, diagnostic
+# checks, and quotable statistics that don't fit elsewhere in the
+# pipeline.
+#
+# Author: Simon Dedman <simondedman@gmail.com>
+# Created: 2025-03-20
+# Updated: 2026-04 (renamed from 12_DAG-SCMs_RawData_Review.R; absorbed
+#                   the predator-teleost diagnostic and the Other Algae
+#                   independence check from 01_data_prep.R, plus the
+#                   SST/reef-sharks deep-dive from the legacy
+#                   05_nat_FPDAG_consistency_check.R)
+#
+# Purpose:
+#   A single home for everything that supports the manuscript's
+#   supplementary material without belonging to the main BRT or DAG
+#   stages. Sections are independent: each can be run standalone after
+#   01_data_prep.R has produced the reef-wide tables.
+#
+# Inputs:
+#   - NFF_data/ch4_reef_wide_df2.RData
+#   - NFF_data/wide.df1.teleosts.csv         (predator-teleost diagnostic)
+#   - NFF_data/survey.wide.df2.RData         (predator-teleost diagnostic)
+#   - NFF_data/BenthicSurveyDataSheets/Algae_breakdown_2025_07.xlsx
+#                                            (Other Algae check)
+#   - NFF_data/fixed_bethic_uvc_final_2023_02_26.csv (Other Algae check)
+#   - NFF_data/ReefWideBRUVUVC.csv           (SST deep-dive)
+#
+# Sections (in execution order), with rationale and outputs:
+#
+#   1. Column plots, raw data (L27+)
+#        Rationale: per-reef bar plots of the BRT and DAG explanatory
+#        variables, faceted by topology. Sanity-check that values look
+#        right and to provide eyeball-comparable reef rankings.
+#        Outputs: Results/ColumnPlots/<expvar>_per_reef.png
+#
+#   2. Linear-model scatter plots, DAG variable pairs (L82+)
+#        Rationale: pairwise lm(y ~ x) for each adjacent edge in the
+#        proposed DAG. Helps interpret the DAG structure visually
+#        before running the Bayesian SCMs.
+#        Outputs: Results/LMplots_DAG/<y> ~ <x>.png
+#
+#   3. Linear-model scatter plots, BRT-significant pairs (L149+)
+#        Rationale: same as 2 but for variable pairs surfaced by the
+#        BRT relative-influence rankings.
+#        Outputs: Results/LMplots_BRT/<response>/<y> ~ <x>.png
+#
+#   4. Focused diagnostic: chi_benthos_percent ~ maxn_shark (L208+)
+#        Rationale: explicit check on the headline shark -> benthos
+#        relationship, with reef-name labels for outliers.
+#        Outputs: Results/Scatterplots/maxn_shark_vs_chi_benthos.png
+#
+#   5. Mike's requested plots, 2025-08-15 (L249+)
+#        Rationale: scatter / box panels Mike Heithaus requested for
+#        an internal review meeting. Retained for transparency.
+#        Outputs: Results/Scatterplots/<various>.png
+#
+#   6. Scatterplots: maxn_shark vs piscivore biomass, with coral cover
+#        as third axis (L293+)
+#        Rationale: visual cross-check of the canonical predator-prey
+#        relationship.
+#        Outputs: Results/Scatterplots/maxn_shark_vs_biomass_g_per_m2_Piscivore_coralcover.png
+#
+#   7. Sharks and piscivores per reef (L477+)
+#        Rationale: per-reef bar/column plots focused specifically on
+#        shark MaxN and piscivore biomass.
+#        Outputs: Results/ColumnPlots/<various>.png
+#
+#   8. Non-plot stats to quote (L543+)
+#        Rationale: numeric summaries (mean, median, IQR) cited in the
+#        manuscript text or methods.
+#        Outputs: console only
+#
+#   9. UVC and BRUV results, per-reef means (L558+)
+#        Rationale: produces the per-reef mean biomass table referenced
+#        in the SM tables.
+#        Outputs: NFF_data/Mean_biomass_g_per_m2_per_reef.csv
+#
+#  10. Predator-teleost BRUV MaxN vs UVC piscivore biomass (L587+)
+#        Rationale: data-quality diagnostic; BRUV MaxN of seven
+#        predator-teleost families should correlate with UVC piscivore
+#        biomass per reef. Originally part of 01_data_prep.R.
+#        Outputs: NFF_data/scatter_pred_tel_plot1.png
+#
+#  11. Other Algae proportions independence check (L649+)
+#        Rationale: tests whether Other.Algae cover is independent of
+#        Fleshy.Macroalgae and Turf.Algae components, using `propr`
+#        compositional correlation. Result: rho ~ -0.36 between turf
+#        and fleshy macroalgae (mildly anti-proportional, consistent
+#        with ecological expectation that they squeeze each other out
+#        at high cover).
+#        Outputs: Results/Boxplots/<date>_benthic_proportions_heatmap.png
+#
+#  12. SST / reef-sharks linear model (post-hoc, L762+)
+#        Rationale: the d-separation test for full_BU in
+#        04_DAG_consistency.R flags ave_temp -> reef_sharks as one of
+#        the larger inconsistencies. This block fits the lm explicitly
+#        as a sanity check (slope positive, p ~ 0.05).
+#        Outputs: console summary, base-graphics diagnostic plots,
+#        ggplot scatter (not currently saved)
+#
+# Packages:
+#   here, tidyverse, ggplot2, ggpubr, viridis, propr, readxl, lubridate,
+#   reshape2
 
 library(here)
 library(tidyverse)

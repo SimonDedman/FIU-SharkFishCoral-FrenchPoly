@@ -1,4 +1,4 @@
-# NK: Threw this together, hope it helps!!
+# Natalie K: Threw this together, hope it helps!!
 
 library(dplyr)
 library(dagitty)

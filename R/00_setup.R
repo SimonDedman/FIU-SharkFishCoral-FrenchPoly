@@ -1,6 +1,9 @@
 # 00_setup.R
 # Common setup for the FIU-SharkFishCoral-FrenchPoly analysis pipeline.
 #
+# Author: Simon Dedman <simondedman@gmail.com>
+# Created: 2026-04
+#
 # Source this script (or have `_targets.R` source it) before running any
 # of the numbered analysis scripts 01-08. It:
 #
@@ -32,14 +35,14 @@ set.seed(123)
 # Listed by stage so they can be cross-referenced against script imports.
 # When this list grows, prefer `renv::snapshot()` to pin versions.
 required_packages <- list(
-  data_prep   = c("tidyverse", "viridis", "plotly", "cowplot", "ggpubr",
-                  "readr", "readxl", "lubridate", "stringr"),
+  data_prep   = c("tidyverse", "plotly"),
   trophic     = c("rfishbase"),
   brt         = c("gbm.auto"),
-  dag         = c("dagitty", "DataCombine", "ggdag", "igraph",
-                  "tidygraph", "ggraph", "reporter"),
-  bayesian    = c("brms", "rstan"),
-  benthic     = c("propr", "reshape2"),
+  dag         = c("dagitty", "DataCombine", "ggdag", "ggrepel",
+                  "igraph", "tidygraph", "ggraph", "reporter"),
+  bayesian    = c("brms", "rstan", "loo"),
+  supplementary = c("propr", "reshape2", "readxl", "lubridate",
+                    "viridis", "ggpubr"),
   shared      = c("here", "dplyr", "ggplot2")
 )
 

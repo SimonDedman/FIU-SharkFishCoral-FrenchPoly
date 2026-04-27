@@ -2,6 +2,13 @@
 # d-separation consistency tests for five candidate DAGs of the
 # French Polynesia coral reef system.
 #
+# Author: Simon Dedman <simondedman@gmail.com>
+# Created: 2026-04
+# Co-authors / development:
+#   - Natalie K (initial dagitty consistency-check workflow; archived
+#     legacy scripts 05-08 nat_FPDAG_*.R)
+#   - Suchinta Arif (Dalhousie; DAG framework; ORCID 0000-0001-8381-3071)
+#
 # Replaces four legacy scripts that have been moved to R/archive/:
 #   05_nat_FPDAG_consistency_check.R                    (full system, both directions)
 #   06_nat_FPDAG_consistency_check_DAG1-tophalf-topdown.R     (DAG1)
@@ -43,10 +50,11 @@
 #   dag_inconsistencies_<dag>_0.3.csv  - filtered to |r| >= 0.3, sorted
 #                                        by absolute effect size
 #
-# DAG framework adapted from Suchinta Arif (Dalhousie); initial dagitty
-# consistency-check workflow contributed by Nathan K. Standardisation
-# uses Gelman's "centre then divide by 2 SD" form, retained from the
-# legacy scripts for comparability.
+# Standardisation uses Gelman's "centre then divide by 2 SD" form,
+# retained from the legacy scripts for comparability.
+#
+# Packages:
+#   dplyr, dagitty, DataCombine, here
 
 library(dplyr)
 library(dagitty)
@@ -82,7 +90,8 @@ colnames(dat) <- as.character(var_names$corrected_name$current_name)
 
 # Five candidate DAGs ####
 # full_TD: full reef system, top-down (sharks -> coral) ####
-full_TD <- dagitty('dag {
+full_TD <- dagitty(
+  'dag {
 ave_npp [pos="-0.927,0.696"]
 ave_temp [pos="-0.890,1.097"]
 crustose_coraline_algae [pos="-0.923,0.349"]
@@ -140,10 +149,12 @@ sicklefin_lemon_sharks -> piscivores
 sicklefin_lemon_sharks -> reef_sharks
 transient_pelagic_sharks -> piscivores
 transient_pelagic_sharks -> reef_sharks
-}')
+}'
+)
 
 # full_BU: full reef system, bottom-up ("BU arrows up") ####
-full_BU <- dagitty('dag {
+full_BU <- dagitty(
+  'dag {
 ave_npp [pos="-0.927,0.696"]
 ave_temp [exposure,pos="-0.890,1.097"]
 crustose_coraline_algae [pos="-0.923,0.349"]
@@ -201,10 +212,12 @@ sicklefin_lemon_sharks -> piscivores
 sicklefin_lemon_sharks -> reef_sharks
 transient_pelagic_sharks -> piscivores
 transient_pelagic_sharks -> reef_sharks
-}')
+}'
+)
 
 # tophalf_TD: upper trophic chain, top-down (DAG1) ####
-tophalf_TD <- dagitty('dag {
+tophalf_TD <- dagitty(
+  'dag {
 ambush_piscivore [pos="-0.876,-1.268"]
 blacktip_reef_shark [pos="-0.970,-1.278"]
 browser [latent,pos="-0.771,-0.705"]
@@ -295,10 +308,12 @@ whitetip_reef_shark -> grazer
 whitetip_reef_shark -> invertivore
 whitetip_reef_shark -> planktivore
 whitetip_reef_shark -> scraper
-}')
+}'
+)
 
 # tophalf_BU: upper trophic chain, bottom-up (DAG2) ####
-tophalf_BU <- dagitty('dag {
+tophalf_BU <- dagitty(
+  'dag {
 ambush_piscivore [pos="-0.876,-1.268"]
 blacktip_reef_shark [pos="-0.970,-1.278"]
 browser [latent,pos="-0.771,-0.705"]
@@ -404,10 +419,12 @@ tawny_nurse_shark -> transient_pelagic_sharks
 whitetip_reef_shark -> sicklefin_lemon_shark
 whitetip_reef_shark -> transient_pelagic_sharks
 zooplankton -> planktivore
-}')
+}'
+)
 
 # bottomhalf_BU: environmental drivers only, bottom-up (DAG3) ####
-bottomhalf_BU <- dagitty('dag {
+bottomhalf_BU <- dagitty(
+  'dag {
 ave_npp [pos="-0.927,0.696"]
 ave_temp [pos="-0.890,1.097"]
 bed_shear_stress [latent,pos="-0.963,1.079"]
@@ -479,7 +496,8 @@ turbidity -> crustose_coraline_algae
 turbidity -> hard_coral
 turbidity -> other_algae
 wave_exposure -> bed_shear_stress
-}')
+}'
+)
 
 dags <- list(
   full_TD = full_TD,
@@ -516,7 +534,10 @@ for (dag_name in names(dags)) {
   # Write all results
   write.csv(
     test,
-    file = file.path(out_dir, paste0("dag_inconsistencies_", dag_name, "_all.csv")),
+    file = file.path(
+      out_dir,
+      paste0("dag_inconsistencies_", dag_name, "_all.csv")
+    ),
     row.names = TRUE
   )
 
@@ -526,16 +547,26 @@ for (dag_name in names(dags)) {
     testf <- testf[rev(order(abs(testf$estimate))), ]
     write.csv(
       testf,
-      file = file.path(out_dir, paste0("dag_inconsistencies_", dag_name, "_0.3.csv")),
+      file = file.path(
+        out_dir,
+        paste0("dag_inconsistencies_", dag_name, "_0.3.csv")
+      ),
       row.names = TRUE
     )
-    cat("  testable independencies:", nrow(test),
-        "; |r| >= 0.3:", nrow(testf), "\n")
+    cat(
+      "  testable independencies:",
+      nrow(test),
+      "; |r| >= 0.3:",
+      nrow(testf),
+      "\n"
+    )
   } else {
-    cat("  testable independencies:", nrow(test),
-        "; |r| >= 0.3: 0 (no filtered file written)\n")
+    cat(
+      "  testable independencies:",
+      nrow(test),
+      "; |r| >= 0.3: 0 (no filtered file written)\n"
+    )
   }
 }
 
-cat("\nAll DAG consistency tests complete. Per-DAG CSVs in:\n  ",
-    out_dir, "\n")
+cat("\nAll DAG consistency tests complete. Per-DAG CSVs in:\n  ", out_dir, "\n")
