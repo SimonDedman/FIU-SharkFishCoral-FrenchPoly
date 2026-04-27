@@ -36,18 +36,15 @@ Surveys combine baited remote underwater video (BRUV) for sharks, underwater vis
 │   └── utils/              Helper scripts (e.g. strip_brm_dso.R)
 ├── data/
 │   └── README.md           Manifest for the FIU Dataverse archive
-├── NFF_data/               Local copy of raw and processed data (gitignored)
-├── Results/                Local outputs: BRT, DAG, plots (gitignored)
-├── figures/                Paper figures committed for README rendering
-│   ├── main/               Figs 1-4
-│   └── supplementary/      Selected SM figures
-├── Docs/                   Manuscript and supplementary material (gitignored)
+├── figures/
+│   ├── main/               Main paper figures (committed for README rendering)
+│   └── supplementary/      Selected SM figure thumbnails
 ├── CITATION.cff            Citation metadata (renders on GitHub)
 ├── LICENSE                 GPL v3
 └── FIU-SharkFishCoral-FrenchPoly.Rproj
 ```
 
-The `R/` script set is being consolidated for release; some scripts will be renumbered and merged before the v1.0 tagged release. The current branch may show transitional naming.
+Local-only directories (gitignored) referenced by the scripts: `NFF_data/` for raw and processed data (downloaded from the FIU Dataverse, see `data/README.md`), `Results/` for BRT and DAG model outputs, `Docs/` for the manuscript and supplementary material, and `Nat_resources/` and `Presentations/` for working materials.
 
 ---
 
@@ -109,15 +106,57 @@ Numbering will be tightened to a clean 01-08 in v1.0; see `R/archive/` for super
 
 ## Figures
 
-Thumbnails of the main paper figures will be added here once the figure-to-script mapping is finalised in v1.0. For now:
+### Main paper figures
 
-| Figure | Source script | Output file (in Dataverse archive) |
-|---|---|---|
-| Main Fig 1 (BRT partial dependence) | `03_BRT_models.R` | `Results/BRT/<group>/...` |
-| Main Fig 2 (LOO R² distributions) | `06_DAG_results.R` | `Results/DAG/2025-10-20_BayesR2boxplots_spline.png` |
-| Main Fig 3 (R² top-down vs bottom-up) | `06_DAG_results.R` | `Results/DAG/2026-02-11_BayesR2_facetTopo_spline.png` |
-| Main Fig 4 (DAG networks) | `07_DAG_network_plots.R` | `Results/DAG/2025-10-17_DAG_Atolls_spline.png`, `2025-10-17_DAG_HighIslands_spline.png` |
-| SM Figs (15+) | various | see `data/README.md` for inventory |
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <a href="figures/main/fig1_BRT_relative_influence.png"><img src="figures/main/fig1_BRT_relative_influence.png" width="400" alt="Fig 1: BRT relative influence"></a><br>
+      <b>Fig 1.</b> BRT relative influence of predictors on each response, separately for atolls and high islands.<br>
+      <em>Source: <code>R/03_BRT_models.R</code></em>
+    </td>
+    <td align="center" width="50%">
+      <a href="figures/main/fig2_BayesR2_boxplots.png"><img src="figures/main/fig2_BayesR2_boxplots.png" width="400" alt="Fig 2: Bayesian R² distributions"></a><br>
+      <b>Fig 2.</b> Bayesian R² distributions per model, faceted by topology x trophic direction.<br>
+      <em>Source: <code>R/06_DAG_results.R</code></em>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <a href="figures/main/fig3_BayesR2_TDvsBU_byTopo.png"><img src="figures/main/fig3_BayesR2_TDvsBU_byTopo.png" width="400" alt="Fig 3: TD vs BU R²"></a><br>
+      <b>Fig 3.</b> Mean Bayesian R² for top-down vs bottom-up models, faceted by topology.<br>
+      <em>Source: <code>R/06_DAG_results.R</code></em>
+    </td>
+    <td align="center">
+      <a href="figures/main/fig4a_DAG_Atolls.png"><img src="figures/main/fig4a_DAG_Atolls.png" width="200" alt="Fig 4a: Atolls DAG"></a>
+      <a href="figures/main/fig4b_DAG_HighIslands.png"><img src="figures/main/fig4b_DAG_HighIslands.png" width="200" alt="Fig 4b: HI DAG"></a><br>
+      <b>Fig 4.</b> DAG networks with posterior-weighted edge strengths, atolls (left) and high islands (right).<br>
+      <em>Source: <code>R/07_DAG_network_plots.R</code></em>
+    </td>
+  </tr>
+</table>
+
+### Supplementary figure highlights
+
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <a href="figures/supplementary/SM_foodweb_atoll.png"><img src="figures/supplementary/SM_foodweb_atoll.png" width="280" alt="Atoll foodweb"></a><br>
+      <b>Atoll foodweb.</b> Hypothesised top-down trophic structure for atoll reefs (sharks abundant). Hand-edited from a dagitty.net export by N. F. Farabaugh; not generated from R code.
+    </td>
+    <td align="center" width="33%">
+      <a href="figures/supplementary/SM_foodweb_HighIslands.png"><img src="figures/supplementary/SM_foodweb_HighIslands.png" width="280" alt="HI foodweb"></a><br>
+      <b>High-islands foodweb.</b> Bottom-up alternative for high-island reefs (sharks sparse). Same provenance as above.
+    </td>
+    <td align="center" width="33%">
+      <a href="figures/supplementary/SM_Fig32_FnGp_trophic_levels.png"><img src="figures/supplementary/SM_Fig32_FnGp_trophic_levels.png" width="280" alt="SM Fig 32 trophic levels"></a><br>
+      <b>SM Fig 32.</b> Functional group trophic levels (FishBase-derived).<br>
+      <em>Source: <code>R/02_trophic_levels.R</code> (computation), <code>R/01_data_prep.R</code> (rendering)</em>
+    </td>
+  </tr>
+</table>
+
+The full inventory of supplementary figures (15 listed in MEMORY.md plus additional renumberings, with SM Fig 32 covering the trophic-level lookup) is documented in the manuscript SM. PNGs and PDFs of every SM figure ship in the Dataverse archive under `Results/`; only highlights are reproduced here for quick orientation.
 
 ---
 
