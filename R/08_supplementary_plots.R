@@ -582,3 +582,178 @@ rawdata |>
   ) |>
   arrange(reef_name) |>
   write_csv(here("NFF_data", "Mean_biomass_g_per_m2_per_reef.csv"))
+
+
+# === Diagnostic: predator-teleost BRUV MaxN vs UVC piscivore biomass ====
+# Originally part of 01_data_prep.R (section "Compare Bruvs Pred. Teleost
+# BRUVS vs UVC"). Moved here as a data-quality cross-check rather than a
+# step in the main pipeline. Produces NFF_data/scatter_pred_tel_plot1.png.
+
+teleost.bruv.raw <- read.csv(
+  here("NFF_data", "wide.df1.teleosts.csv"),
+  header = TRUE,
+  as.is = TRUE
+) |>
+  mutate(across(
+    .cols = c(geo, isl_grp, archi, Season, bait, topo),
+    .fns = ~ factor(.x)
+  ))
+
+survey.wide.df2 <- readRDS(here("NFF_data", "survey.wide.df2.RData"))
+
+compare.tel.df1 <- teleost.bruv.raw |>
+  dplyr::select(
+    -c(lutjanidae_maxN:lethrinidae_maxN_a, carangidae_maxN_b:total_maxN_b)
+  ) |>
+  dplyr::rename(
+    teleost_maxn = total_maxN_a,
+    site_name = site,
+    reef_name = reef
+  ) |>
+  group_by(site_name, reef_name) |>
+  summarise(
+    across(c(geo, archi, isl_grp, Season, topo), \(x) first(x)),
+    across(where(is.numeric), \(x) mean(x, na.rm = TRUE))
+  ) |>
+  merge(
+    survey.wide.df2 |>
+      dplyr::select(reef_name, biomass_g_per_m2_Piscivore) |>
+      group_by(reef_name) |>
+      summarise(
+        biomass_g_per_m2_Piscivore = mean(
+          biomass_g_per_m2_Piscivore,
+          na.rm = TRUE
+        )
+      ),
+    by = c("reef_name")
+  ) |>
+  filter(site_name != c("Nuka Hiva", "Uapou"))
+
+scatter_pred_tel_plot1 <- ggplot(
+  compare.tel.df1,
+  aes(x = teleost_maxn, y = biomass_g_per_m2_Piscivore)
+) +
+  geom_point(size = 6, shape = 21, aes(fill = reef_name), colour = "black") +
+  viridis::scale_fill_viridis(option = "turbo", discrete = TRUE, name = "Site") +
+  ggpubr::theme_pubr(base_size = 14) +
+  xlab("Pred. Teleost MaxN BRUVS") +
+  ylab("Pred. Teleost Biomass (g/m2) UVC") +
+  theme(legend.position = "right", plot.title = element_text(hjust = 0.5))
+
+ggsave(
+  filename = here("NFF_data", "scatter_pred_tel_plot1.png"),
+  plot = scatter_pred_tel_plot1
+)
+
+
+# === Other Algae proportions independence check (2025-08-26) ====
+# Originally part of 01_data_prep.R. Tests whether Other.Algae proportions
+# are independent of their component categories (Fleshy Macroalgae + Turf
+# Algae) by computing the difference and using `propr` for compositional
+# correlation analysis (rho metric, CLR-transformed). Result: turf and
+# fleshy macroalgae are mildly anti-proportional (rho ~ -0.36), consistent
+# with the ecological expectation that they squeeze each other out at high
+# cover. Produces Results/Boxplots/<date>_benthic_proportions_heatmap.png.
+
+library(propr)  # installed via renv (was previously installed in-script via devtools::install_github("tpq/propr"))
+
+otheralgae <- readxl::read_excel(
+  here::here(
+    "NFF_data",
+    "BenthicSurveyDataSheets",
+    "Algae_breakdown_2025_07.xlsx"
+  ),
+  sheet = "Sheet1"
+) |>
+  dplyr::rename(
+    Other.Algae = `Other Algae`,
+    Fleshy.Macroalgae = `Fleshy Macroalgae`,
+    Turf.Algae = Turf
+  ) |>
+  dplyr::filter(is.na(FilterOut)) |>
+  dplyr::select(UniqueID, Fleshy.Macroalgae, Turf.Algae)
+
+benthos <- readr::read_csv(here::here(
+  "NFF_data",
+  "fixed_bethic_uvc_final_2023_02_26.csv"
+)) |>
+  dplyr::left_join(otheralgae, by = "UniqueID") |>
+  dplyr::mutate(
+    OAdiff = Other.Algae - (Fleshy.Macroalgae + Turf.Algae),
+    AllBenthos = Sand +
+      Rubble +
+      Pavement +
+      CCA +
+      Hard.Coral +
+      Soft.Coral +
+      Invert +
+      Fleshy.Macroalgae +
+      Turf.Algae
+  ) |>
+  tidyr::drop_na() |>
+  dplyr::filter(UniqueID != "NUK2_4") |> # FM & Turf don't add to OA total
+  dplyr::select(
+    Sand,
+    Rubble,
+    Pavement,
+    CCA,
+    Fleshy.Macroalgae,
+    Turf.Algae,
+    Hard.Coral,
+    Soft.Coral,
+    Invert
+  )
+
+pr <- propr(
+  counts = benthos,
+  metric = "rho",
+  ivar = "clr",
+  alpha = NA,
+  p = 100
+)
+getResults(pr)
+# Turf-fleshy: rho ~ -0.36 (mildly anti-proportional, consistent with
+# ecological expectation that they squeeze each other out at high cover).
+
+heatmap_df <- reshape2::melt(
+  pr@matrix,
+  varnames = c("Var1", "Var2"),
+  value.name = "propr"
+)
+# Keep only lower triangle (unique pairs, no diagonals)
+heatmap_df <- subset(
+  heatmap_df,
+  as.numeric(factor(Var1, levels = colnames(pr@matrix))) >
+    as.numeric(factor(Var2, levels = colnames(pr@matrix)))
+)
+
+ggplot2::ggplot(heatmap_df, ggplot2::aes(Var1, Var2, fill = propr)) +
+  ggplot2::geom_tile() +
+  ggplot2::geom_text(ggplot2::aes(label = round(propr, 2)), size = 3) +
+  ggplot2::scale_fill_gradient2(
+    low = "red",
+    mid = "white",
+    high = "blue",
+    midpoint = 0
+  ) +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(
+    axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+    panel.background = ggplot2::element_rect(fill = "white", colour = "grey50"),
+    plot.background = ggplot2::element_rect(fill = "white", colour = "grey50"),
+    panel.border = ggplot2::element_rect(
+      colour = "black",
+      fill = NA,
+      linewidth = 1
+    )
+  ) +
+  ggplot2::labs(x = "", y = "", fill = "Propr (rho)")
+
+ggplot2::ggsave(
+  filename = paste0(lubridate::today(), "_benthic_proportions_heatmap.png"),
+  device = "png",
+  path = here::here("Results", "Boxplots"),
+  width = 8,
+  height = 8,
+  units = "in"
+)

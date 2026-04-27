@@ -23,6 +23,8 @@ These are the upstream data files required to run the full pipeline from scratch
 | `BRUV.csv` | Baited remote underwater video (BRUV) shark counts, preprocessed: per-set MaxN by species. | NFF (preprocessed from `SharkNumbersExtended_species_maxn_stats.2023.01.xlsx`) |
 | `UVC.csv` | Fish UVC observations, preprocessed: counts/biomass by species, transect, reef. | NFF |
 | `SharkNumbersExtended_species_maxn_stats.2023.01.xlsx` | Master shark count data: per-set BRUV records by species, prior to aggregation. Provided so users can verify the BRUV.csv preprocessing. | NFF |
+| `wide.df1.teleosts.csv` | Pred-teleost BRUV MaxN per family (lutjanidae, scombridae, megalopidae, carangidae, sphyraenidae, serranidae, lethrinidae) per site, prior to aggregation. Used by the predator-teleost-vs-piscivore-biomass diagnostic in `08_supplementary_plots.R`. | NFF |
+| `Algae_breakdown_2025_07.xlsx` | Typed-up algal breakdown (Other Algae split into Fleshy Macroalgae and Turf Algae per UVC observation). Used by the Other Algae proportion-independence check in `08_supplementary_plots.R`. **Note:** in the local repository this sits inside `NFF_data/BenthicSurveyDataSheets/`; the surrounding folder of PDF datasheet scans is **not** archived. | NFF |
 | `Trophic_Categorisation_Desbiens.csv` | Species-level assignments to functional groups, derived from the methodology of Desbiens et al. 2021 (DOI: 10.1002/ecy.3303), supplemented with FishBase queries. **Note:** this categorisation is *not* in the published Desbiens et al. supplementary material; cite the methodology source and acknowledge this file as a derivative work. | Derived |
 | `site_order_df.csv` | Site ordering metadata (geographic / topological order for plot facets). | Project |
 | `island.geomorphology conversion.xlsx` | Reef-to-topology classification (open atoll, closed atoll, near atoll, high barrier). | Project |
@@ -36,7 +38,7 @@ Output of the data-prep stage (script `R/01_data_prep.R`). Provided so reviewers
 | `ch4_reef_wide_df2.RData` + `.csv` | Main reef-level analysis table: shark counts, fish biomass by functional group, environmental covariates, benthic cover. **Used directly by scripts 02-08.** | 24 reefs |
 | `ch4_atoll_reef_wide_df2.RData` + `.csv` | Atolls-only subset. | 13 reefs |
 | `ch4_island_reef_wide_df2.RData` + `.csv` | High-islands-only subset. | 11 reefs |
-| `ReefWideBRUVUVC-DAGtested.csv` | Output of `04_DAG_consistency.R`: reef-level table after d-separation tests. | 24 |
+| `survey.wide.df2.RData` | Survey-level wide table (one row per UVC survey) prior to per-reef aggregation. Used by the predator-teleost diagnostic in `08_supplementary_plots.R`. | survey-level |
 | `Mean_biomass_g_per_m2_per_reef.csv` | Per-reef mean biomass summary (used in column-plot supplementary figures). | 24 |
 
 ### Fitted Bayesian models (Tier 1 reproducibility)
@@ -75,13 +77,12 @@ These are produced by scripts from the raw inputs and would only duplicate what 
 - `benthic_sum_reef_2023_02_26.csv/.RData`
 - `pred_tel_uvc_sum_reef_2023_02_28.RData/.csv`
 - `prey_uvc_sum_reef_2023_02_28.RData/.csv`
-- `survey.wide.df1/df2.RData` (and atoll/island variants)
+- `survey.wide.df1.RData` and atoll/island variants of df1; `survey.wide.df2` atoll/island variants (the reef-pooled `survey.wide.df2.RData` itself is shared, see Processed inputs above)
 - `ch4_survey_wide_df1/df2.csv` (and atoll/island variants)
 
 ### Orphaned / superseded files (not used by current pipeline)
 
-- `wide.df1.teleosts.csv` (was used by deprecated `teleost_maxn` predator-MaxN summary; column dropped in script consolidation)
-- `fixed_fish_uvc_final_2023_02_28.csv` (referenced only by a commented-out line in `02_Explore`)
+- `fixed_fish_uvc_final_2023_02_28.csv` (referenced only by a commented-out line in the legacy `02_Explore` script)
 - `fish.spp.list.fn.gps.fixed.rds` (RDS twin of the .csv; scripts re-cache as needed)
 - `TeleostDietFnGps.csv`, `OfficialFnGp-additions-Coralivores.csv`, `Coralivores.csv`, `NA.Feeding.group.csv`, `joinReviewFamOutstanding.csv` (lookup tables from upstream NFF taxonomy work; not read or written by any keeper script)
 - `SharkNumbers.xlsx` (superseded by `SharkNumbersExtended_*`)
@@ -93,7 +94,7 @@ These are produced by scripts from the raw inputs and would only duplicate what 
 - `2023-12-21 NFF email.txt`, `2024-06-05 NFF Si chat.docx` (project communications)
 - `Old Ch. 4 BRT Code/` (NFF's predecessor BRT code, kept for project history)
 - `2025-02-21_BKUPs.7z` (working backup)
-- `BenthicSurveyDataSheets/` (scans / typed-up field datasheets; the digitised data are shared in `fixed_bethic_uvc_final_2023_02_26.csv`)
+- `BenthicSurveyDataSheets/` (PDF scans of original field datasheets; the typed-up benthic data are shared in `fixed_bethic_uvc_final_2023_02_26.csv`, and the typed-up Other Algae split is shared as the standalone `Algae_breakdown_2025_07.xlsx` listed in Raw inputs above)
 - 8x dated `*_AllDfsColnames.csv` (column-inventory snapshots, 2025-02-24 to 2025-04-04)
 - Diagnostic exploration PNGs: `2024-06-24_DAG-full-sharkFishGroups.png`, `2024-06-25_DAG.png`, `2025-03-17_DAG-analyses-run.png/.pptx`, `3DAG setup.png`, `SharkTrophicLevels.png`, `shark_maxN.png`, `shark_maxN_byArchi.png`, `shark_maxN_byTopo.png`, `scatter_pred_tel_plot1.png`
 
