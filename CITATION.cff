@@ -2,6 +2,13 @@ cff-version: 1.2.0
 message: "If you use this software, please cite both the article and this code archive."
 type: software
 title: "FIU-SharkFishCoral-FrenchPoly: Analysis code for top-down and bottom-up forcing on French Polynesian coral reefs"
+version: "1.0.0"
+date-released: "2026-04-27"
+doi: "10.5281/zenodo.19835080"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.19835080"
+    description: "Zenodo archive of v1.0.0 (this release)"
 abstract: >-
   R analysis pipeline for the manuscript "Top-down and bottom-up forcing on coral reefs
   changes with habitat-specific predator abundance" (Dedman et al. 2026). Provides

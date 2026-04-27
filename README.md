@@ -2,7 +2,7 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![DOI (data)](https://img.shields.io/badge/data%20DOI-TBD-lightgrey.svg)](#data-availability)
-[![DOI (code)](https://img.shields.io/badge/code%20DOI-TBD-lightgrey.svg)](#data-availability)
+[![DOI (code)](https://zenodo.org/badge/DOI/10.5281/zenodo.19835080.svg)](https://doi.org/10.5281/zenodo.19835080)
 
 Analysis code for the manuscript:
 
@@ -170,7 +170,7 @@ See `data/README.md` for the file-level manifest.
 
 This GitHub repository contains code only. Tagged releases are mirrored to **Zenodo** for a citable code DOI:
 
-> Dedman, S., et al. (2026). FIU-SharkFishCoral-FrenchPoly: code archive. Zenodo. DOI: TBD.
+> Dedman, S., et al. (2026). FIU-SharkFishCoral-FrenchPoly: code archive. Zenodo. https://doi.org/10.5281/zenodo.19835080
 
 ---
 
