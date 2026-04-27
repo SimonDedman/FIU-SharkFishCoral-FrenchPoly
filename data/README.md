@@ -21,6 +21,7 @@ These are the upstream data files required to run the full pipeline from scratch
 | `fixed_bethic_uvc_final_2023_02_26.csv` | Raw benthic underwater visual census (UVC) observations: percent cover by reef, transect, and benthic category (CCA, hard coral, soft coral, fleshy macroalgae, turf algae, other algae, sand, rubble, pavement, invertebrate). | NFF field surveys |
 | `fish.spp.list.fn.gps.fixed.csv` | Fish species list with assigned functional groups (Piscivore, Invertivore, Herbivore, Planktivore, Coralivore). | NFF taxonomy reconciliation |
 | `BRUV.csv` | Baited remote underwater video (BRUV) shark counts, preprocessed: per-set MaxN by species. | NFF (preprocessed from `SharkNumbersExtended_species_maxn_stats.2023.01.xlsx`) |
+| `wide.df1.ch3.60min.2023.01.csv` | Shark BRUV MaxN per species per set, 60-minute time-cap subset (chapter-3 era). Read by `01_data_prep.R` as the canonical shark BRUV input. | NFF |
 | `UVC.csv` | Fish UVC observations, preprocessed: counts/biomass by species, transect, reef. | NFF |
 | `SharkNumbersExtended_species_maxn_stats.2023.01.xlsx` | Master shark count data: per-set BRUV records by species, prior to aggregation. Provided so users can verify the BRUV.csv preprocessing. | NFF |
 | `wide.df1.teleosts.csv` | Pred-teleost BRUV MaxN per family (lutjanidae, scombridae, megalopidae, carangidae, sphyraenidae, serranidae, lethrinidae) per site, prior to aggregation. Used by the predator-teleost-vs-piscivore-biomass diagnostic in `08_supplementary_plots.R`. | NFF |

@@ -5,8 +5,8 @@
 # Author: Simon Dedman <simondedman@gmail.com>
 # Created: 2026-04
 # Co-authors / development:
-#   - Natalie K (initial dagitty consistency-check workflow; archived
-#     legacy scripts 05-08 nat_FPDAG_*.R)
+#   - Natalie Klinard (initial dagitty consistency-check workflow; archived
+#     legacy scripts 05-08 nat_FPDAG_*.R; ORCID 0000-0001-7809-9360)
 #   - Suchinta Arif (Dalhousie; DAG framework; ORCID 0000-0001-8381-3071)
 #
 # Replaces four legacy scripts that have been moved to R/archive/:

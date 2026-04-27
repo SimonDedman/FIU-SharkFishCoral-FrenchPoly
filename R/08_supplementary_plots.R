@@ -28,61 +28,61 @@
 #
 # Sections (in execution order), with rationale and outputs:
 #
-#   1. Column plots, raw data (L27+)
+#   Section 1: Column plots, raw data (L128+)
 #        Rationale: per-reef bar plots of the BRT and DAG explanatory
 #        variables, faceted by topology. Sanity-check that values look
 #        right and to provide eyeball-comparable reef rankings.
 #        Outputs: Results/ColumnPlots/<expvar>_per_reef.png
 #
-#   2. Linear-model scatter plots, DAG variable pairs (L82+)
+#   Section 2: Linear-model scatter plots, DAG variable pairs (L183+)
 #        Rationale: pairwise lm(y ~ x) for each adjacent edge in the
 #        proposed DAG. Helps interpret the DAG structure visually
 #        before running the Bayesian SCMs.
 #        Outputs: Results/LMplots_DAG/<y> ~ <x>.png
 #
-#   3. Linear-model scatter plots, BRT-significant pairs (L149+)
+#   Section 3: Linear-model scatter plots, BRT-significant pairs (L250+)
 #        Rationale: same as 2 but for variable pairs surfaced by the
 #        BRT relative-influence rankings.
 #        Outputs: Results/LMplots_BRT/<response>/<y> ~ <x>.png
 #
-#   4. Focused diagnostic: chi_benthos_percent ~ maxn_shark (L208+)
+#   Section 4: Focused diagnostic - chi_benthos_percent ~ maxn_shark (L309+)
 #        Rationale: explicit check on the headline shark -> benthos
 #        relationship, with reef-name labels for outliers.
 #        Outputs: Results/Scatterplots/maxn_shark_vs_chi_benthos.png
 #
-#   5. Mike's requested plots, 2025-08-15 (L249+)
+#   Section 5: Mike's requested plots, 2025-08-15 (L350+)
 #        Rationale: scatter / box panels Mike Heithaus requested for
 #        an internal review meeting. Retained for transparency.
 #        Outputs: Results/Scatterplots/<various>.png
 #
-#   6. Scatterplots: maxn_shark vs piscivore biomass, with coral cover
-#        as third axis (L293+)
+#   Section 6: Scatterplots - maxn_shark vs piscivore biomass with
+#        coral cover as third axis (L394+)
 #        Rationale: visual cross-check of the canonical predator-prey
 #        relationship.
 #        Outputs: Results/Scatterplots/maxn_shark_vs_biomass_g_per_m2_Piscivore_coralcover.png
 #
-#   7. Sharks and piscivores per reef (L477+)
+#   Section 7: Sharks and piscivores per reef (L578+)
 #        Rationale: per-reef bar/column plots focused specifically on
 #        shark MaxN and piscivore biomass.
 #        Outputs: Results/ColumnPlots/<various>.png
 #
-#   8. Non-plot stats to quote (L543+)
+#   Section 8: Non-plot stats to quote (L644+)
 #        Rationale: numeric summaries (mean, median, IQR) cited in the
 #        manuscript text or methods.
 #        Outputs: console only
 #
-#   9. UVC and BRUV results, per-reef means (L558+)
+#   Section 9: UVC and BRUV results, per-reef means (L659+)
 #        Rationale: produces the per-reef mean biomass table referenced
 #        in the SM tables.
 #        Outputs: NFF_data/Mean_biomass_g_per_m2_per_reef.csv
 #
-#  10. Predator-teleost BRUV MaxN vs UVC piscivore biomass (L587+)
+#  Section 10: Predator-teleost BRUV MaxN vs UVC piscivore biomass (L688+)
 #        Rationale: data-quality diagnostic; BRUV MaxN of seven
 #        predator-teleost families should correlate with UVC piscivore
 #        biomass per reef. Originally part of 01_data_prep.R.
 #        Outputs: NFF_data/scatter_pred_tel_plot1.png
 #
-#  11. Other Algae proportions independence check (L649+)
+#  Section 11: Other Algae proportions independence check (L750+)
 #        Rationale: tests whether Other.Algae cover is independent of
 #        Fleshy.Macroalgae and Turf.Algae components, using `propr`
 #        compositional correlation. Result: rho ~ -0.36 between turf
@@ -91,7 +91,7 @@
 #        at high cover).
 #        Outputs: Results/Boxplots/<date>_benthic_proportions_heatmap.png
 #
-#  12. SST / reef-sharks linear model (post-hoc, L762+)
+#  Section 12: SST / reef-sharks linear model (post-hoc, L863+)
 #        Rationale: the d-separation test for full_BU in
 #        04_DAG_consistency.R flags ave_temp -> reef_sharks as one of
 #        the larger inconsistencies. This block fits the lm explicitly
@@ -125,7 +125,7 @@ rawdata <- readRDS(here(
   ) |>
   arrange(topo2)
 
-# Column plots raw data ####
+# Section 1: Column plots, raw data ####
 dir.create(here(
   "Results",
   "ColumnPlots"
@@ -180,7 +180,7 @@ for (whichvar in myvars) {
   )
 }
 
-# Linear model plots DAG variables ####
+# Section 2: Linear-model scatter plots, DAG variable pairs ####
 source("~/Dropbox/Galway/Analysis/R/MiscScripts/R/lmplot.R")
 dir.create(here(
   "Results",
@@ -247,7 +247,7 @@ for (i in 1:nrow(predresp)) {
 }
 
 
-# Linear model plots BRT variables ####
+# Section 3: Linear-model scatter plots, BRT-significant pairs ####
 source("~/Dropbox/Galway/Analysis/R/MiscScripts/R/lmplot.R")
 dir.create(here(
   "Results",
@@ -306,7 +306,7 @@ for (j in 1:length(responses)) {
 } # close for j responses
 
 
-# Specifically chi benthos ~ maxn shark ####
+# Section 4: Focused diagnostic - chi_benthos_percent ~ maxn_shark ####
 # Fit model
 x <- "maxn_shark"
 y <- "chi_benthos_percent"
@@ -347,7 +347,7 @@ ggsave(
   bg = "white"
 )
 
-# 2025-08-15 Mike requests ####
+# Section 5: Mike's requested plots (2025-08-15) ####
 # median and first quartile value for predatory teleost biomass and shark max n on reefs
 # Boxplot of BayesR2 results
 maxn_shark
@@ -391,7 +391,7 @@ rawdata %>%
 # Atolls               3.11                          72.3
 # HighIslands          1.08                          17.8
 
-# Scatterplots ####
+# Section 6: Scatterplots - maxn_shark vs piscivore biomass with coral cover ####
 ## maxn_shark vs biomass_g_per_m2_Piscivore ####
 # with dots coloured by coral cover
 rawdata |>
@@ -575,7 +575,7 @@ ggsave(
   bg = "white"
 )
 
-## sharks & piscivores per reef ####
+# Section 7: Sharks and piscivores per reef ####
 # plot maxn_shark and biomass_g_per_m2_Piscivore per reef
 # order by topo (high barrier then near atoll then closed atoll then open atoll) and isl_grp
 rawdata |>
@@ -641,7 +641,7 @@ ggsave(
 )
 
 
-# Non-plot stats to quote ####
+# Section 8: Non-plot stats to quote ####
 # mean and sd of teleost groups
 rawdata |>
   summarise(
@@ -656,7 +656,7 @@ rawdata |>
   )
 
 
-# 3.1 UVC results & BRUV results ####
+# Section 9: UVC and BRUV results, per-reef means ####
 # mean biomass g/m2 with SD for each teleost group
 rawdata |>
   summarise(
@@ -685,7 +685,7 @@ rawdata |>
   write_csv(here("NFF_data", "Mean_biomass_g_per_m2_per_reef.csv"))
 
 
-# === Diagnostic: predator-teleost BRUV MaxN vs UVC piscivore biomass ====
+# Section 10: Predator-teleost BRUV MaxN vs UVC piscivore biomass ####
 # Originally part of 01_data_prep.R (section "Compare Bruvs Pred. Teleost
 # BRUVS vs UVC"). Moved here as a data-quality cross-check rather than a
 # step in the main pipeline. Produces NFF_data/scatter_pred_tel_plot1.png.
@@ -747,7 +747,7 @@ ggsave(
 )
 
 
-# === Other Algae proportions independence check (2025-08-26) ====
+# Section 11: Other Algae proportions independence check (2025-08-26) ####
 # Originally part of 01_data_prep.R. Tests whether Other.Algae proportions
 # are independent of their component categories (Fleshy Macroalgae + Turf
 # Algae) by computing the difference and using `propr` for compositional
@@ -860,7 +860,7 @@ ggplot2::ggsave(
 )
 
 
-# === SST / reef-sharks linear model (post-hoc, 2024-09-03) ====
+# Section 12: SST / reef-sharks linear model (post-hoc, 2024-09-03) ####
 # The d-separation test for full_BU in 04_DAG_consistency.R flags
 # ave_temp ~ reef_sharks as one of the larger inconsistencies. This
 # block fits an explicit lm to that pair as a sanity check on the
