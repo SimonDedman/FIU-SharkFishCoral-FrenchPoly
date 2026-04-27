@@ -1,7 +1,48 @@
-# Suchinta Arif, 2025-03-14 & earlier
-# Synthesized script combining TD/BU and Atoll/HighIsland analyses
-# TD DAG: https://dagitty.net/dags.html?id=7bBT4Rqj#
-# BU DAG: https://dagitty.net/dags.html?id=GBrpiZXW
+# 05_DAG_bayesian_fits.R
+# Bayesian Structural Causal Models for top-down vs bottom-up forcing.
+#
+# Purpose:
+#   Fit a list of 11 brms models per (topology x trophic direction) scenario,
+#   covering the full set of pairwise relationships specified in the DAG. The
+#   four scenarios are Atoll-TopDown, Atoll-BottomUp, HighIslands-TopDown,
+#   HighIslands-BottomUp; each produces 11 fitted brmsfit objects saved to
+#   Results/DAG/models_list_<topo>_<direction>_spline.Rds.
+#
+# Inputs:
+#   NFF_data/ch4_reef_wide_df2.RData (24-reef analysis table; n=13 atolls,
+#   n=11 high islands after topology filtering).
+#
+# Outputs:
+#   Results/DAG/brm_models/<scenario>_<modelN>_<vars>_spline.stan (Stan code)
+#   Results/DAG/models_list_<topo>_<direction>_spline.Rds (fitted brmsfit list)
+#
+# Method choice:
+#   Earlier work fit each model with a Gaussian-family linear regression
+#   (`family = gaussian()`, linear terms `y ~ x1 + x2`, normal(0, 2.5) priors
+#   on regression coefficients). Posterior predictive checks revealed
+#   heavy-tailed residuals consistent with the small per-topology sample sizes
+#   (n = 11 - 13) and indicated departures from linearity for several
+#   shark-fish and fish-benthos relationships. We replaced linear terms with
+#   cubic shrinkage splines (`s(x, k = 3, bs = "cs")`) under Student-t errors,
+#   with `exponential(1)` priors on the smoothing standard deviations to
+#   penalise excess wiggliness; the chosen formulation matched the data more
+#   closely without overfitting (LOO-PSIS comparison reported in
+#   Results/DAG/elpd_pointwise_summary_spline.csv). The earlier Gaussian-linear
+#   variant is retained at R/archive/11_DAG-TDBU-AtollHI-Collated_gaussian.R
+#   for transparency.
+#
+# Runtime:
+#   Substantial. 44 brm fits with 4 chains, 2000 iterations each, plus
+#   `add_criterion(loo, reloo = TRUE)` which triggers refits where Pareto-k
+#   diagnostics are poor.
+#
+# Method development:
+#   DAG-based Bayesian SCM framework adapted from Suchinta Arif's
+#   2025-03-14 development draft (and earlier).
+#
+# DAG sources:
+#   TD DAG: https://dagitty.net/dags.html?id=7bBT4Rqj
+#   BU DAG: https://dagitty.net/dags.html?id=GBrpiZXW
 
 # Load packages ####
 # install.packages("rstanarm")

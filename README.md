@@ -31,7 +31,7 @@ Surveys combine baited remote underwater video (BRUV) for sharks, underwater vis
 ```
 .
 ├── R/                      Analysis scripts (numbered execution order)
-│   ├── 01_*.R … 13_*.R     Active pipeline (see "Pipeline" below)
+│   ├── 00_*.R … 08_*.R     Active pipeline (see "Pipeline" below)
 │   ├── archive/            Superseded / exploratory scripts kept for transparency
 │   └── utils/              Helper scripts (e.g. strip_brm_dso.R)
 ├── data/
@@ -94,14 +94,14 @@ These files are <1 MB each.
 
 | Step | Script | Inputs | Outputs |
 |---|---|---|---|
-| 1. Data preparation | `02_Explore_ch4_2023_03.R` | Raw benthic UVC, fish UVC, BRUV CSVs | `ch4_reef_wide_df2.RData` (24-reef analysis table) and atoll/island subsets |
-| 2. Trophic level lookup | `01_Teleost_FnGp_TrophLev.R` | FishBase API; functional group definitions | Mean trophic levels per group (used in SM Fig 32) |
-| 3. BRT models | `03_BRT_runs.R` | `ch4_*_reef_wide_df2.RData` | BRT diagnostics, partial dependence plots → `Results/BRT/` |
-| 4. DAG consistency | `05_…_consistency_check.R` and DAG-specific variants | reef-wide table + dagitty DAG | `ReefWideBRUVUVC-DAGtested.csv` |
-| 5. Bayesian SCM fits | `11_DAG-TDBU-AtollHI-Collated_studentFam.R` | DAG-tested data | 4 × `models_list_*_spline.Rds` (Atolls/HI × TD/BU) |
-| 6. Results processing & comparison | `12_DAG-SCMs_Atoll-Vs-HighIsland_TopDown-vs-BottomUp.R` | model lists | LOO summaries, posterior intervals, R², stacking weights |
-| 7. DAG network plots | `13_DAG-network-plot.R` | model lists, posterior summaries | DAG figures (Main Fig 4, SM Fig 14) |
-| 8. Raw data summaries (SM) | `12_DAG-SCMs_RawData_Review.R` | reef-wide table | Boxplots, column plots, scatterplots |
+| 1. Data preparation | `01_data_prep.R` | Raw benthic UVC, fish UVC, BRUV CSVs | `ch4_reef_wide_df2.RData` (24-reef analysis table) and atoll/island subsets |
+| 2. Trophic level lookup | `02_trophic_levels.R` | FishBase API; functional group definitions | Mean trophic levels per group (used in SM Fig 32) |
+| 3. BRT models | `03_BRT_models.R` | `ch4_*_reef_wide_df2.RData` | BRT diagnostics, partial dependence plots → `Results/BRT/` |
+| 4. DAG consistency | `04_DAG_consistency.R` (collapsed from 4 legacy scripts) | reef-wide table + dagitty DAGs | `ReefWideBRUVUVC-DAGtested.csv` and per-DAG inconsistency CSVs |
+| 5. Bayesian SCM fits | `05_DAG_bayesian_fits.R` | DAG-tested data | 4 × `models_list_*_spline.Rds` (Atolls/HI × TD/BU) |
+| 6. Results processing & comparison | `06_DAG_results.R` | model lists | LOO summaries, posterior intervals, R², stacking weights |
+| 7. DAG network plots | `07_DAG_network_plots.R` | model lists, posterior summaries | DAG figures (Main Fig 4, SM Fig 14) |
+| 8. Raw data summaries (SM) | `08_supplementary_plots.R` | reef-wide table | Boxplots, column plots, scatterplots |
 
 Numbering will be tightened to a clean 01-08 in v1.0; see `R/archive/` for superseded variants.
 
@@ -113,10 +113,10 @@ Thumbnails of the main paper figures will be added here once the figure-to-scrip
 
 | Figure | Source script | Output file (in Dataverse archive) |
 |---|---|---|
-| Main Fig 1 (BRT partial dependence) | `03_BRT_runs.R` | `Results/BRT/<group>/...` |
-| Main Fig 2 (LOO R² distributions) | `12_DAG-SCMs_*.R` | `Results/DAG/2025-10-20_BayesR2boxplots_spline.png` |
-| Main Fig 3 (R² top-down vs bottom-up) | `12_DAG-SCMs_*.R` | `Results/DAG/2026-02-11_BayesR2_facetTopo_spline.png` |
-| Main Fig 4 (DAG networks) | `13_DAG-network-plot.R` | `Results/DAG/2025-10-17_DAG_Atolls_spline.png`, `2025-10-17_DAG_HighIslands_spline.png` |
+| Main Fig 1 (BRT partial dependence) | `03_BRT_models.R` | `Results/BRT/<group>/...` |
+| Main Fig 2 (LOO R² distributions) | `06_DAG_results.R` | `Results/DAG/2025-10-20_BayesR2boxplots_spline.png` |
+| Main Fig 3 (R² top-down vs bottom-up) | `06_DAG_results.R` | `Results/DAG/2026-02-11_BayesR2_facetTopo_spline.png` |
+| Main Fig 4 (DAG networks) | `07_DAG_network_plots.R` | `Results/DAG/2025-10-17_DAG_Atolls_spline.png`, `2025-10-17_DAG_HighIslands_spline.png` |
 | SM Figs (15+) | various | see `data/README.md` for inventory |
 
 ---

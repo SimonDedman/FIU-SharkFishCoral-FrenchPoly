@@ -29,7 +29,7 @@ These are the upstream data files required to run the full pipeline from scratch
 
 ### Processed inputs (reproducibility convenience)
 
-Output of the data-prep stage (script `01_data_prep.R`, formerly `02_Explore_ch4_2023_03.R`). Provided so reviewers can skip the data-prep step and proceed directly to BRT or DAG fitting.
+Output of the data-prep stage (script `R/01_data_prep.R`). Provided so reviewers can skip the data-prep step and proceed directly to BRT or DAG fitting.
 
 | File | Description | n |
 |---|---|---|
