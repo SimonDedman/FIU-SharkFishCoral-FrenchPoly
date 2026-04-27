@@ -1,0 +1,136 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite both the article and this code archive."
+type: software
+title: "FIU-SharkFishCoral-FrenchPoly: Analysis code for top-down and bottom-up forcing on French Polynesian coral reefs"
+abstract: >-
+  R analysis pipeline for the manuscript "Top-down and bottom-up forcing on coral reefs
+  changes with habitat-specific predator abundance" (Dedman et al. 2026). Provides
+  scripts to reproduce all figures and statistical results: data preparation from
+  benthic UVC and BRUV surveys; boosted regression tree (BRT) models of fish biomass
+  and benthic cover; structural causal modelling using Bayesian regression (brms)
+  with cubic shrinkage splines; directed acyclic graph (DAG) consistency testing
+  and visualisation. Tested on R 4.3+; package versions pinned via renv.
+authors:
+  - family-names: Dedman
+    given-names: Simon
+    orcid: "https://orcid.org/0000-0002-9108-972X"
+    affiliation: "Florida International University"
+  - family-names: Farabaugh
+    given-names: Naomi F.
+    orcid: "https://orcid.org/0000-0002-7839-7453"
+    affiliation: "Florida International University"
+  - family-names: Bond
+    given-names: Mark E.
+    orcid: "https://orcid.org/0000-0001-5261-5152"
+    affiliation: "Florida International University"
+  - family-names: Chapman
+    given-names: Demian
+    orcid: "https://orcid.org/0000-0002-7976-0947"
+    affiliation: "Florida International University"
+  - family-names: Clua
+    given-names: Eric
+    orcid: "https://orcid.org/0000-0001-7629-2685"
+    affiliation: "PSL Research University, CRIOBE, Moorea"
+  - family-names: Harborne
+    given-names: Alastair R.
+    orcid: "https://orcid.org/0000-0002-6818-8615"
+    affiliation: "Florida International University"
+  - family-names: Papastamatiou
+    given-names: Yannis P.
+    orcid: "https://orcid.org/0000-0002-6091-6841"
+    affiliation: "Florida International University"
+  - family-names: Kiszka
+    given-names: Jeremy J.
+    orcid: "https://orcid.org/0000-0003-1095-8979"
+    affiliation: "Florida International University"
+  - family-names: Heupel
+    given-names: Michelle
+    orcid: "https://orcid.org/0000-0002-8245-7332"
+    affiliation: "Australian Institute of Marine Science"
+  - family-names: Wirsing
+    given-names: Aaron J.
+    orcid: "https://orcid.org/0000-0001-8326-5394"
+    affiliation: "University of Washington"
+  - family-names: Heithaus
+    given-names: Michael R.
+    orcid: "https://orcid.org/0000-0002-3219-1003"
+    affiliation: "Florida International University"
+repository-code: "https://github.com/SimonDedman/FIU-SharkFishCoral-FrenchPoly"
+license: GPL-3.0-or-later
+keywords:
+  - coral reefs
+  - sharks
+  - trophic cascades
+  - structural causal models
+  - Bayesian inference
+  - boosted regression trees
+  - French Polynesia
+preferred-citation:
+  type: article
+  title: "Top-down and bottom-up forcing on coral reefs changes with habitat-specific predator abundance"
+  authors:
+    - family-names: Dedman
+      given-names: Simon
+      orcid: "https://orcid.org/0000-0002-9108-972X"
+    - family-names: Farabaugh
+      given-names: Naomi F.
+      orcid: "https://orcid.org/0000-0002-7839-7453"
+    - family-names: Bond
+      given-names: Mark E.
+      orcid: "https://orcid.org/0000-0001-5261-5152"
+    - family-names: Chapman
+      given-names: Demian
+      orcid: "https://orcid.org/0000-0002-7976-0947"
+    - family-names: Clua
+      given-names: Eric
+      orcid: "https://orcid.org/0000-0001-7629-2685"
+    - family-names: Harborne
+      given-names: Alastair R.
+      orcid: "https://orcid.org/0000-0002-6818-8615"
+    - family-names: Papastamatiou
+      given-names: Yannis P.
+      orcid: "https://orcid.org/0000-0002-6091-6841"
+    - family-names: Kiszka
+      given-names: Jeremy J.
+      orcid: "https://orcid.org/0000-0003-1095-8979"
+    - family-names: Heupel
+      given-names: Michelle
+      orcid: "https://orcid.org/0000-0002-8245-7332"
+    - family-names: Wirsing
+      given-names: Aaron J.
+      orcid: "https://orcid.org/0000-0001-8326-5394"
+    - family-names: Heithaus
+      given-names: Michael R.
+      orcid: "https://orcid.org/0000-0002-3219-1003"
+  year: 2026
+  journal: "Proceedings of the National Academy of Sciences"
+  doi: "TBD"
+references:
+  - type: data
+    title: "Data for: Top-down and bottom-up forcing on coral reefs changes with habitat-specific predator abundance"
+    authors:
+      - family-names: Dedman
+        given-names: Simon
+      - family-names: Farabaugh
+        given-names: Naomi F.
+      - family-names: Bond
+        given-names: Mark E.
+      - family-names: Chapman
+        given-names: Demian
+      - family-names: Clua
+        given-names: Eric
+      - family-names: Harborne
+        given-names: Alastair R.
+      - family-names: Papastamatiou
+        given-names: Yannis P.
+      - family-names: Kiszka
+        given-names: Jeremy J.
+      - family-names: Heupel
+        given-names: Michelle
+      - family-names: Wirsing
+        given-names: Aaron J.
+      - family-names: Heithaus
+        given-names: Michael R.
+    year: 2026
+    repository: "FIU Dataverse"
+    doi: "TBD"
