@@ -56,3 +56,7 @@ rsconnect/
 # Claude Code
 .claude
 .positai
+
+# RStudio rendered Markdown previews (auto-generated alongside .md files)
+README.html
+data/README.html
