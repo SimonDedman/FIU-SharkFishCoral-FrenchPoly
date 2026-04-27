@@ -97,7 +97,7 @@ These files are <1 MB each.
 | 1. Data preparation | `01_data_prep.R` | Raw benthic UVC, fish UVC, BRUV CSVs | `ch4_reef_wide_df2.RData` (24-reef analysis table) and atoll/island subsets |
 | 2. Trophic level lookup | `02_trophic_levels.R` | FishBase API; functional group definitions | Mean trophic levels per group (used in SM Fig 32) |
 | 3. BRT models | `03_BRT_models.R` | `ch4_*_reef_wide_df2.RData` | BRT diagnostics, partial dependence plots → `Results/BRT/` |
-| 4. DAG consistency | `04_DAG_consistency.R` (collapsed from 4 legacy scripts) | reef-wide table + dagitty DAGs | `ReefWideBRUVUVC-DAGtested.csv` and per-DAG inconsistency CSVs |
+| 4. DAG consistency | `04_DAG_consistency.R` (collapsed from 4 legacy scripts) | `ReefWideBRUVUVC.csv` + 5 candidate DAGs | per-DAG `dag_inconsistencies_<dag>_*.csv` files in `Results/DAG/consistency/` |
 | 5. Bayesian SCM fits | `05_DAG_bayesian_fits.R` | DAG-tested data | 4 × `models_list_*_spline.Rds` (Atolls/HI × TD/BU) |
 | 6. Results processing & comparison | `06_DAG_results.R` | model lists | LOO summaries, posterior intervals, R², stacking weights |
 | 7. DAG network plots | `07_DAG_network_plots.R` | model lists, posterior summaries | DAG figures (Main Fig 4, SM Fig 14) |

@@ -757,3 +757,38 @@ ggplot2::ggsave(
   height = 8,
   units = "in"
 )
+
+
+# === SST / reef-sharks linear model (post-hoc, 2024-09-03) ====
+# The d-separation test for full_BU in 04_DAG_consistency.R flags
+# ave_temp ~ reef_sharks as one of the larger inconsistencies. This
+# block fits an explicit lm to that pair as a sanity check on the
+# strength and sign of the relationship. The regression is borderline
+# significant (p ~ 0.05) with positive slope, suggesting reef-shark
+# abundance may scale weakly with sea surface temperature; this is
+# noted in the manuscript supplementary methods rather than treated
+# as a primary finding. Originally part of legacy script
+# 05_nat_FPDAG_consistency_check.R, now relocated here.
+
+dat_sst <- read.csv(here::here("NFF_data", "ReefWideBRUVUVC.csv"))
+
+sst.lm <- lm(formula = reef_sharks ~ ave_temp, data = dat_sst)
+summary(sst.lm)
+# Reported in 2024-09-03 run:
+#                Estimate Std. Error t value Pr(>|t|)
+# (Intercept)   0.1395     0.1206   1.157   0.2579
+# ave_temp      0.3481     0.1721   2.023   0.0535 .
+# Residual standard error: 0.2523 on 26 degrees of freedom
+# Multiple R-squared: 0.136, Adjusted R-squared: 0.1028
+# F-statistic: 4.093 on 1 and 26 DF, p-value: 0.05345
+
+# Diagnostic plots
+plot(sst.lm)
+
+# Scatter with regression line
+ggplot2::ggplot(
+  dat_sst,
+  ggplot2::aes(x = ave_temp, y = reef_sharks)
+) +
+  ggplot2::geom_point() +
+  ggplot2::stat_smooth(method = "lm")
