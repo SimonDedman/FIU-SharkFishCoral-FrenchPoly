@@ -59,7 +59,7 @@ git clone https://github.com/SimonDedman/FIU-SharkFishCoral-FrenchPoly.git
 cd FIU-SharkFishCoral-FrenchPoly
 ```
 
-1. Download the data archive from FIU Dataverse (DOI: TBD) into `NFF_data/` at the project root.
+1. Download the data archive from FIU Dataverse ([10.34703/gzx1-9v95/1L510G](https://doi.org/10.34703/gzx1-9v95/1L510G)) into `NFF_data/` at the project root.
 2. Open the project in RStudio (`FIU-SharkFishCoral-FrenchPoly.Rproj`).
 3. `renv::restore()` to install pinned package versions.
 4. Run scripts in `R/` in numeric order, or use `targets::tar_make()` once the `_targets.R` pipeline is in place (planned for v1.0).
