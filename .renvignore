@@ -1,0 +1,13 @@
+# Exclude archived/superseded scripts from renv dependency discovery.
+# These reference packages (rstanarm, BART, etc.) that the active
+# pipeline does not use.
+R/archive/
+
+# NFF_data/ is a data directory but contains some old NFF R scripts in
+# subfolders (Old Ch. 4 BRT Code/) and possibly other working materials.
+# Pull dependencies only from the active analysis pipeline.
+NFF_data/
+Nat_resources/
+Docs/
+Presentations/
+Results/
