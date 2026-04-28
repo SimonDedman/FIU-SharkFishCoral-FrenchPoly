@@ -1,7 +1,7 @@
 # Top-down and bottom-up forcing on French Polynesian coral reefs
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![DOI (data)](https://img.shields.io/badge/data%20DOI-TBD-lightgrey.svg)](#data-availability)
+[![DOI (data)](https://img.shields.io/badge/data%20DOI-10.34703%2Fgzx1--9v95%2F1L510G-blue.svg)](https://doi.org/10.34703/gzx1-9v95/1L510G)
 [![DOI (code)](https://zenodo.org/badge/DOI/10.5281/zenodo.19835080.svg)](https://doi.org/10.5281/zenodo.19835080)
 
 Analysis code for the manuscript:
@@ -164,7 +164,7 @@ The full inventory of supplementary figures (15 listed in MEMORY.md plus additio
 
 All raw and processed data are deposited on the **FIU Dataverse**:
 
-> Dedman, S., et al. (2026). Data for: Top-down and bottom-up forcing on coral reefs changes with habitat-specific predator abundance. FIU Dataverse. DOI: TBD.
+> Dedman, S., et al. (2026). Data for: Top-down and bottom-up forcing on coral reefs changes with habitat-specific predator abundance. FIU Dataverse. https://doi.org/10.34703/gzx1-9v95/1L510G
 
 See `data/README.md` for the file-level manifest.
 

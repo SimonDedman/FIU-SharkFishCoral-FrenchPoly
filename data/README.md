@@ -2,7 +2,8 @@
 
 The data underlying this analysis are deposited on the **FIU Dataverse** at:
 
-> **DOI: TBD** (assigned on deposit) - https://dataverse.fiu.edu/dataset.xhtml?persistentId=doi:TBD
+> **DOI: [10.34703/gzx1-9v95/1L510G](https://doi.org/10.34703/gzx1-9v95/1L510G)**
+> Landing page: https://dataverse.fiu.edu/dataset.xhtml?persistentId=doi:10.34703/gzx1-9v95/1L510G
 
 Please cite the data archive separately from the article and the code archive. The article reports the analysis; the Dataverse archive holds the data; the GitHub/Zenodo archive holds the code.
 
@@ -130,4 +131,4 @@ Please cite both the article and the data archive:
 
 > Dedman, S., Farabaugh, N. F., Bond, M. E., Chapman, D., Clua, E., Harborne, A. R., Papastamatiou, Y. P., Kiszka, J. J., Heupel, M., Wirsing, A. J., & Heithaus, M. R. (2026). Top-down and bottom-up forcing on coral reefs changes with habitat-specific predator abundance. *Proceedings of the National Academy of Sciences* (or *Science*). DOI: TBD
 
-> Dedman, S., Farabaugh, N. F., Bond, M. E., Chapman, D., Clua, E., Harborne, A. R., Papastamatiou, Y. P., Kiszka, J. J., Heupel, M., Wirsing, A. J., & Heithaus, M. R. (2026). Data for: Top-down and bottom-up forcing on coral reefs changes with habitat-specific predator abundance. FIU Dataverse. DOI: TBD
+> Dedman, S., Farabaugh, N. F., Bond, M. E., Chapman, D., Clua, E., Harborne, A. R., Papastamatiou, Y. P., Kiszka, J. J., Heupel, M., Wirsing, A. J., & Heithaus, M. R. (2026). Data for: Top-down and bottom-up forcing on coral reefs changes with habitat-specific predator abundance. FIU Dataverse. https://doi.org/10.34703/gzx1-9v95/1L510G
