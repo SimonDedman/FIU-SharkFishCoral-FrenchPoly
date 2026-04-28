@@ -38,7 +38,7 @@ required_packages <- list(
   data_prep   = c("tidyverse", "plotly"),
   trophic     = c("rfishbase"),
   brt         = c("gbm.auto"),
-  dag         = c("dagitty", "DataCombine", "ggdag", "ggrepel",
+  dag         = c("dagitty", "ggdag", "ggrepel",
                   "igraph", "tidygraph", "ggraph", "reporter"),
   bayesian    = c("brms", "rstan", "loo"),
   supplementary = c("propr", "reshape2", "readxl", "lubridate",

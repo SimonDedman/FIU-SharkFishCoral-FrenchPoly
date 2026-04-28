@@ -54,11 +54,15 @@
 # retained from the legacy scripts for comparability.
 #
 # Packages:
-#   dplyr, dagitty, DataCombine, here
+#   dplyr, dagitty, here
+#
+# Note: legacy scripts used DataCombine::FindReplace for the column-name
+# mapping below; replaced here with base-R `match()` since DataCombine
+# was archived from CRAN in 2018 and is no longer installable on
+# R >= 4.5. The mapping behaviour is identical.
 
 library(dplyr)
 library(dagitty)
-library(DataCombine)
 library(here)
 
 # Output directory ####
@@ -75,17 +79,15 @@ stdize <- function(x) {
 # Load data and apply legacy column-name mapping ####
 dat <- read.csv(here("NFF_data", "ReefWideBRUVUVC.csv"))
 name_match <- read.csv(here("NFF_data", "FPDAG_match_table.csv"))
-var_names <- data.frame(current_name = colnames(dat))
-var_names$corrected_name <- DataCombine::FindReplace(
-  var_names,
-  "current_name",
-  name_match,
-  from = "name_in_data",
-  to = "name_in_dag",
-  exact = TRUE,
-  vector = FALSE
+# For each data column, look up its DAG-equivalent name in the lookup
+# table; if not found (NA), keep the original column name.
+matched_idx <- match(colnames(dat), name_match$name_in_data)
+new_names <- ifelse(
+  is.na(matched_idx),
+  colnames(dat),
+  name_match$name_in_dag[matched_idx]
 )
-colnames(dat) <- as.character(var_names$corrected_name$current_name)
+colnames(dat) <- new_names
 
 
 # Five candidate DAGs ####
