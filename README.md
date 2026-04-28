@@ -2,7 +2,7 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![DOI (data)](https://img.shields.io/badge/data%20DOI-10.34703%2Fgzx1--9v95%2F1L510G-blue.svg)](https://doi.org/10.34703/gzx1-9v95/1L510G)
-[![DOI (code)](https://zenodo.org/badge/DOI/10.5281/zenodo.19835080.svg)](https://doi.org/10.5281/zenodo.19835080)
+[![DOI (code)](https://img.shields.io/badge/code%20DOI-10.5281%2Fzenodo.19835080-blue.svg)](https://doi.org/10.5281/zenodo.19835080)
 
 Analysis code for the manuscript:
 
