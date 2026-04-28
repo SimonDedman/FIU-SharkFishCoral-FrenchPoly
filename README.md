@@ -39,6 +39,7 @@ Surveys combine baited remote underwater video (BRUV) for sharks, underwater vis
 ├── figures/
 │   ├── main/               Main paper figures (committed for README rendering)
 │   └── supplementary/      Selected SM figure thumbnails
+├── _targets.R              targets pipeline definition (tar_make() entry point)
 ├── CITATION.cff            Citation metadata (renders on GitHub)
 ├── LICENSE                 GPL v3
 └── FIU-SharkFishCoral-FrenchPoly.Rproj
@@ -61,8 +62,10 @@ cd FIU-SharkFishCoral-FrenchPoly
 
 1. Download the data archive from FIU Dataverse ([10.34703/gzx1-9v95/1L510G](https://doi.org/10.34703/gzx1-9v95/1L510G)) into `NFF_data/` at the project root.
 2. Open the project in RStudio (`FIU-SharkFishCoral-FrenchPoly.Rproj`).
-3. `renv::restore()` to install pinned package versions.
-4. Run scripts in `R/` in numeric order, or use `targets::tar_make()` once the `_targets.R` pipeline is in place (planned for v1.0).
+3. Install the `targets` package (and `renv` once the lockfile is added in a future release).
+4. Run the full pipeline with **`targets::tar_make()`**. Visualise dependencies with `targets::tar_visnetwork()`. Inspect a single target's outputs with `targets::tar_read(<target_name>)`.
+
+Alternatively, run the eight numbered scripts in `R/` directly in numeric order; the `_targets.R` pipeline is a wrapper around exactly that behaviour with caching and dependency tracking added.
 
 ### Tier 1 - skip Bayesian fit (a few minutes)
 
@@ -70,7 +73,7 @@ The full Bayesian fit takes a substantial amount of time (44 brm fits across 4 a
 
 1. Steps 1-3 above.
 2. Additionally download `models_list_*_spline.Rds` and `posteriors_list_spline.Rds` from the Dataverse archive into `Results/DAG/`.
-3. Run only the post-fitting scripts (results processing, LOO comparison, plotting).
+3. The targets pipeline detects the existing model files and considers the `bayesian_fits` target up-to-date. Run `targets::tar_make()` and only the post-fitting targets execute. Or run scripts 06-08 directly.
 
 The compiled Stan binaries have been stripped from the model objects (`R/utils/strip_brm_dso.R`), reducing each `models_list_*_spline.Rds` from ~210 MB to ~17-20 MB. `summary()`, `plot()`, `posterior_predict()`, and `loo()` work directly; `update()` will trigger a one-time recompile.
 

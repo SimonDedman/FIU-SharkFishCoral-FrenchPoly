@@ -60,3 +60,7 @@ rsconnect/
 # RStudio rendered Markdown previews (auto-generated alongside .md files)
 README.html
 data/README.html
+
+# targets pipeline cache
+_targets/
+_targets.yaml

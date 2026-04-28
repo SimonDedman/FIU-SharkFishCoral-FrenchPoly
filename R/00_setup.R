@@ -43,6 +43,7 @@ required_packages <- list(
   bayesian    = c("brms", "rstan", "loo"),
   supplementary = c("propr", "reshape2", "readxl", "lubridate",
                     "viridis", "ggpubr"),
+  pipeline    = c("targets"),
   shared      = c("here", "dplyr", "ggplot2")
 )
 
