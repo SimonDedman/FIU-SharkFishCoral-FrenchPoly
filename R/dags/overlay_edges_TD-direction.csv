@@ -1,0 +1,14 @@
+from,to
+herbivores,crustose_coraline_algae
+herbivores,hard_coral
+herbivores,other_algae
+piscivores,herbivores
+piscivores,invertivores
+piscivores,planktivores
+reef_sharks,herbivores
+reef_sharks,invertivores
+reef_sharks,offshore_prey
+reef_sharks,planktivores
+sicklefin_lemon_sharks,offshore_prey
+sicklefin_lemon_sharks,piscivores
+sicklefin_lemon_sharks,reef_sharks

@@ -180,6 +180,66 @@ for (whichvar in myvars) {
   )
 }
 
+# Plain-English names for LM plot titles and axis labels (2026-09-24) ####
+# Defined once; used by Sections 2-4. Titles: "<x> vs <y>" in sentence case,
+# with R2 and P on a second line (lmplot()). File names keep the variable names.
+var_names <- c(
+  sicklefin_lemon_sharks = "Sicklefin lemon shark abundance",
+  reef_sharks = "Reef shark abundance",
+  maxn_shark = "Shark abundance",
+  biomass_g_per_m2_Piscivore = "Piscivore biomass",
+  biomass_g_per_m2_Herbivore = "Herbivore biomass",
+  biomass_g_per_m2_Invertivore = "Invertivore biomass",
+  biomass_g_per_m2_Planktivore = "Planktivore biomass",
+  log_piscivore = "Piscivore biomass",
+  log_Herbivore = "Herbivore biomass",
+  log_Invertivore = "Invertivore biomass",
+  log_Planktivore = "Planktivore biomass",
+  Hard.Coral = "Hard coral cover",
+  CCA = "CCA cover",
+  Other.Algae = "Other algae cover",
+  chi_benthos_percent = "Coral cover",
+  ave_temp = "Mean temperature",
+  ave_npp = "Mean NPP",
+  pop.dens = "Human population density",
+  lagoon.size = "Lagoon size",
+  Relief = "Reef relief",
+  topo = "Geomorphology",
+  isl_grp = "Island group"
+)
+var_units <- c(
+  sicklefin_lemon_sharks = "MaxN",
+  reef_sharks = "MaxN",
+  maxn_shark = "MaxN",
+  biomass_g_per_m2_Piscivore = "g/m\u00b2",
+  biomass_g_per_m2_Herbivore = "g/m\u00b2",
+  biomass_g_per_m2_Invertivore = "g/m\u00b2",
+  biomass_g_per_m2_Planktivore = "g/m\u00b2",
+  log_piscivore = "log g/m\u00b2",
+  log_Herbivore = "log g/m\u00b2",
+  log_Invertivore = "log g/m\u00b2",
+  log_Planktivore = "log g/m\u00b2",
+  Hard.Coral = "%",
+  CCA = "%",
+  Other.Algae = "%",
+  chi_benthos_percent = "hard coral + CCA, %",
+  ave_temp = "\u00b0C",
+  ave_npp = "mg C m\u207b\u00b2 day\u207b\u00b9",
+  pop.dens = "people/km\u00b2",
+  lagoon.size = "km\u00b2",
+  Relief = "0-5 scale"
+)
+# lower-case the first letter unless it starts an acronym ("CCA cover")
+lower_first <- function(x) {
+  ifelse(grepl("^[A-Z][a-z]", x), paste0(tolower(substr(x, 1, 1)), substring(x, 2)), x)
+}
+lm_title <- function(xvar, yvar) {
+  paste0(var_names[[xvar]], " vs ", lower_first(var_names[[yvar]]))
+}
+axis_label <- function(var) {
+  if (var %in% names(var_units)) paste0(var_names[[var]], " (", var_units[[var]], ")") else var_names[[var]]
+}
+
 # Section 2: Linear-model scatter plots, DAG variable pairs ####
 source("~/Dropbox/Galway/Analysis/R/MiscScripts/R/lmplot.R")
 dir.create(here(
@@ -226,9 +286,12 @@ lmplot(
   y = rawdata[, predresp$response[1]],
   xname = predresp$predictor[1],
   yname = predresp$response[1],
-  plotname = paste0(predresp$response[1], " ~ ", predresp$predictor[1]),
+  plotname = paste0(predresp$response[1], " ~ ", predresp$predictor[1], "_pointlabels"),
+  title = lm_title(predresp$predictor[1], predresp$response[1]),
+  xlab = axis_label(predresp$predictor[1]),
+  ylab = axis_label(predresp$response[1]),
   pointtext = TRUE,
-  savedir = here("Results", "LMplots")
+  savedir = here("Results", "LMplots_DAG") # was "LMplots", which is never created
 )
 
 # Loop through predictors and responses
@@ -241,7 +304,10 @@ for (i in 1:nrow(predresp)) {
     y = rawdata[, Resvar],
     xname = Expvar,
     yname = Resvar,
-    savedir = here("Results", "LMplots"),
+    title = lm_title(Expvar, Resvar),
+    xlab = axis_label(Expvar),
+    ylab = axis_label(Resvar),
+    savedir = here("Results", "LMplots_DAG"), # was "LMplots", which is never created
     plotname = paste0(Expvar, " ~ ", Resvar)
   )
 }
@@ -299,6 +365,9 @@ for (j in 1:length(responses)) {
       y = rawdata[, Resvar],
       xname = Expvar,
       yname = Resvar,
+      title = lm_title(Expvar, Resvar),
+      xlab = axis_label(Expvar),
+      ylab = axis_label(Resvar),
       savedir = here("Results", "LMplots_BRT", responses[j]),
       plotname = paste0(Resvar, " ~ ", Expvar)
     )
@@ -317,18 +386,16 @@ pval <- summary(fit)$coefficients[2, 4]
 # Build plot
 ggplot(rawdata, aes(x = rawdata[, x], y = rawdata[, y])) +
   geom_point(aes(colour = topo2), size = 3) +
-  labs(x = x, y = y) +
+  labs(x = axis_label(x), y = axis_label(y)) +
   theme_minimal(base_size = 18) +
   geom_smooth(method = "lm", se = FALSE, color = "blue", linewidth = 1) +
   ggtitle(paste0(
-    x,
-    " (x) vs ",
-    y,
-    " (y). ",
-    "Rsquared: ",
-    round(r2, 3),
-    ", P: ",
-    round(pval, 3)
+    lm_title(x, y),
+    "\n",
+    "R\u00b2: ",
+    formatC(r2, format = "f", digits = 2),
+    ", ",
+    if (pval < 0.001) "P < 0.001" else paste0("P = ", formatC(pval, format = "f", digits = 3))
   ))
 
 # Save plot

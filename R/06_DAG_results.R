@@ -53,7 +53,7 @@
 #     2025-10-17_stacking_weights_spline.png
 #
 # Packages:
-#   here, loo, brms, tidyverse
+#   here, loo, brms, tidyverse, ggtext
 
 # USE SPLINE MODELS ####
 # Set to TRUE to use spline / Student-t fits from 05_DAG_bayesian_fits.R.
@@ -65,7 +65,9 @@ library(here)
 library(loo)
 library(brms)
 library(tidyverse)
+library(ggtext) # element_markdown(): bold the per-topo summary axis labels
 options(future.globals.maxSize = 1.5 * 1024^3) # 1.5 GiB otherwise add_criterion can run out of memory
+set.seed(123) # loo_R2() and posterior summaries use random draws; fixes reruns to the same values
 
 
 # Set file suffix based on model type ####
@@ -104,15 +106,21 @@ posteriors_list <- list()
 elpd_obs_list <- list()
 bayesR2_list <- list()
 
+# ORDER MUST MATCH the saved model lists, i.e. 05_DAG_bayesian_fits.R's
+# models_list[c(1, 3, 5:13)]; labels are attached by position below, and the
+# model loop stops if any label disagrees with its model's formula.
+# Fixed 2026-09-24: positions 3, 5, 6, 7 & 8 were previously in a different
+# order (planktivores/invertivores/herbivores), which mislabelled five paths in
+# every scenario (see Docs/Science/SEM_rework_review_2026-09-24_1040.html).
 topdown_formulas <- c(
   "Sicklefin lemon sharks on reef sharks",
   "Sicklefin lemon sharks on piscivores",
-  "Reef sharks on planktivores",
-  "Reef sharks on invertivores",
   "Reef sharks on herbivores",
+  "Reef sharks on invertivores",
+  "Reef sharks on planktivores",
+  "Piscivores on herbivores",
   "Piscivores on planktivores",
   "Piscivores on invertivores",
-  "Piscivores on herbivores",
   "Herbivores on hard coral",
   "Herbivores on crustose coraline algae",
   "Herbivores on other algae"
@@ -121,18 +129,60 @@ topdown_formulas <- c(
 bottomup_formulas <- c(
   "Reef sharks on sicklefin lemon sharks",
   "Piscivores on sicklefin lemon sharks",
-  "Planktivores on reef sharks",
-  "Invertivores on reef sharks",
   "Herbivores on reef sharks",
+  "Invertivores on reef sharks",
+  "Planktivores on reef sharks",
+  "Herbivores on piscivores",
   "Planktivores on piscivores",
   "Invertivores on piscivores",
-  "Herbivores on piscivores",
   "Hard coral on herbivores",
   "Crustose coraline algae on herbivores",
   "Other algae on herbivores"
 )
 
 original_labels <- c(topdown_formulas, bottomup_formulas)
+
+# Display order for figures only (labels above must stay in model order):
+# prey guilds in the same order for reef sharks and piscivores
+# (herbivores, invertivores, planktivores). Model order has piscivores as
+# herbivores, planktivores, invertivores, so positions 7 and 8 swap.
+display_order <- c(1:6, 8, 7, 9:11)
+
+# loo_compare() output shape changed in loo 2.10 ####
+# <= 2.9: numeric matrix, class "compare.loo", model names as row names.
+# >= 2.10: data.frame with a `model` column plus extra (partly character)
+# diagnostic columns. This returns the <= 2.9 shape either way, so the code
+# below (row lookup by label, as.data.frame) runs under both versions.
+normalise_loo_compare <- function(x) {
+  if (is.data.frame(x) && "model" %in% names(x)) {
+    keep <- intersect(
+      c("elpd_diff", "se_diff", "elpd_loo", "se_elpd_loo", "p_loo", "se_p_loo", "looic", "se_looic"),
+      names(x)
+    )
+    m <- as.matrix(x[, keep, drop = FALSE])
+    rownames(m) <- as.character(x$model)
+    class(m) <- c("compare.loo", class(m))
+    return(m)
+  }
+  x
+}
+
+# Label check: "<focal predictor> on <response>", from the model formula ####
+var_words <- c(
+  reef_sharks = "reef sharks",
+  sicklefin_lemon_sharks = "sicklefin lemon sharks",
+  biomass_g_per_m2_Piscivore = "piscivores",
+  biomass_g_per_m2_Herbivore = "herbivores",
+  biomass_g_per_m2_Invertivore = "invertivores",
+  biomass_g_per_m2_Planktivore = "planktivores",
+  Hard.Coral = "hard coral",
+  CCA = "crustose coraline algae",
+  Other.Algae = "other algae"
+)
+label_from_formula <- function(model) {
+  v <- all.vars(model$formula$formula)
+  paste(var_words[[v[2]]], "on", var_words[[v[1]]])
+}
 
 # Loop through models & calculate loo & posteriors ####
 resultsdf <- data.frame(
@@ -195,8 +245,22 @@ for (topo in c(
         length(loopmodelslist)
       ))
       model <- loopmodelslist[[i]]
+      expected_label <- if (direction == "TopDown") topdown_formulas[i] else bottomup_formulas[i]
+      if (tolower(expected_label) != label_from_formula(model)) {
+        stop(
+          "Label/model mismatch: ", topo, " ", direction, " #", i, ": label '",
+          expected_label, "' but model is '", label_from_formula(model), "'"
+        )
+      }
       # Save full loo object for later comparison
-      loo_result <- loo(model, k_threshold = 0.7, reloo = TRUE)
+      # Saved models have their compiled Stan DSO stripped (R/utils/strip_brm_dso.R),
+      # so reloo refits are impossible; use the reloo'd loo that 05 stored with
+      # add_criterion(loo, reloo = TRUE) at fit time (same 0.7 k threshold).
+      loo_result <- if (!is.null(model$criteria$loo)) {
+        model$criteria$loo
+      } else {
+        loo(model, k_threshold = 0.7, reloo = TRUE)
+      }
       loo_list[[topo]][[direction]][[i]] <- loo_result
       # Store the pointwise (per observation i.e. reef) ELPD contributions per model
       elpd_obs_list[[topo]][[direction]][[i]] <- data.frame(
@@ -373,8 +437,8 @@ ggplot(
       model = factor(
         model,
         levels = c(
-          rev(topdown_formulas),
-          rev(bottomup_formulas)
+          rev(topdown_formulas[display_order]),
+          rev(bottomup_formulas[display_order])
         )
       )
     ),
@@ -478,37 +542,69 @@ bayesR2 |>
   dplyr::pull()
 
 
-## Loo Bayes R2 ggplot, topo facet ####
-ggplot(
-  bayesR2 |>
-    # make model a factor, with levels in paired order of formulas from high to low trophic level
-    mutate(
-      model = factor(
-        rep(
-          bayesR2 |>
-            # replace " on " with " - " in model column entries
-            dplyr::mutate(model = gsub(" on ", " - ", model)) |>
-            dplyr::filter(
-              topo == "Atolls",
-              direction == "TopDown"
-            ) |>
-            dplyr::select(model) |>
-            dplyr::pull(),
-          times = 4
-        ),
-        levels = rev(
-          bayesR2 |>
-            # replace " on " with " - " in model column entries
-            dplyr::mutate(model = gsub(" on ", " - ", model)) |>
-            dplyr::filter(
-              topo == "Atolls",
-              direction == "TopDown"
-            ) |>
-            dplyr::select(model) |>
-            dplyr::pull()
-        )
-      )
+## Loo Bayes R2 ggplot, topo facet (with per-topo summary means) ####
+# Shared y-axis categories use the top-down phrasing of each trophic pair, so the
+# TopDown and BottomUp estimates for a pair share one category and dodge side by side.
+topo_labels <- gsub(" on ", " - ", topdown_formulas)
+
+# Per-model rows: relabel every row to its trophic-pair (top-down phrasing).
+bayesR2_models <- bayesR2 |>
+  dplyr::mutate(model = rep(topo_labels, times = 4))
+
+# Per-topo x direction summary rows, replicating the boxplot statistics of the old
+# Figure 2 (the "Boxplot of BayesR2 results" block below): the mean BayesR2 becomes
+# the pointrange point (matching stat_summary fun = mean), and the interquartile
+# range (Q1-Q3) of the 11 model BayesR2 estimates becomes the pointrange line
+# (matching the box). The median is also computed for reference. Line thickness
+# (post_int_width) is derived from the IQR width via the same case_when rule used
+# for the per-model 95% intervals, so the same length/thickness rules apply.
+bayesR2_means <- bayesR2 |>
+  dplyr::group_by(topo, direction) |>
+  dplyr::summarise(
+    mean_r2 = mean(BayesR2),
+    median_r2 = median(BayesR2),
+    q1_r2 = quantile(BayesR2, 0.25),
+    q3_r2 = quantile(BayesR2, 0.75),
+    .groups = "drop"
+  ) |>
+  dplyr::mutate(
+    BayesR2 = mean_r2, # point = mean (the stat_summary diamond in old Fig 2)
+    Q2.5 = q1_r2, # lower quartile (box bottom) -> pointrange ymin
+    Q97.5 = q3_r2, # upper quartile (box top)    -> pointrange ymax
+    posterior_interval = q3_r2 - q1_r2, # IQR width drives line thickness
+    post_int_width = case_when(
+      posterior_interval < 0.2 ~ "Precise",
+      between(posterior_interval, 0.2, 0.5) ~ "Moderate",
+      posterior_interval > 0.5 ~ "Imprecise",
+      .default = "Reference"
     ),
+    post_int_width = factor(
+      post_int_width,
+      levels = c("Imprecise", "Moderate", "Precise")
+    ),
+    # ** ** = markdown bold, rendered by ggtext::element_markdown on the axis labels
+    model = if_else(topo == "Atolls", "**Atolls mean**", "**High Islands mean**")
+  ) |>
+  # keep median_r2 for reference; drop the now-redundant mean/quartile helpers
+  dplyr::select(
+    topo, direction, model, BayesR2, Q2.5, Q97.5,
+    posterior_interval, post_int_width, median_r2
+  )
+
+# Combine model rows + summary rows. Model factor: low-to-high trophic with the bold
+# mean label LAST so it sits at the TOP of each facet after coord_flip. topo reversed
+# so High Islands is the top facet and Atolls the bottom.
+bayesR2_plot <- dplyr::bind_rows(bayesR2_models, bayesR2_means) |>
+  dplyr::mutate(
+    model = factor(
+      model,
+      levels = c(rev(topo_labels[display_order]), "**Atolls mean**", "**High Islands mean**")
+    ),
+    topo = factor(topo, levels = c("HighIslands", "Atolls"))
+  )
+
+ggplot(
+  bayesR2_plot,
   aes(
     x = model,
     y = BayesR2,
@@ -577,7 +673,7 @@ ggplot(
     legend.text = element_text(size = 10),
     strip.text.x = element_text(size = 10, hjust = 1)
   ) +
-  theme_sub_axis_left(text = element_text(margin = margin_auto(-14))) # shrink gap between left axis labels and Y axis. new in ggplot4
+  theme_sub_axis_left(text = ggtext::element_markdown(size = 10, margin = margin_auto(-10))) # shrink gap between left axis labels and Y axis (ggplot4); element_markdown renders **bold** on the mean labels
 # Save plot
 ggsave(
   here(
@@ -863,7 +959,7 @@ for (topo in c(
     bottomup_formulas[order(bottomup_scores, decreasing = TRUE)]
   )
 
-  comparison <- loo_compare(ordered_loos)
+  comparison <- normalise_loo_compare(loo_compare(ordered_loos))
   # Step 4: Reorder comparison to match original formula order
   comparison <- comparison[original_labels, , drop = FALSE]
 
@@ -1954,39 +2050,29 @@ ggsave(
 )
 
 
-# Plot BayesR2 bars per group, FIg7?####
-# open /home/simon/Documents/Si Work/PostDoc Work/FIU/2024-01_SharksFishCoral-FrenchPoly/FIU-SharkFishCoral-FrenchPoly/Results/DAG/bayesR2.xlsx
-# sheet: piv.Gp.Means, cells A7:E11
-bayesR2_df <- readxl::read_excel(
-  here(
-    "Results",
-    "DAG",
-    "bayesR2.xlsx"
-  ),
-  range = "piv.Gp.Means!A9:E11",
-  col_names = c(
-    "Rownames",
-    "Atolls: Top Down",
-    "Atolls: Bottom Up",
-    "High Islands: Top Down",
-    "High Islands: Bottom Up"
-  )
-) |>
-  # convert "Rownames" column to row names
-  column_to_rownames(var = "Rownames") |>
-  # pivot longer
-  rownames_to_column(var = "Category") |>
-  pivot_longer(
-    cols = -Category,
-    names_to = "Group",
-    values_to = "ycentred"
+# Plot BayesR2 bars per group (SM Fig. S41) ####
+# Group means of the per-model Bayesian R2, computed here from `bayesR2`.
+# Previously read from a hand-made pivot (Results/DAG/bayesR2.xlsx, sheet
+# piv.Gp.Means), which no longer exists; replaced 2026-09-24. Groups by model
+# position, as in the old pivot's `group` column (bayesR2_spline.xlsx):
+# 1 = Large Meso (sicklefin <-> reef sharks), 2-8 = Meso, 9-11 = Basal.
+trophic_group <- c("Large Meso", rep("Meso", 7), rep("Basal", 3))
+bayesR2_df <- bayesR2 |>
+  dplyr::mutate(
+    Category = trophic_group[trophic],
+    Topology = dplyr::recode(as.character(topo), HighIslands = "High Islands"),
+    Direction = dplyr::recode(
+      as.character(direction),
+      TopDown = "Top Down",
+      BottomUp = "Bottom Up"
+    )
   ) |>
-  # split Group into Topology and Direction
-  separate(
-    Group,
-    into = c("Topology", "Direction"),
-    sep = ": "
-  )
+  dplyr::group_by(Category, Topology, Direction) |>
+  dplyr::summarise(ycentred = mean(BayesR2), .groups = "drop")
+readr::write_csv(
+  bayesR2_df,
+  here("Results", "DAG", paste0("bayesR2_group_means", file_suffix, ".csv"))
+)
 
 library(ggh4x)
 

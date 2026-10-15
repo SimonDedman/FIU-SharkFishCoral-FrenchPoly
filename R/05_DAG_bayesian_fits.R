@@ -39,9 +39,11 @@
 #   for transparency.
 #
 # Runtime:
-#   Substantial. 44 brm fits with 4 chains, 2000 iterations each, plus
+#   Substantial: ~1 h 20 min on a 12-core desktop (measured from output
+#   timestamps, 2025-10-16 run: 14:44 to 16:05), i.e. ~20 min per scenario,
+#   ~1.5-2 min per model. 44 brm fits with 4 chains, 2000 iterations each, plus
 #   `add_criterion(loo, reloo = TRUE)` which triggers refits where Pareto-k
-#   diagnostics are poor.
+#   diagnostics are poor; Stan compilation is a large share of each fit.
 #
 # Packages:
 #   brms, here, tidyverse
@@ -439,21 +441,6 @@ for (topo_name in names(topo_types)) {
         models_list[[13]],
         prob = 0.95
       ))
-
-      ## Labels for TD plots ####
-      plot_labels <- c(
-        "Sicklefin lemon sharks on reef sharks",
-        "Sicklefin lemon sharks on piscivores",
-        "Reef sharks on herbivores",
-        "Reef sharks on invertivores",
-        "Reef sharks on planktivores",
-        "Piscivores on herbivores",
-        "Piscivores on planktivores",
-        "Piscivores on invertivores",
-        "Herbivores on hard coral",
-        "Herbivores on crustose coraline algae",
-        "Herbivores on other algae"
-      )
     } else {
       # BOTTOM-UP MODELS ####
 
@@ -789,36 +776,6 @@ for (topo_name in names(topo_types)) {
         prob = 0.95
       ))
 
-      ## Labels for BU plots (note: direction reversed) ####
-      if (topo_name == "Atoll") {
-        plot_labels <- c(
-          "Sicklefin lemon sharks on reef sharks",
-          "Sicklefin lemon sharks on piscivores",
-          "Reef sharks on herbivores",
-          "Reef sharks on invertivores",
-          "Reef sharks on planktivores",
-          "Piscivores on herbivores",
-          "Piscivores on planktivores",
-          "Piscivores on invertivores",
-          "Herbivores on hard coral",
-          "Herbivores on crustose coraline algae",
-          "Herbivores on other algae"
-        )
-      } else {
-        plot_labels <- c(
-          "Reef sharks on sicklefin lemon sharks",
-          "Piscivores on sicklefin lemon sharks",
-          "Herbivores on reef sharks",
-          "Invertivores on reef sharks",
-          "Planktivores on reef sharks",
-          "Herbivores on piscivores",
-          "Planktivores on piscivores",
-          "Invertivores on piscivores",
-          "Hard coral on herbivores",
-          "Crustose coraline algae on herbivores",
-          "Other algae on herbivores"
-        )
-      }
     }
 
     # Save 95% credible intervals ####
@@ -846,148 +803,6 @@ for (topo_name in names(topo_types)) {
         "Results",
         "DAG",
         paste0("models_list_", topo_file, "_", direction_file, "_spline.Rds")
-      ),
-      compress = "xz"
-    )
-
-    # Plot data ####
-    library(ggplot2)
-
-    # Create the data frame with effect sizes and confidence intervals ####
-    # For spline models, extract smooth term standard deviations as effect measure
-    # These represent the strength/wiggliness of the smooth relationship
-    extract_smooth_effect <- function(model) {
-      # Get all parameters from the model
-      all_pars <- as.data.frame(summary(model)$fixed)
-      smooth_pars <- as.data.frame(summary(model)$splines)
-
-      # If smooth parameters exist, use the first smooth term's SD
-      # Otherwise use intercept as placeholder
-      if (nrow(smooth_pars) > 0) {
-        return(smooth_pars[1, "Estimate"])
-      } else {
-        return(0)
-      }
-    }
-
-    plot_df <- data.frame(
-      label = plot_labels,
-      effect = c(
-        extract_smooth_effect(models_list[[1]]),
-        extract_smooth_effect(models_list[[3]]),
-        extract_smooth_effect(models_list[[5]]),
-        extract_smooth_effect(models_list[[6]]),
-        extract_smooth_effect(models_list[[7]]),
-        extract_smooth_effect(models_list[[8]]),
-        extract_smooth_effect(models_list[[9]]),
-        extract_smooth_effect(models_list[[10]]),
-        extract_smooth_effect(models_list[[11]]),
-        extract_smooth_effect(models_list[[12]]),
-        extract_smooth_effect(models_list[[13]])
-      ),
-      lower = c(
-        extract_smooth_effect(models_list[[1]]) - 0.1,
-        extract_smooth_effect(models_list[[3]]) - 0.1,
-        extract_smooth_effect(models_list[[5]]) - 0.1,
-        extract_smooth_effect(models_list[[6]]) - 0.1,
-        extract_smooth_effect(models_list[[7]]) - 0.1,
-        extract_smooth_effect(models_list[[8]]) - 0.1,
-        extract_smooth_effect(models_list[[9]]) - 0.1,
-        extract_smooth_effect(models_list[[10]]) - 0.1,
-        extract_smooth_effect(models_list[[11]]) - 0.1,
-        extract_smooth_effect(models_list[[12]]) - 0.1,
-        extract_smooth_effect(models_list[[13]]) - 0.1
-      ),
-      upper = c(
-        extract_smooth_effect(models_list[[1]]) + 0.1,
-        extract_smooth_effect(models_list[[3]]) + 0.1,
-        extract_smooth_effect(models_list[[5]]) + 0.1,
-        extract_smooth_effect(models_list[[6]]) + 0.1,
-        extract_smooth_effect(models_list[[7]]) + 0.1,
-        extract_smooth_effect(models_list[[8]]) + 0.1,
-        extract_smooth_effect(models_list[[9]]) + 0.1,
-        extract_smooth_effect(models_list[[10]]) + 0.1,
-        extract_smooth_effect(models_list[[11]]) + 0.1,
-        extract_smooth_effect(models_list[[12]]) + 0.1,
-        extract_smooth_effect(models_list[[13]]) + 0.1
-      ),
-      group = factor(
-        c(
-          rep("Group 1", 2),
-          rep("Group 2", 3),
-          rep("Group 3", 3),
-          rep("Group 4", 3)
-        ),
-        levels = c("Group 1", "Group 2", "Group 3", "Group 4")
-      )
-    )
-
-    # Reverse the order of the labels so the first appears at the top
-    plot_df$label <- factor(plot_df$label, levels = rev(plot_df$label))
-
-    # Define custom colours for each group
-    colors <- c(
-      "Group 1" = "blue",
-      "Group 2" = "red",
-      "Group 3" = "green",
-      "Group 4" = "purple"
-    )
-
-    # Create the plot
-    analysis_plot <- ggplot(
-      plot_df,
-      aes(x = effect, y = label, color = group)
-    ) +
-      geom_point(size = 3) +
-      geom_errorbarh(aes(xmin = lower, xmax = upper), height = 0.1) +
-      scale_color_manual(values = colors) +
-      labs(x = "Effect Size", y = "") +
-      theme_minimal() +
-      theme(
-        legend.position = "none",
-        axis.text.y = if (trophic_dir == "TD" && topo_name == "Atoll") {
-          element_blank()
-        } else {
-          element_text()
-        },
-        axis.line.x = element_line(color = "black"),
-        plot.background = element_rect(fill = "white", colour = "grey50")
-      ) +
-      geom_vline(xintercept = 0, linetype = 2, colour = "grey60") +
-      scale_x_continuous(
-        breaks = seq(-5, 6, by = 1),
-        minor_breaks = seq(-4.5, 5.5, by = 0.5),
-        limits = c(-4.5, 5.5)
-      )
-
-    print(analysis_plot)
-
-    # Save plot as PNG
-    ggsave(
-      filename = paste0(
-        lubridate::today(),
-        "_DAG-results-",
-        topo_name,
-        "-",
-        trophic_dir,
-        "_spline.png"
-      ),
-      plot = analysis_plot,
-      device = "png",
-      path = here("Results", "DAG")
-    )
-
-    # Save plot as RDS
-    saveRDS(
-      object = analysis_plot,
-      file = here(
-        "Results",
-        "DAG",
-        paste0(
-          trophic_dir,
-          ifelse(topo_name == "Atoll", "atoll", "highisland"),
-          "plot_spline.Rds"
-        )
       ),
       compress = "xz"
     )

@@ -776,7 +776,11 @@ ggplot() +
       "DAG of French Polynesia Coral Reef Ecosystem - Atolls",
       "DAG of French Polynesia Coral Reef Ecosystem - High Islands"
     ),
-    subtitle = expression("Modelled Bayesian R"^2 * " of Gaussian STAN GLMs"), # Legend title for linewidth
+    subtitle = if (use_spline) {
+      expression("Modelled Bayesian R"^2 * " of Student-t spline models (brms)")
+    } else {
+      expression("Modelled Bayesian R"^2 * " of Gaussian STAN GLMs")
+    },
     caption = paste0(
       today(),
       # "; dashed lines indicate stacking weights < 0.05: high uncertainty / weak support / contributes little to predictive performance vs top model"

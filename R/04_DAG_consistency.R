@@ -91,131 +91,19 @@ colnames(dat) <- new_names
 
 
 # Five candidate DAGs ####
-# full_TD: full reef system, top-down (sharks -> coral) ####
-full_TD <- dagitty(
-  'dag {
-ave_npp [pos="-0.927,0.696"]
-ave_temp [pos="-0.890,1.097"]
-crustose_coraline_algae [pos="-0.923,0.349"]
-emerged_land_area [pos="-0.883,1.585"]
-hard_coral [outcome,pos="-1.030,-0.171"]
-herbivores [pos="-0.909,-0.746"]
-invert [latent,pos="-1.099,-0.065"]
-invertivores [pos="-1.108,-0.673"]
-island_geomorphology [pos="-0.970,1.724"]
-lagoon_size [pos="-1.086,1.471"]
-latitude [pos="-1.104,1.716"]
-other_algae [pos="-0.825,0.260"]
-piscivores [pos="-0.880,-1.502"]
-planktivores [pos="-1.203,-0.701"]
-pop_dens [pos="-0.789,-0.360"]
-reef_sharks [exposure,pos="-1.024,-1.445"]
-relief [pos="-1.123,0.674"]
-sicklefin_lemon_sharks [pos="-1.095,-2.097"]
-transient_pelagic_sharks [pos="-0.933,-2.078"]
-ave_npp -> crustose_coraline_algae
-ave_npp -> hard_coral
-ave_npp -> invert
-ave_temp -> ave_npp
-ave_temp -> crustose_coraline_algae
-ave_temp -> hard_coral
-ave_temp -> other_algae
-crustose_coraline_algae -> hard_coral
-emerged_land_area -> pop_dens
-herbivores -> crustose_coraline_algae
-herbivores -> hard_coral
-herbivores -> other_algae
-invertivores -> invert
-invertivores -> other_algae
-island_geomorphology -> ave_npp
-island_geomorphology -> emerged_land_area
-island_geomorphology -> lagoon_size
-other_algae -> hard_coral
-piscivores -> herbivores
-piscivores -> invertivores
-piscivores -> planktivores
-pop_dens -> hard_coral
-pop_dens -> herbivores
-pop_dens -> invertivores
-pop_dens -> piscivores
-pop_dens -> planktivores
-reef_sharks -> herbivores
-reef_sharks -> invertivores
-reef_sharks -> planktivores
-relief -> hard_coral
-relief -> herbivores
-relief -> invert
-relief -> invertivores
-relief -> planktivores
-sicklefin_lemon_sharks -> piscivores
-sicklefin_lemon_sharks -> reef_sharks
-transient_pelagic_sharks -> piscivores
-transient_pelagic_sharks -> reef_sharks
-}'
-)
-
-# full_BU: full reef system, bottom-up ("BU arrows up") ####
-full_BU <- dagitty(
-  'dag {
-ave_npp [pos="-0.927,0.696"]
-ave_temp [exposure,pos="-0.890,1.097"]
-crustose_coraline_algae [pos="-0.923,0.349"]
-emerged_land_area [pos="-0.883,1.585"]
-hard_coral [pos="-1.030,-0.171"]
-herbivores [pos="-0.909,-0.746"]
-invert [latent,pos="-1.099,-0.065"]
-invertivores [pos="-1.108,-0.673"]
-island_geomorphology [pos="-0.970,1.724"]
-lagoon_size [pos="-1.086,1.471"]
-latitude [pos="-1.104,1.716"]
-other_algae [pos="-0.825,0.260"]
-piscivores [pos="-0.880,-1.502"]
-planktivores [pos="-1.203,-0.701"]
-pop_dens [pos="-0.789,-0.360"]
-reef_sharks [outcome,pos="-1.024,-1.445"]
-relief [pos="-1.123,0.674"]
-sicklefin_lemon_sharks [pos="-1.095,-2.097"]
-transient_pelagic_sharks [pos="-0.933,-2.078"]
-ave_npp -> crustose_coraline_algae
-ave_npp -> hard_coral
-ave_npp -> invert
-ave_temp -> ave_npp
-ave_temp -> crustose_coraline_algae
-ave_temp -> hard_coral
-ave_temp -> other_algae
-crustose_coraline_algae -> hard_coral
-emerged_land_area -> pop_dens
-herbivores -> crustose_coraline_algae
-herbivores -> hard_coral
-herbivores -> other_algae
-invertivores -> invert
-invertivores -> other_algae
-island_geomorphology -> ave_npp
-island_geomorphology -> emerged_land_area
-island_geomorphology -> lagoon_size
-other_algae -> hard_coral
-piscivores -> herbivores
-piscivores -> invertivores
-piscivores -> planktivores
-pop_dens -> hard_coral
-pop_dens -> herbivores
-pop_dens -> invertivores
-pop_dens -> piscivores
-pop_dens -> planktivores
-reef_sharks -> herbivores
-reef_sharks -> invertivores
-reef_sharks -> planktivores
-relief -> hard_coral
-relief -> herbivores
-relief -> invert
-relief -> invertivores
-relief -> planktivores
-sicklefin_lemon_sharks -> piscivores
-sicklefin_lemon_sharks -> reef_sharks
-transient_pelagic_sharks -> piscivores
-transient_pelagic_sharks -> reef_sharks
-}'
-)
+# full_TD / full_BU: full reef system, from the shared DAG source ####
+# 2026-09-24: the two literal dagitty strings that used to sit here were
+# IDENTICAL in their edges (full_BU was a copy of full_TD with only the
+# exposure/outcome tags swapped, inherited from the legacy script), so the
+# "full_BU" results before this date were TD results under another name.
+# Both graphs now come from R/utils/dag_directions.R: TD is the latest
+# dagitty DAG (7VHv3H73 + invertivores -> crown_of_thorns), BU reverses the
+# 13 overlay (faunal/floral) edges listed in R/dags/overlay_edges_TD-direction.csv.
+# Latent nodes stay in the graph; dagitty tests only implications among
+# observed variables.
+source(here("R", "utils", "dag_directions.R"))
+full_TD <- dag_td()
+full_BU <- dag_bu(full_TD)
 
 # tophalf_TD: upper trophic chain, top-down (DAG1) ####
 tophalf_TD <- dagitty(
@@ -514,6 +402,14 @@ dags <- list(
 for (dag_name in names(dags)) {
   cat("\n=== Testing DAG:", dag_name, "===\n")
   DAG <- dags[[dag_name]]
+
+  # Any non-latent node with no data column (e.g. zooplankton in the full
+  # DAGs) is treated as latent, so dagitty tests only observed implications
+  missing_nodes <- setdiff(setdiff(names(DAG), latents(DAG)), colnames(dat))
+  if (length(missing_nodes)) {
+    cat("  no data column, treated as latent:", missing_nodes, "\n")
+    latents(DAG) <- c(latents(DAG), missing_nodes)
+  }
 
   # Subset data to DAG variables (latent vars are simply absent from data)
   ddat <- dat[, colnames(dat) %in% names(DAG), drop = FALSE]
