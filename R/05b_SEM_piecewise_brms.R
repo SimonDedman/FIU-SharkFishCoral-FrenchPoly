@@ -139,6 +139,13 @@ if ("--no-brms" %in% cli_args) run_brms_linear <- run_brms_spline <- FALSE
 # brms side adds (1 | island). Output goes to <variant>_islandRE/.
 island_re <- "--island-re" %in% cli_args
 run_name <- if (island_re) paste0(variant, "_islandRE") else variant
+# MEASURED 2026-10-14: at brms defaults (adapt_delta 0.8, 2000 iter) the island-RE
+# fits gave 125 divergences in 24 of 51 fits (vs 80 in 15, splines only, without
+# the RE), max Rhat 1.028, min ESS ratio 0.022: the island SD (12 islands, 2 reefs
+# each) makes a funnel. Tighter adaptation and longer chains for RE runs only, so
+# reef-level runs stay byte-comparable with their caches.
+brms_control <- if (island_re) list(adapt_delta = 0.99, max_treedepth = 12) else NULL
+if (island_re) brms_iter <- 4000
 
 out_dir <- if (run_name == "original") here("Results", "SEM") else here("Results", "SEM", "variants", run_name)
 brms_dir <- file.path(out_dir, "brms")
@@ -515,7 +522,7 @@ if (run_brms_linear || run_brms_spline) {
           family = gaussian(),
           prior = c(set_prior("normal(0, 1)", class = "b"),
                     set_prior("normal(0, 2)", class = "Intercept")),
-          chains = 4, iter = brms_iter, seed = brms_seed, cores = brms_cores, refresh = 0,
+          chains = 4, iter = brms_iter, seed = brms_seed, cores = brms_cores, refresh = 0, control = brms_control,
           save_pars = save_pars(all = TRUE)
         )
         n_done <- n_done + 1
@@ -525,7 +532,7 @@ if (run_brms_linear || run_brms_spline) {
           p, formula = formula_for(y, preds, re = island_re), data = dat_std, family = student(),
           prior = c(set_prior("normal(0, 1)", class = "b"),
                     set_prior("normal(0, 2)", class = "Intercept")),
-          chains = 4, iter = brms_iter, seed = brms_seed, cores = brms_cores, refresh = 0,
+          chains = 4, iter = brms_iter, seed = brms_seed, cores = brms_cores, refresh = 0, control = brms_control,
           save_pars = save_pars(all = TRUE)
         )
         n_done <- n_done + 1
@@ -538,7 +545,7 @@ if (run_brms_linear || run_brms_spline) {
           p, formula = as.formula(paste(y, "~", rhs)), data = dat_std, family = student(),
           prior = c(set_prior("normal(0, 5)", class = "Intercept"),
                     set_prior("exponential(1)", class = "sds")),
-          chains = 4, iter = brms_iter, seed = brms_seed, cores = brms_cores, refresh = 0,
+          chains = 4, iter = brms_iter, seed = brms_seed, cores = brms_cores, refresh = 0, control = brms_control,
           save_pars = save_pars(all = TRUE)
         )
         n_done <- n_done + 1
