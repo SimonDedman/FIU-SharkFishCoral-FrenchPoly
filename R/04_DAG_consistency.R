@@ -1,5 +1,5 @@
 # 04_DAG_consistency.R
-# d-separation consistency tests for five candidate DAGs of the
+# d-separation consistency tests for three candidate DAGs of the
 # French Polynesia coral reef system.
 #
 # Author: Simon Dedman <simondedman@gmail.com>
@@ -20,19 +20,18 @@
 #                   sharks as exposure, hard_coral as outcome (top-down)
 #   full_BU       - full reef system, ave_temp as exposure, reef_sharks as
 #                   outcome (bottom-up; "BU arrows up")
-#   tophalf_TD    - upper trophic chain only (species-level sharks ->
-#                   ambush/pursuit piscivores -> grazer/scraper/etc. ->
-#                   benthos), grey_reef_shark as exposure, hard_coral as
-#                   outcome (DAG1)
-#   tophalf_BU    - upper trophic chain only, hard_coral as exposure,
-#                   grey_reef_shark as outcome (DAG2)
 #   bottomhalf_BU - environmental drivers only (latitude/island_geomorphology/
 #                   temp/npp -> benthos), island_geomorphology as exposure,
 #                   hard_coral as outcome (DAG3)
 #
-# All five DAGs are systematically related: full_TD/full_BU are the
-# unified-system tests in opposing directions; tophalf and bottomhalf are
-# subset checks that localise inconsistencies to specific parts of the
+# 2026-10-14: the legacy tophalf_TD / tophalf_BU DAGs (DAG1, DAG2; species-level
+# upper trophic chain) were dropped: their species-level nodes have no data
+# columns at guild resolution, so almost none of their implications were
+# testable, and the paper does not use them. Archived scripts 06/07 keep them.
+#
+# The DAGs are systematically related: full_TD/full_BU are the
+# unified-system tests in opposing directions; bottomhalf is a
+# subset check that localises inconsistencies to specific parts of the
 # trophic structure. The reef-sharks-vs-temperature pair fails the
 # d-separation test in full_BU and is explored further as a supplementary
 # linear regression in 08_supplementary_plots.R.
@@ -90,7 +89,7 @@ new_names <- ifelse(
 colnames(dat) <- new_names
 
 
-# Five candidate DAGs ####
+# Three candidate DAGs ####
 # full_TD / full_BU: full reef system, from the shared DAG source ####
 # 2026-09-24: the two literal dagitty strings that used to sit here were
 # IDENTICAL in their edges (full_BU was a copy of full_TD with only the
@@ -104,213 +103,6 @@ colnames(dat) <- new_names
 source(here("R", "utils", "dag_directions.R"))
 full_TD <- dag_td()
 full_BU <- dag_bu(full_TD)
-
-# tophalf_TD: upper trophic chain, top-down (DAG1) ####
-tophalf_TD <- dagitty(
-  'dag {
-ambush_piscivore [pos="-0.876,-1.268"]
-blacktip_reef_shark [pos="-0.970,-1.278"]
-browser [latent,pos="-0.771,-0.705"]
-crustose_coraline_algae [pos="-0.923,0.349"]
-grazer [pos="-0.893,-0.705"]
-grey_reef_shark [exposure,pos="-1.206,-1.756"]
-hard_coral [outcome,pos="-1.030,-0.171"]
-invert [pos="-1.103,0.007"]
-invertivore [pos="-1.108,-0.673"]
-other_algae [pos="-0.825,0.260"]
-planktivore [pos="-1.203,-0.701"]
-pop_dens [pos="-0.711,0.242"]
-pursuit_piscivore [pos="-0.779,-1.271"]
-scraper [pos="-1.003,-0.698"]
-sicklefin_lemon_shark [pos="-1.095,-2.097"]
-silvertip_shark [latent,pos="-0.753,-1.802"]
-tawny_nurse_shark [pos="-1.067,-1.285"]
-transient_pelagic_sharks [pos="-0.933,-2.078"]
-whitetip_reef_shark [pos="-1.168,-1.385"]
-ambush_piscivore -> browser
-ambush_piscivore -> grazer
-ambush_piscivore -> invertivore
-ambush_piscivore -> planktivore
-ambush_piscivore -> scraper
-blacktip_reef_shark -> browser
-blacktip_reef_shark -> grazer
-blacktip_reef_shark -> invertivore
-blacktip_reef_shark -> planktivore
-blacktip_reef_shark -> scraper
-browser -> other_algae
-crustose_coraline_algae -> hard_coral
-grazer -> crustose_coraline_algae
-grazer -> other_algae
-grey_reef_shark -> ambush_piscivore
-grey_reef_shark -> browser
-grey_reef_shark -> grazer
-grey_reef_shark -> invertivore
-grey_reef_shark -> planktivore
-grey_reef_shark -> pursuit_piscivore
-grey_reef_shark -> scraper
-invertivore -> invert
-invertivore -> other_algae
-other_algae -> hard_coral
-pop_dens -> ambush_piscivore
-pop_dens -> browser
-pop_dens -> grazer
-pop_dens -> hard_coral
-pop_dens -> invertivore
-pop_dens -> planktivore
-pop_dens -> pursuit_piscivore
-pop_dens -> scraper
-pursuit_piscivore -> browser
-pursuit_piscivore -> grazer
-pursuit_piscivore -> invertivore
-pursuit_piscivore -> planktivore
-pursuit_piscivore -> scraper
-scraper -> crustose_coraline_algae
-scraper -> hard_coral
-scraper -> other_algae
-sicklefin_lemon_shark -> ambush_piscivore
-sicklefin_lemon_shark -> blacktip_reef_shark
-sicklefin_lemon_shark -> grey_reef_shark
-sicklefin_lemon_shark -> pursuit_piscivore
-sicklefin_lemon_shark -> silvertip_shark
-sicklefin_lemon_shark -> tawny_nurse_shark
-sicklefin_lemon_shark -> whitetip_reef_shark
-silvertip_shark -> ambush_piscivore
-silvertip_shark -> browser
-silvertip_shark -> grazer
-silvertip_shark -> invertivore
-silvertip_shark -> planktivore
-silvertip_shark -> pursuit_piscivore
-silvertip_shark -> scraper
-tawny_nurse_shark -> browser
-tawny_nurse_shark -> grazer
-tawny_nurse_shark -> invertivore
-tawny_nurse_shark -> planktivore
-tawny_nurse_shark -> scraper
-transient_pelagic_sharks -> ambush_piscivore
-transient_pelagic_sharks -> blacktip_reef_shark
-transient_pelagic_sharks -> grey_reef_shark
-transient_pelagic_sharks -> pursuit_piscivore
-transient_pelagic_sharks -> silvertip_shark
-transient_pelagic_sharks -> tawny_nurse_shark
-transient_pelagic_sharks -> whitetip_reef_shark
-whitetip_reef_shark -> browser
-whitetip_reef_shark -> grazer
-whitetip_reef_shark -> invertivore
-whitetip_reef_shark -> planktivore
-whitetip_reef_shark -> scraper
-}'
-)
-
-# tophalf_BU: upper trophic chain, bottom-up (DAG2) ####
-tophalf_BU <- dagitty(
-  'dag {
-ambush_piscivore [pos="-0.876,-1.268"]
-blacktip_reef_shark [pos="-0.970,-1.278"]
-browser [latent,pos="-0.771,-0.705"]
-coral_spawning [latent,pos="-1.230,0.373"]
-crown_of_thorns [latent,pos="-1.137,-0.402"]
-crustose_coraline_algae [pos="-0.923,0.349"]
-grazer [pos="-0.893,-0.705"]
-grey_reef_shark [outcome,pos="-1.206,-1.756"]
-hard_coral [exposure,pos="-1.030,-0.171"]
-invert [pos="-1.112,-0.074"]
-invertivore [pos="-1.108,-0.673"]
-offshore_prey [latent,pos="-1.301,-0.762"]
-other_algae [pos="-0.825,0.260"]
-other_offshore_prey_proxies [latent,pos="-1.283,-0.470"]
-planktivore [pos="-1.203,-0.701"]
-pop_dens [pos="-0.711,0.242"]
-pursuit_piscivore [pos="-0.779,-1.271"]
-scraper [pos="-1.003,-0.698"]
-sicklefin_lemon_shark [pos="-1.095,-2.097"]
-silvertip_shark [latent,pos="-0.753,-1.802"]
-tawny_nurse_shark [pos="-1.067,-1.285"]
-transient_pelagic_sharks [pos="-0.933,-2.078"]
-whitetip_reef_shark [pos="-1.168,-1.385"]
-zooplankton [pos="-1.210,0.096"]
-ambush_piscivore -> grey_reef_shark
-ambush_piscivore -> sicklefin_lemon_shark
-ambush_piscivore -> silvertip_shark
-ambush_piscivore -> transient_pelagic_sharks
-blacktip_reef_shark -> sicklefin_lemon_shark
-blacktip_reef_shark -> transient_pelagic_sharks
-browser -> ambush_piscivore
-browser -> blacktip_reef_shark
-browser -> grey_reef_shark
-browser -> pursuit_piscivore
-browser -> silvertip_shark
-browser -> tawny_nurse_shark
-browser -> whitetip_reef_shark
-coral_spawning -> planktivore
-crustose_coraline_algae -> grazer
-crustose_coraline_algae -> hard_coral
-crustose_coraline_algae -> scraper
-grazer -> ambush_piscivore
-grazer -> blacktip_reef_shark
-grazer -> grey_reef_shark
-grazer -> pursuit_piscivore
-grazer -> silvertip_shark
-grazer -> tawny_nurse_shark
-grazer -> whitetip_reef_shark
-grey_reef_shark -> sicklefin_lemon_shark
-grey_reef_shark -> transient_pelagic_sharks
-hard_coral -> coral_spawning
-hard_coral -> crown_of_thorns
-hard_coral -> scraper
-invert -> invertivore
-invertivore -> ambush_piscivore
-invertivore -> blacktip_reef_shark
-invertivore -> grey_reef_shark
-invertivore -> pursuit_piscivore
-invertivore -> silvertip_shark
-invertivore -> tawny_nurse_shark
-invertivore -> whitetip_reef_shark
-offshore_prey -> grey_reef_shark
-offshore_prey -> sicklefin_lemon_shark
-offshore_prey -> silvertip_shark
-offshore_prey -> transient_pelagic_sharks
-other_algae -> browser
-other_algae -> grazer
-other_algae -> hard_coral
-other_algae -> invertivore
-other_algae -> scraper
-other_offshore_prey_proxies -> offshore_prey
-planktivore -> ambush_piscivore
-planktivore -> blacktip_reef_shark
-planktivore -> grey_reef_shark
-planktivore -> pursuit_piscivore
-planktivore -> silvertip_shark
-planktivore -> tawny_nurse_shark
-planktivore -> whitetip_reef_shark
-pop_dens -> ambush_piscivore
-pop_dens -> browser
-pop_dens -> grazer
-pop_dens -> hard_coral
-pop_dens -> invertivore
-pop_dens -> offshore_prey
-pop_dens -> planktivore
-pop_dens -> pursuit_piscivore
-pop_dens -> scraper
-pursuit_piscivore -> grey_reef_shark
-pursuit_piscivore -> sicklefin_lemon_shark
-pursuit_piscivore -> silvertip_shark
-pursuit_piscivore -> transient_pelagic_sharks
-scraper -> ambush_piscivore
-scraper -> blacktip_reef_shark
-scraper -> grey_reef_shark
-scraper -> pursuit_piscivore
-scraper -> silvertip_shark
-scraper -> tawny_nurse_shark
-scraper -> whitetip_reef_shark
-silvertip_shark -> sicklefin_lemon_shark
-silvertip_shark -> transient_pelagic_sharks
-tawny_nurse_shark -> sicklefin_lemon_shark
-tawny_nurse_shark -> transient_pelagic_sharks
-whitetip_reef_shark -> sicklefin_lemon_shark
-whitetip_reef_shark -> transient_pelagic_sharks
-zooplankton -> planktivore
-}'
-)
 
 # bottomhalf_BU: environmental drivers only, bottom-up (DAG3) ####
 bottomhalf_BU <- dagitty(
@@ -392,8 +184,6 @@ wave_exposure -> bed_shear_stress
 dags <- list(
   full_TD = full_TD,
   full_BU = full_BU,
-  tophalf_TD = tophalf_TD,
-  tophalf_BU = tophalf_BU,
   bottomhalf_BU = bottomhalf_BU
 )
 
