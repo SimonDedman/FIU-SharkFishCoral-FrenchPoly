@@ -73,11 +73,12 @@
 #   plus ~1 min for stage E. Peak memory now ~1 GB (fits are not held in
 #   memory). Fully resumable from Results/SEM/brms/.
 #
-# Packages: dagitty, piecewiseSEM, brms, loo, here, dplyr, tidyr, ggplot2, readr
+# Packages: dagitty, piecewiseSEM, nlme, brms, loo, here, dplyr, tidyr, ggplot2, readr
 
 suppressPackageStartupMessages({
   library(dagitty)
   library(piecewiseSEM)
+  library(nlme) # attached, not nlme::: dSep() rebuilds lme calls by name
   library(brms)
   library(here)
   library(dplyr)
@@ -129,7 +130,17 @@ stopifnot(variant %in% names(VARIANTS))
 V <- VARIANTS[[variant]]
 if ("--no-brms" %in% cli_args) run_brms_linear <- run_brms_spline <- FALSE
 
-out_dir <- if (variant == "original") here("Results", "SEM") else here("Results", "SEM", "variants", variant)
+# --island-re (2026-10-14, Simon's decision after the revised2 refute-check):
+# every equation gets a random intercept for island. The 24 reefs come from 12
+# islands (mostly 2 reefs each; Tahiti 3, Marutea 1), so without it reefs on one
+# island count as independent and p-values / CIs are optimistic. Geomorphology
+# is an island-level property: 7 atoll islands vs 5 high islands.
+# piecewiseSEM side uses nlme::lme (supported by psem/dSep without lmerTest);
+# brms side adds (1 | island). Output goes to <variant>_islandRE/.
+island_re <- "--island-re" %in% cli_args
+run_name <- if (island_re) paste0(variant, "_islandRE") else variant
+
+out_dir <- if (run_name == "original") here("Results", "SEM") else here("Results", "SEM", "variants", run_name)
 brms_dir <- file.path(out_dir, "brms")
 dir.create(brms_dir, showWarnings = FALSE, recursive = TRUE)
 progress_file <- file.path(out_dir, "progress.txt")
@@ -139,8 +150,10 @@ progress <- function(...) {
   cat(msg, "\n", file = progress_file, append = TRUE)
 }
 cat("", file = progress_file)
-progress("START 05b  variant=", variant, "  dag=", V$dag, "  coral_drop=", paste(V$coral_drop, collapse = ","))
-writeLines(c(variant, V$dag, paste(V$coral_drop, collapse = ",")), file.path(out_dir, "variant.txt"))
+progress("START 05b  variant=", variant, "  island_re=", island_re, "  dag=", V$dag,
+         "  coral_drop=", paste(V$coral_drop, collapse = ","))
+writeLines(c(variant, V$dag, paste(V$coral_drop, collapse = ","), paste0("island_re=", island_re)),
+           file.path(out_dir, "variant.txt"))
 
 # Stage A: data ####
 # DAG node -> data column (17 observed nodes)
@@ -178,6 +191,8 @@ stopifnot(all(colmap %in% names(raw)))
 dat <- as.data.frame(raw[, colmap])
 names(dat) <- names(colmap)
 dat$reef_name <- raw$reef_name
+dat$island <- factor(as.character(raw$site_name)) # 12 islands; grouping for --island-re
+stopifnot(nlevels(dat$island) == 12)
 dat$geomorphology <- factor(
   ifelse(raw$topo %in% c("open atoll", "closed atoll"), "Atolls", "HighIslands"),
   levels = c("Atolls", "HighIslands")
@@ -270,17 +285,28 @@ for (nm in names(scenarios)) {
            nrow(corr_sets[[nm]]), " correlated-error pairs")
 }
 
-formula_for <- function(y, preds, interaction = FALSE) {
+formula_for <- function(y, preds, interaction = FALSE, re = FALSE) {
   rhs <- paste(preds, collapse = " + ")
   if (interaction) rhs <- paste0("(", rhs, ") * geomorphology")
+  if (re) rhs <- paste(rhs, "+ (1 | island)") # brms syntax
   as.formula(paste(y, "~", rhs))
+}
+
+# One equation, frequentist: lm, or lme with an island random intercept.
+# do.call embeds the data frame in the call: psem re-evaluates model calls,
+# and a bare `data = data` there resolves to utils::data().
+fit_eq <- function(y, preds, data, interaction = FALSE, method = "REML") {
+  if (island_re) {
+    do.call("lme", list(fixed = formula_for(y, preds, interaction), random = ~ 1 | island,
+                            data = data, method = method))
+  } else {
+    do.call("lm", list(formula = formula_for(y, preds, interaction), data = data))
+  }
 }
 
 # Stage B: piecewiseSEM ####
 build_psem <- function(eqs, corr, data) {
-  # do.call embeds the data frame in each lm call: psem re-evaluates model
-  # calls, and a bare `data = data` there resolves to utils::data().
-  parts <- lapply(names(eqs), function(y) do.call("lm", list(formula = formula_for(y, eqs[[y]]), data = data)))
+  parts <- lapply(names(eqs), function(y) fit_eq(y, eqs[[y]], data))
   if (nrow(corr)) {
     for (k in seq_len(nrow(corr))) {
       # %~~% is a piecewiseSEM function (class formula.cerror), not formula syntax
@@ -297,8 +323,11 @@ build_psem <- function(eqs, corr, data) {
 generalised_loglik <- function(eqs, data, union_vars) {
   ll <- 0; k <- 0
   for (y in names(eqs)) {
-    f <- do.call("lm", list(formula = formula_for(y, eqs[[y]]), data = data))
-    ll <- ll + as.numeric(logLik(f)); k <- k + length(coef(f)) + 1
+    # ML (not REML) so log-likelihoods are comparable across fixed-effect sets
+    f <- fit_eq(y, eqs[[y]], data, method = "ML")
+    ll <- ll + as.numeric(logLik(f))
+    # parameters: fixed effects + residual variance (+ island variance)
+    k <- k + if (island_re) length(nlme::fixef(f)) + 2 else length(coef(f)) + 1
   }
   for (v in setdiff(union_vars, names(eqs))) {
     x <- data[[v]]
@@ -349,15 +378,23 @@ if (run_piecewise) {
     ll_rows[[paste(nm, "pooled")]] <- data.frame(scenario = nm, subset = "pooled",
                                                  t(generalised_loglik(es$eqs, dat_std, union_vars)))
     for (g in levels(dat_std$geomorphology)) {
-      ll_rows[[paste(nm, g)]] <- data.frame(scenario = nm, subset = g,
-        t(generalised_loglik(es$eqs, dat_std[dat_std$geomorphology == g, ], union_vars)))
+      # With --island-re a subset has only 7 (atoll) or 5 (high-island) islands,
+      # and pop_dens/temp/NPP are island-level, so equations with more
+      # island-level predictors than islands are singular: record NA, not a crash.
+      ll <- tryCatch(generalised_loglik(es$eqs, dat_std[dat_std$geomorphology == g, ], union_vars),
+                     error = function(e) {
+                       progress(nm, " ", g, ": generalised log-lik NOT ESTIMABLE (", conditionMessage(e), ")")
+                       c(logLik = NA_real_, k = NA_real_, n = sum(dat_std$geomorphology == g),
+                         BIC = NA_real_, AIC = NA_real_)
+                     })
+      ll_rows[[paste(nm, g)]] <- data.frame(scenario = nm, subset = g, t(ll))
     }
     progress(nm, ": Fisher's C = ", round(s$Cstat$Fisher.C, 2), ", df = ", s$Cstat$df,
              ", p = ", signif(s$Cstat$P.Value, 3), " (", nrow(s$dTable), " claims)")
   }
   readr::write_csv(do.call(rbind, fisher), file.path(out_dir, "fisherC.csv"))
   llt <- do.call(rbind, ll_rows)
-  llt <- llt |> group_by(subset) |> mutate(dBIC_vs_best = BIC - min(BIC)) |> ungroup()
+  llt <- llt |> group_by(subset) |> mutate(dBIC_vs_best = BIC - min(BIC)) |> ungroup() # NA if either side not estimable
   readr::write_csv(llt, file.path(out_dir, "loglik_bic_comparison.csv"))
   print(as.data.frame(llt))
 
@@ -390,19 +427,38 @@ if (run_piecewise) {
     int_rows <- list(); slope_rows_lm <- list()
     for (y in names(es$eqs)) {
       preds <- es$eqs[[y]]
-      m_int <- do.call("lm", list(formula = formula_for(y, preds, interaction = TRUE), data = dat_std))
-      d1 <- drop1(m_int, test = "F")
-      d1 <- d1[grepl(":geomorphology", rownames(d1)), , drop = FALSE]
-      cf <- coef(m_int)
+      if (island_re) {
+        # lme: likelihood-ratio test (ML fits) of each x:geomorphology term,
+        # full interaction model vs the same model without that one term
+        m_int <- fit_eq(y, preds, dat_std, interaction = TRUE, method = "ML")
+        cf <- nlme::fixef(m_int)
+        rdf <- min(m_int$fixDF$X)
+      } else {
+        m_int <- fit_eq(y, preds, dat_std, interaction = TRUE)
+        d1 <- drop1(m_int, test = "F")
+        d1 <- d1[grepl(":geomorphology", rownames(d1)), , drop = FALSE]
+        cf <- coef(m_int)
+        rdf <- m_int$df.residual
+      }
       for (x in preds) {
         int_term <- paste0(x, ":geomorphologyHighIslands") # coefficient name
-        d1_row <- d1[rownames(d1) == paste0(x, ":geomorphology"), , drop = FALSE] # drop1 term label
+        if (island_re) {
+          m_red <- update(m_int, fixed = as.formula(paste(". ~ . -", paste0(x, ":geomorphology"))))
+          lr <- anova(m_red, m_int)
+          stat <- lr$L.Ratio[2]; tdf <- lr$df[2] - lr$df[1]; pv <- lr$`p-value`[2]
+        } else {
+          d1_row <- d1[rownames(d1) == paste0(x, ":geomorphology"), , drop = FALSE] # drop1 term label
+          stat <- if (nrow(d1_row)) d1_row[["F value"]] else NA_real_
+          tdf <- if (nrow(d1_row)) d1_row[["Df"]] else NA_integer_
+          pv <- if (nrow(d1_row)) d1_row[["Pr(>F)"]] else NA_real_
+        }
         int_rows[[length(int_rows) + 1]] <- data.frame(
           scenario = nm, response = y, predictor = x,
-          F_value = if (nrow(d1_row)) d1_row[["F value"]] else NA_real_,
-          df = if (nrow(d1_row)) d1_row[["Df"]] else NA_integer_,
-          resid_df = m_int$df.residual,
-          P_value = if (nrow(d1_row)) d1_row[["Pr(>F)"]] else NA_real_,
+          test = if (island_re) "LRT (ML, lme island RE)" else "F (drop1, lm)",
+          statistic = stat, df = tdf, resid_df = rdf,
+          # an interaction model with no residual df (island-level df under
+          # --island-re) cannot test anything: blank the p-value, never quote it
+          estimable = rdf > 0, P_value = if (rdf > 0) pv else NA_real_,
           slope_atolls = unname(cf[x]),
           slope_highislands = unname(cf[x] + cf[int_term]),
           overlay_path = paste(x, y) %in% overlay_key | paste(y, x) %in% overlay_key
@@ -411,10 +467,12 @@ if (run_piecewise) {
     }
     it <- bind_rows(int_rows)
     readr::write_csv(it, file.path(out_dir, paste0("geomorphology_interaction_", nm, ".csv")))
+    progress(nm, ": geomorphology interactions NOT estimable (resid df <= 0): ", sum(!it$estimable), " of ", nrow(it))
     progress(nm, ": geomorphology interactions p < 0.05: ", sum(it$P_value < 0.05, na.rm = TRUE),
              " of ", nrow(it), " paths (", sum(it$P_value < 0.05 & it$overlay_path, na.rm = TRUE),
              " overlay); min residual df ", min(it$resid_df))
-    mg <- tryCatch(multigroup(fits[[nm]], group = "geomorphology"), error = function(e) e)
+    mg <- if (island_re) simpleError("skipped: island random effect run") else
+      tryCatch(multigroup(fits[[nm]], group = "geomorphology"), error = function(e) e)
     if (inherits(mg, "error")) {
       progress(nm, ": piecewiseSEM::multigroup cross-check failed: ", conditionMessage(mg))
     } else {
@@ -453,7 +511,7 @@ if (run_brms_linear || run_brms_spline) {
         # interaction model: group-specific slopes
         p <- file.path(brms_dir, paste0(nm, "_", y, "_linear.Rds"))
         fit_cached(
-          p, formula = formula_for(y, preds, interaction = TRUE), data = dat_std,
+          p, formula = formula_for(y, preds, interaction = TRUE, re = island_re), data = dat_std,
           family = gaussian(),
           prior = c(set_prior("normal(0, 1)", class = "b"),
                     set_prior("normal(0, 2)", class = "Intercept")),
@@ -464,7 +522,7 @@ if (run_brms_linear || run_brms_spline) {
         # pooled linear: the comparator for the spline sensitivity check
         p <- file.path(brms_dir, paste0(nm, "_", y, "_linear_pooled.Rds"))
         fit_cached(
-          p, formula = formula_for(y, preds), data = dat_std, family = student(),
+          p, formula = formula_for(y, preds, re = island_re), data = dat_std, family = student(),
           prior = c(set_prior("normal(0, 1)", class = "b"),
                     set_prior("normal(0, 2)", class = "Intercept")),
           chains = 4, iter = brms_iter, seed = brms_seed, cores = brms_cores, refresh = 0,
@@ -475,6 +533,7 @@ if (run_brms_linear || run_brms_spline) {
       if (run_brms_spline) {
         p <- file.path(brms_dir, paste0(nm, "_", y, "_spline.Rds"))
         rhs <- paste(sprintf('s(%s, k = 3, bs = "cs")', preds), collapse = " + ")
+        if (island_re) rhs <- paste(rhs, "+ (1 | island)")
         fit_cached(
           p, formula = as.formula(paste(y, "~", rhs)), data = dat_std, family = student(),
           prior = c(set_prior("normal(0, 5)", class = "Intercept"),
@@ -605,7 +664,8 @@ if (run_brms_linear) {
       caption = paste0(
         "Bottom-up points are the reversed path (row label read right to left).\n",
         "Each response has one equation with all DAG parents; slopes by geomorphology from a\n",
-        "predictor x geomorphology interaction model, n = 24 reefs.\n",
+        "predictor x geomorphology interaction model, n = 24 reefs",
+        if (island_re) " on 12 islands (island random intercept).\n" else ".\n",
         "Mean rows: mean |slope| over the 11 paths, per posterior draw. ", format(Sys.Date())
       )
     ) +
