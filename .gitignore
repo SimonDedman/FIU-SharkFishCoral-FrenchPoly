@@ -64,3 +64,10 @@ data/README.html
 # targets pipeline cache
 _targets/
 _targets.yaml
+
+# OAuth tokens
+secrets/
+
+# R session junk
+*.Rhistory
+Rplots.pdf

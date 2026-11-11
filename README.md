@@ -6,23 +6,33 @@
 
 Analysis code for the manuscript:
 
-> **Dedman, S., Farabaugh, N. F., Bond, M. E., Chapman, D., Clua, E., Harborne, A. R., Papastamatiou, Y. P., Kiszka, J. J., Heupel, M., Wirsing, A. J., & Heithaus, M. R. (2026). Top-down and bottom-up forcing on coral reefs changes with habitat-specific predator abundance.** *Proceedings of the National Academy of Sciences* or *Science*, in preparation. DOI: TBD.
+> **Dedman, S., Farabaugh, N. F., Bond, M. E., Chapman, D., Clua, E., Harborne, A. R., Papastamatiou, Y. P., Kiszka, J. J., Heupel, M., Wirsing, A. J., & Heithaus, M. R. (2026). Top-down and bottom-up forcing on coral reefs changes with habitat-specific predator abundance.** *Science*, in revision. DOI: TBD.
 
 Corresponding author: Simon Dedman (simondedman@gmail.com). Co-first authors: Simon Dedman and Naomi F. Farabaugh.
+
+> **Status (November 2026).** The manuscript is in revision after the first round of review. The analytical approach changed in response to review (see "What changed in the revision"), and the figures below are the current drafts. The Zenodo DOI above archives v1.0.0, the code as first submitted; a new release will follow acceptance.
 
 ---
 
 ## Overview
 
-We test whether top-down forcing (sharks → mesopredators → herbivores → benthos) or bottom-up forcing (productivity → herbivores → benthos) better explains coral-reef community structure across 24 reefs in French Polynesia, and whether the dominant direction differs between atolls (where sharks are abundant) and high islands (where sharks are sparse).
+We test whether top-down forcing (sharks → mesopredators → teleost prey guilds → benthos) or bottom-up forcing (the same links reversed) better explains coral-reef community structure across 24 reefs on 12 islands in French Polynesia, and whether the balance differs between atolls (where sharks are abundant) and high islands (where sharks are sparse).
 
-Three statistical approaches are layered:
+Surveys combine baited remote underwater video (BRUV) for sharks, underwater visual census (UVC) for reef-fish biomass, and benthic UVC for coral, algal, and substrate cover.
 
-1. **Boosted Regression Trees (BRT)** to identify which predictor variables most influence fish biomass and benthic cover, separately for atolls and high islands.
-2. **Directed Acyclic Graphs (DAGs)** to encode the hypothesised causal structure, validated by d-separation tests against the data.
-3. **Bayesian Structural Causal Models** (`brms`) with Student-t errors and cubic shrinkage splines to estimate the strength of each top-down and bottom-up pathway, compared via leave-one-out cross-validation (LOO-PSIS).
+Two statistical approaches are layered:
 
-Surveys combine baited remote underwater video (BRUV) for sharks, underwater visual census (UVC) for reef fish biomass, and benthic UVC for coral, algal, and substrate cover.
+1. **Boosted regression trees (BRT)** identify which predictors most influence fish biomass and benthic cover, separately for atolls and high islands (`R/03_BRT_models.R`).
+2. **Piecewise structural equation models (SEM)** fit one causal graph in both directions and compare them (`R/05b_SEM_piecewise_brms.R`):
+   - A single top-down directed acyclic graph (DAG) is held in `R/dags/`. The bottom-up DAG is derived from it in code (`R/utils/dag_directions.R`) by reversing only the 13 faunal and floral links under test; environmental and geomorphological links keep their direction in both.
+   - Each of the nine biotic nodes (two shark groups, four teleost guilds, three benthic classes) has one equation containing all its DAG parents, so coefficients are partial and standardised.
+   - Overall fit is tested by d-separation and Fisher's C, and top-down is compared with bottom-up as whole models by the generalised BIC of Shipley and Douma (2020), using `piecewiseSEM`.
+   - Path slopes for atolls and high islands come from Bayesian equations in `brms` (predictor × geomorphology interactions), with an **island random intercept in every equation** because reefs are paired within islands.
+   - Paths are linear on log-transformed, standardised data; spline versions are fitted as a sensitivity check and compared by LOO-PSIS.
+
+### What changed in the revision
+
+The submitted version scored each path separately by Bayesian leave-one-out R² from spline models (`R/05_DAG_bayesian_fits.R`, `R/06_DAG_results.R`, `R/07_DAG_network_plots.R`). Following review, that approach was replaced by the piecewise SEM described above. The earlier scripts stay in the repository unchanged as the record of the submitted analysis, and the submitted figures are kept in `figures/archive/submitted_2026-06/`. In the course of the reanalysis we also found and fixed a label-ordering fault in the submitted Figure 2 (five of eleven path labels attached to the wrong models; `R/06_DAG_results.R` now stops if a label disagrees with its model's formula), and a bottom-up DAG in the consistency checks that was a copy of the top-down one. The DAG was revised after its first fit, adding productivity and temperature links to the prey guilds; the revision is declared as post hoc in the manuscript, and every DAG version is kept in `R/dags/`.
 
 ---
 
@@ -31,29 +41,29 @@ Surveys combine baited remote underwater video (BRUV) for sharks, underwater vis
 ```
 .
 ├── R/                      Analysis scripts (numbered execution order)
-│   ├── 00_*.R … 08_*.R     Active pipeline (see "Pipeline" below)
-│   ├── archive/            Superseded / exploratory scripts kept for transparency
-│   └── utils/              Helper scripts (e.g. strip_brm_dso.R)
+│   ├── 00_*.R … 14_*.R     Pipeline and figure scripts (see "Pipeline" below)
+│   ├── dags/               dagitty DAG files, all versions, plus the Fig. S4 layout
+│   ├── archive/            Superseded and exploratory scripts kept for transparency
+│   └── utils/              Helpers (DAG direction handling, SEM progress display, model stripping)
 ├── data/
 │   └── README.md           Manifest for the FIU Dataverse archive
 ├── figures/
-│   ├── main/               Main paper figures (committed for README rendering)
-│   └── supplementary/      Selected SM figure thumbnails
+│   ├── main/               Main-text figures (current drafts)
+│   ├── supplementary/      Selected supplementary figures
+│   ├── archive/            Figures as first submitted (June 2026)
+│   └── icons/              Organism icons used in the figures
 ├── _targets.R              targets pipeline definition (tar_make() entry point)
+├── renv.lock               Pinned package versions
 ├── CITATION.cff            Citation metadata (renders on GitHub)
 ├── LICENSE                 GPL v3
 └── FIU-SharkFishCoral-FrenchPoly.Rproj
 ```
 
-Local-only directories (gitignored) referenced by the scripts: `NFF_data/` for raw and processed data (downloaded from the FIU Dataverse, see `data/README.md`), `Results/` for BRT and DAG model outputs, `Docs/` for the manuscript and supplementary material, and `Nat_resources/` and `Presentations/` for working materials.
+Local-only directories (gitignored) referenced by the scripts: `NFF_data/` for raw and processed data (downloaded from the FIU Dataverse, see `data/README.md`), `Results/` for model outputs, `Docs/` for the manuscript and supplementary material, and `Nat_resources/` and `Presentations/` for working materials.
 
 ---
 
 ## Reproduction
-
-Three reproducibility tiers, depending on how much you want to recompute.
-
-### Tier 0 - full pipeline from raw data (~few hours)
 
 ```bash
 git clone https://github.com/SimonDedman/FIU-SharkFishCoral-FrenchPoly.git
@@ -61,105 +71,105 @@ cd FIU-SharkFishCoral-FrenchPoly
 ```
 
 1. Download the data archive from FIU Dataverse ([10.34703/gzx1-9v95/1L510G](https://doi.org/10.34703/gzx1-9v95/1L510G)) into `NFF_data/` at the project root.
-2. Open the project in RStudio (`FIU-SharkFishCoral-FrenchPoly.Rproj`).
-3. Install the `targets` package (and `renv` once the lockfile is added in a future release).
-4. Run the full pipeline with **`targets::tar_make()`**. Visualise dependencies with `targets::tar_visnetwork()`. Inspect a single target's outputs with `targets::tar_read(<target_name>)`.
+2. Open the project in RStudio (`FIU-SharkFishCoral-FrenchPoly.Rproj`) and run `renv::restore()` to install the pinned package versions (R 4.5).
+3. Run the pipeline with **`targets::tar_make()`**, or only the reported SEM branch with `targets::tar_make(c(sem_fits, sem_figures))`. Visualise dependencies with `targets::tar_visnetwork()`.
 
-Alternatively, run the eight numbered scripts in `R/` directly in numeric order; the `_targets.R` pipeline is a wrapper around exactly that behaviour with caching and dependency tracking added.
+The SEM can also be run directly:
 
-### Tier 1 - skip Bayesian fit (a few minutes)
+```bash
+Rscript R/05b_SEM_piecewise_brms.R --variant=revised2 --island-re
+Rscript R/14_fig2A_coefficients.R
+Rscript R/07b_SEM_network_plots.R
+```
 
-The full Bayesian fit takes a substantial amount of time (44 brm fits across 4 atoll/island × top-down/bottom-up scenarios, with `add_criterion(loo, reloo = TRUE)` triggering refits where Pareto-k diagnostics are poor). To bypass it:
+The piecewiseSEM stage takes under a minute. The 51 brms fits (17 equations, each fitted linear by geomorphology, linear pooled, and spline pooled) took about 1.5 hours on a 12-core desktop with the island random effect (`adapt_delta` 0.99, 4,000 iterations). Fits are cached per equation in `Results/SEM/variants/revised2_islandRE/brms/`, so a stopped run resumes where it left off. Add `--no-brms` to run the piecewiseSEM stage alone. Without `--island-re` and `--variant`, the script reproduces the reef-level fits of the DAG as first specified, whose fit the SM reports for comparison.
 
-1. Steps 1-3 above.
-2. Additionally download `models_list_*_spline.Rds` and `posteriors_list_spline.Rds` from the Dataverse archive into `Results/DAG/`.
-3. The targets pipeline detects the existing model files and considers the `bayesian_fits` target up-to-date. Run `targets::tar_make()` and only the post-fitting targets execute. Or run scripts 06-08 directly.
-
-The compiled Stan binaries have been stripped from the model objects (`R/utils/strip_brm_dso.R`), reducing each `models_list_*_spline.Rds` from ~210 MB to ~17-20 MB. `summary()`, `plot()`, `posterior_predict()`, and `loo()` work directly; `update()` will trigger a one-time recompile.
-
-### Tier 2 - inspect summaries only (no recomputation)
-
-Download the small CSV / Rds summaries from `Results/DAG/` on Dataverse:
-
-- `bayesR2_spline.csv` - Bayesian R² values per model
-- `95pct_intervals_list_*_spline.csv` - posterior intervals
-- `loo_compare_results_spline.csv` - LOO-PSIS model comparison
-- `*plot_spline.Rds` - saved ggplot objects (TD/BU × atolls/HI DAG networks)
-
-These files are <1 MB each.
+The SEM outputs are not yet in the Dataverse archive and will be added with the revised manuscript. The Dataverse model files (`models_list_*_spline.Rds`) belong to the submitted LOO-R² analysis; with them in `Results/DAG/`, scripts 06 and 07 reproduce the submitted figures in a few minutes.
 
 ---
 
 ## Pipeline
 
-| Step | Script | Inputs | Outputs |
+| Step | Script | Role | Main outputs |
 |---|---|---|---|
-| 1. Data preparation | `01_data_prep.R` | Raw benthic UVC, fish UVC, BRUV CSVs | `ch4_reef_wide_df2.RData` (24-reef analysis table) and atoll/island subsets |
-| 2. Trophic level lookup | `02_trophic_levels.R` | FishBase API; functional group definitions | Mean trophic levels per group (used in SM Fig 32) |
-| 3. BRT models | `03_BRT_models.R` | `ch4_*_reef_wide_df2.RData` | BRT diagnostics, partial dependence plots → `Results/BRT/` |
-| 4. DAG consistency | `04_DAG_consistency.R` (collapsed from 4 legacy scripts) | `ReefWideBRUVUVC.csv` + 5 candidate DAGs | per-DAG `dag_inconsistencies_<dag>_*.csv` files in `Results/DAG/consistency/` |
-| 5. Bayesian SCM fits | `05_DAG_bayesian_fits.R` | DAG-tested data | 4 × `models_list_*_spline.Rds` (Atolls/HI × TD/BU) |
-| 6. Results processing & comparison | `06_DAG_results.R` | model lists | LOO summaries, posterior intervals, R², stacking weights |
-| 7. DAG network plots | `07_DAG_network_plots.R` | model lists, posterior summaries | DAG figures (Main Fig 4, SM Fig 14) |
-| 8. Raw data summaries (SM) | `08_supplementary_plots.R` | reef-wide table | Boxplots, column plots, scatterplots |
+| 0 | `00_setup.R` | Shared setup, package guidance | n/a |
+| 1 | `01_data_prep.R` | Aggregate benthic UVC, fish UVC, and BRUV records to 24 reefs | `ch4_reef_wide_df2.RData` and atoll and island subsets |
+| 2 | `02_trophic_levels.R` | FishBase trophic levels per functional group | SM trophic-level figure |
+| 3 | `03_BRT_models.R` | Boosted regression trees for atolls and for high islands | Fig. 1, `Results/BRT/` |
+| 4 | `04_DAG_consistency.R` | d-separation checks of candidate DAGs | `Results/DAG/consistency/` |
+| 5b | **`05b_SEM_piecewise_brms.R`** | **Reported analysis**: piecewise SEM, Fisher's C, TD vs BU BIC, brms slopes by geomorphology with island random intercept, spline sensitivity | `Results/SEM/variants/revised2_islandRE/` |
+| 14 | `14_fig2A_coefficients.R` | Fig. 2A from the 05b outputs, no refits | `Fig2A_SEM_coefficients.png` |
+| 7b | `07b_SEM_network_plots.R` | Fig. S40: DAG networks carrying the SEM slopes (full and tested-only versions) | `figS40/*.png` |
+| 13 | `13_shark_vs_piscivore_plot.R` | Reef-shark vs piscivore slopes on each prey guild (draft SM figure) | `*_shark_vs_piscivore_slopes.png` |
+| 8 | `08_supplementary_plots.R` | Raw-data summaries for the SM | Boxplots, column plots, scatterplots |
+| 9, 10 | `09_DAG_stylised.R`, `10_DAG_stylised_layer2.R` | Stylised renders of the conceptual DAG | `Results/DAG/Stylised/` |
+| 11 | `11_panel_icons.R` | Parametric high-island and atoll panel icons | `figures/*-icon.*` |
+| 12 | `12_DAG_variant_diagrams.R` | Diagrams of the DAG variants compared in 05b | `Results/DAG/Stylised/` |
+| 5, 6, 7 | `05_DAG_bayesian_fits.R`, `06_DAG_results.R`, `07_DAG_network_plots.R` | Submitted analysis (per-path LOO-R²), kept for the record | `Results/DAG/` |
 
-Numbering will be tightened to a clean 01-08 in v1.0; see `R/archive/` for superseded variants.
+Helpers: `utils/dag_directions.R` (single source for the TD and BU DAGs), `utils/sem_progress.sh` (progress display for long 05b runs), `utils/strip_brm_dso.R` (strips compiled Stan code from saved brms objects).
 
 ---
 
 ## Figures
 
-### Main paper figures
+### Main text
 
 <table>
   <tr>
-    <td align="center" width="50%">
-      <a href="figures/main/fig1_BRT_relative_influence.png"><img src="figures/main/fig1_BRT_relative_influence.png" width="400" alt="Fig 1: BRT relative influence"></a><br>
-      <b>Fig 1.</b> BRT relative influence of predictors on each response, separately for atolls and high islands.<br>
+    <td align="center" colspan="2">
+      <a href="figures/main/fig1_BRT_relative_influence_HI-A-flip_icons.png"><img src="figures/main/fig1_BRT_relative_influence_HI-A-flip_icons.png" width="800" alt="Fig. 1: BRT relative influence"></a><br>
+      <b>Fig. 1.</b> Relative influence of reef variables on BRT models of coral cover, high islands (left) and atolls (right). The orange dot-dashed line marks the influence expected by chance; + and − give the direction of each relationship.<br>
       <em>Source: <code>R/03_BRT_models.R</code></em>
     </td>
-    <td align="center" width="50%">
-      <a href="figures/main/fig2_BayesR2_boxplots.png"><img src="figures/main/fig2_BayesR2_boxplots.png" width="400" alt="Fig 2: Bayesian R² distributions"></a><br>
-      <b>Fig 2.</b> Bayesian R² distributions per model, faceted by topology x trophic direction.<br>
-      <em>Source: <code>R/06_DAG_results.R</code></em>
-    </td>
   </tr>
   <tr>
-    <td align="center">
-      <a href="figures/main/fig3_BayesR2_TDvsBU_byTopo.png"><img src="figures/main/fig3_BayesR2_TDvsBU_byTopo.png" width="400" alt="Fig 3: TD vs BU R²"></a><br>
-      <b>Fig 3.</b> Mean Bayesian R² for top-down vs bottom-up models, faceted by topology.<br>
-      <em>Source: <code>R/06_DAG_results.R</code></em>
+    <td align="center" width="50%">
+      <a href="figures/main/fig2A_SEM_coefficients.png"><img src="figures/main/fig2A_SEM_coefficients.png" width="380" alt="Fig. 2A: SEM path coefficients"></a><br>
+      <b>Fig. 2A.</b> Standardised partial regression coefficients (posterior median, 95% CI) for the eleven tested paths, top-down (red) and bottom-up (green, the same link reversed), on high islands (i) and atolls (ii). Top row of each panel: mean absolute slope over the eleven paths.<br>
+      <em>Source: <code>R/05b_SEM_piecewise_brms.R</code>, <code>R/14_fig2A_coefficients.R</code></em>
     </td>
-    <td align="center">
-      <a href="figures/main/fig4a_DAG_Atolls.png"><img src="figures/main/fig4a_DAG_Atolls.png" width="200" alt="Fig 4a: Atolls DAG"></a>
-      <a href="figures/main/fig4b_DAG_HighIslands.png"><img src="figures/main/fig4b_DAG_HighIslands.png" width="200" alt="Fig 4b: HI DAG"></a><br>
-      <b>Fig 4.</b> DAG networks with posterior-weighted edge strengths, atolls (left) and high islands (right).<br>
-      <em>Source: <code>R/07_DAG_network_plots.R</code></em>
+    <td align="center" width="50%">
+      <a href="figures/supplementary/SM_FigS4_DAG_revised.png"><img src="figures/supplementary/SM_FigS4_DAG_revised.png" width="380" alt="Fig. S4: revised DAG"></a><br>
+      <b>Fig. S4.</b> The revised causal graph. Thick two-headed arrows are the links tested in both directions; the bottom-up DAG reverses exactly these. Rendered with dagitty from <code>R/dags/</code>.<br>
+      <em>Fig. 2B (summary food webs) is being redrawn from the SEM results and will be added.</em>
     </td>
   </tr>
 </table>
 
-### Supplementary figure highlights
+### Supplementary highlights
 
 <table>
   <tr>
-    <td align="center" width="33%">
-      <a href="figures/supplementary/SM_foodweb_atoll.png"><img src="figures/supplementary/SM_foodweb_atoll.png" width="280" alt="Atoll foodweb"></a><br>
-      <b>Atoll foodweb.</b> Hypothesised top-down trophic structure for atoll reefs (sharks abundant). Hand-edited from a dagitty.net export by N. F. Farabaugh; not generated from R code.
+    <td align="center" width="50%">
+      <a href="figures/supplementary/SM_FigS40_SEM_HighIslands.png"><img src="figures/supplementary/SM_FigS40_SEM_HighIslands.png" width="380" alt="Fig. S40: high islands"></a><br>
+      <b>Fig. S40, high islands.</b>
     </td>
-    <td align="center" width="33%">
-      <a href="figures/supplementary/SM_foodweb_HighIslands.png"><img src="figures/supplementary/SM_foodweb_HighIslands.png" width="280" alt="HI foodweb"></a><br>
-      <b>High-islands foodweb.</b> Bottom-up alternative for high-island reefs (sharks sparse). Same provenance as above.
+    <td align="center" width="50%">
+      <a href="figures/supplementary/SM_FigS40_SEM_Atolls.png"><img src="figures/supplementary/SM_FigS40_SEM_Atolls.png" width="380" alt="Fig. S40: atolls"></a><br>
+      <b>Fig. S40, atolls.</b>
     </td>
-    <td align="center" width="33%">
-      <a href="figures/supplementary/SM_Fig32_FnGp_trophic_levels.png"><img src="figures/supplementary/SM_Fig32_FnGp_trophic_levels.png" width="280" alt="SM Fig 32 trophic levels"></a><br>
-      <b>SM Fig 32.</b> Functional group trophic levels (FishBase-derived).<br>
-      <em>Source: <code>R/02_trophic_levels.R</code> (computation), <code>R/01_data_prep.R</code> (rendering)</em>
+  </tr>
+  <tr>
+    <td colspan="2">
+      Fig. S40 shows the measured nodes of the SEM with the eleven direction-tested paths in colour (top-down red, bottom-up green). Edge width is the absolute standardised slope; solid edges have 95% CIs excluding zero, dashed edges include zero. <em>Source: <code>R/07b_SEM_network_plots.R</code></em>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <a href="figures/supplementary/SM_shark_vs_piscivore_slopes.png"><img src="figures/supplementary/SM_shark_vs_piscivore_slopes.png" width="380" alt="Reef sharks vs piscivores"></a><br>
+      <b>Reef sharks vs piscivores (draft).</b> Top-down slopes of each predator on each prey guild, pooled and by geomorphology; both predators share each guild's equation, so each slope is adjusted for the other.<br>
+      <em>Source: <code>R/13_shark_vs_piscivore_plot.R</code></em>
+    </td>
+    <td align="center" width="50%">
+      <a href="figures/supplementary/SM_Fig32_FnGp_trophic_levels.png"><img src="figures/supplementary/SM_Fig32_FnGp_trophic_levels.png" width="380" alt="Functional group trophic levels"></a><br>
+      <b>Functional group trophic levels</b> (FishBase-derived).<br>
+      <em>Source: <code>R/02_trophic_levels.R</code>, <code>R/01_data_prep.R</code></em>
     </td>
   </tr>
 </table>
 
-The full inventory of supplementary figures (15 listed in MEMORY.md plus additional renumberings, with SM Fig 32 covering the trophic-level lookup) is documented in the manuscript SM. PNGs and PDFs of every SM figure ship in the Dataverse archive under `Results/`; only highlights are reproduced here for quick orientation.
+Supplementary figure numbers follow the revised SM and may change before publication.
 
 ---
 
@@ -203,7 +213,7 @@ DAG framework and consistency-test methodology developed in collaboration with S
 
 ---
 
-## License
+## Licence
 
 This repository is licensed under the GNU General Public License v3.0 (see [LICENSE](LICENSE)). The data archive on Dataverse may carry separate licensing terms; see its landing page.
 

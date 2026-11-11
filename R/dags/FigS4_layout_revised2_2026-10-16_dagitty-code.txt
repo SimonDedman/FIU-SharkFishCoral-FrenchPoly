@@ -1,0 +1,130 @@
+dag {
+bb="0,0,2.154,1.650"
+"bleaching history" [latent,pos="0.9565,1.0005"]
+"disease history" [latent,pos="0.7305,1.0765"]
+ave_npp [pos="1.5625,1.0805"]
+ave_temp [pos="1.5520,1.2860"]
+bed_shear_stress [latent,pos="1.1705,1.3025"]
+coral_recruitment [latent,pos="0.2595,1.0140"]
+coral_spawning [latent,pos="0.1120,1.1605"]
+crown_of_thorns [latent,pos="0.4030,0.7000"]
+crustose_coraline_algae [pos="1.3495,0.8825"]
+cyclones [latent,pos="0.5550,1.3810"]
+depth [latent,pos="1.7845,1.4635"]
+emerged_land_area [pos="1.6345,1.5685"]
+hard_coral [outcome,pos="1.0045,0.6385"]
+herbivores [pos="1.4665,0.4530"]
+invert [latent,pos="0.6445,0.7205"]
+invertivores [pos="0.5775,0.4860"]
+island_geomorphology [pos="1.1940,1.5700"]
+lagoon_size [pos="0.6755,1.4555"]
+latitude [pos="0.5950,1.5660"]
+light [latent,pos="2.1110,1.2590"]
+nutrient_run_off [latent,pos="0.7200,1.3540"]
+offshore_prey [latent,pos="0.2325,0.3125"]
+other_algae [pos="1.8585,0.8185"]
+other_offshore_prey_proxies [latent,pos="0.3900,0.1300"]
+piscivores [pos="1.3745,0.2685"]
+planktivores [pos="0.1520,0.4730"]
+pop_dens [pos="2.0035,0.6270"]
+reef_sharks [exposure,pos="0.8605,0.2365"]
+relief [pos="0.5100,1.0950"]
+sicklefin_lemon_sharks [pos="1.0925,0.0325"]
+unmeasured_guild_driver [latent,pos="0.3100,0.5800"]
+turbidity [latent,pos="2.0750,1.0580"]
+wave_exposure [latent,pos="1.5265,1.4365"]
+zooplankton [pos="0.2425,0.7945"]
+"bleaching history" -> hard_coral
+"disease history" -> hard_coral
+ave_npp -> crustose_coraline_algae
+ave_npp -> hard_coral
+ave_npp -> invert
+ave_npp -> offshore_prey
+ave_npp -> turbidity
+ave_npp -> zooplankton
+ave_temp -> "bleaching history"
+ave_temp -> "disease history"
+ave_temp -> ave_npp
+ave_temp -> crustose_coraline_algae
+ave_temp -> hard_coral
+ave_temp -> offshore_prey
+ave_temp -> other_algae
+bed_shear_stress -> crustose_coraline_algae
+bed_shear_stress -> relief
+coral_recruitment -> hard_coral
+coral_spawning -> coral_recruitment
+crown_of_thorns -> hard_coral
+crustose_coraline_algae -> coral_recruitment
+crustose_coraline_algae -> hard_coral
+cyclones -> relief
+depth -> bed_shear_stress
+depth -> light
+depth -> wave_exposure
+emerged_land_area -> nutrient_run_off
+emerged_land_area -> pop_dens
+herbivores -> crustose_coraline_algae
+herbivores -> hard_coral
+herbivores -> other_algae
+invertivores -> crown_of_thorns
+invertivores -> invert
+invertivores -> other_algae
+island_geomorphology -> ave_npp
+island_geomorphology -> bed_shear_stress
+island_geomorphology -> emerged_land_area
+island_geomorphology -> lagoon_size
+island_geomorphology -> nutrient_run_off
+island_geomorphology -> offshore_prey
+lagoon_size -> nutrient_run_off
+latitude -> cyclones
+latitude -> light
+light -> ave_npp
+light -> ave_temp
+light -> turbidity
+nutrient_run_off -> "disease history"
+nutrient_run_off -> ave_npp
+nutrient_run_off -> crown_of_thorns
+nutrient_run_off -> crustose_coraline_algae
+nutrient_run_off -> other_algae
+nutrient_run_off -> turbidity
+other_algae -> hard_coral
+other_offshore_prey_proxies -> offshore_prey
+piscivores -> herbivores
+piscivores -> invertivores
+piscivores -> planktivores
+planktivores -> coral_spawning
+pop_dens -> hard_coral
+pop_dens -> herbivores
+pop_dens -> invertivores
+pop_dens -> nutrient_run_off
+pop_dens -> offshore_prey
+pop_dens -> piscivores
+pop_dens -> planktivores
+reef_sharks -> herbivores
+reef_sharks -> invertivores
+reef_sharks -> offshore_prey
+reef_sharks -> planktivores
+relief -> hard_coral
+relief -> herbivores
+relief -> invert
+relief -> invertivores
+relief -> planktivores
+sicklefin_lemon_sharks -> offshore_prey
+sicklefin_lemon_sharks -> piscivores
+sicklefin_lemon_sharks -> reef_sharks
+turbidity -> crustose_coraline_algae
+turbidity -> hard_coral
+turbidity -> other_algae
+wave_exposure -> bed_shear_stress
+zooplankton -> planktivores
+ave_npp -> herbivores
+ave_npp -> invertivores
+ave_npp -> planktivores
+ave_temp -> herbivores
+ave_temp -> invertivores
+ave_temp -> planktivores
+unmeasured_guild_driver -> herbivores
+unmeasured_guild_driver -> invertivores
+unmeasured_guild_driver -> planktivores
+pop_dens -> reef_sharks
+ave_temp -> reef_sharks
+}

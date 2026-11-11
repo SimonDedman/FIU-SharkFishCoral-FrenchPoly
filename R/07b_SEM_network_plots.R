@@ -21,7 +21,7 @@
 # 95% CI (05b brms_mean_abs_slope_by_geomorphology.csv).
 #
 # Inputs:
-#   Presentations/2026-10-16_dagitty-model_revised2_code.txt  (Fig. S4 layout)
+#   R/dags/FigS4_layout_revised2_2026-10-16_dagitty-code.txt  (Fig. S4 layout; copy of Presentations/2026-10-16_dagitty-model_revised2_code.txt)
 #   Results/SEM/variants/revised2_islandRE/brms_slopes_by_geomorphology.csv
 #   Results/SEM/variants/revised2_islandRE/brms_mean_abs_slope_by_geomorphology.csv
 #   Results/SEM/variants/revised2_islandRE/equations_TD.csv
@@ -40,7 +40,7 @@ out_dir <- file.path(res_dir, "figS40")
 dir.create(out_dir, showWarnings = FALSE)
 
 # Layout: the Fig. S4 dagitty code (positions in export pixels / 1000, y down)
-dag <- dagitty(paste(readLines(here("Presentations", "2026-10-16_dagitty-model_revised2_code.txt")),
+dag <- dagitty(paste(readLines(here("R", "dags", "FigS4_layout_revised2_2026-10-16_dagitty-code.txt")),
                      collapse = "\n"))
 co <- coordinates(dag)
 nodes <- tibble(name = names(co$x), x = co$x * 1000, y = -co$y * 1000,

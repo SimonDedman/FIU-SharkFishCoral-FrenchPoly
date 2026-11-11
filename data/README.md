@@ -121,7 +121,9 @@ To run the full pipeline locally:
 3. Open the project in RStudio (`FIU-SharkFishCoral-FrenchPoly.Rproj`) and run `renv::restore()` to install pinned package versions.
 4. Run scripts in numeric order; or use `targets::tar_make()` to run the full pipeline (see top-level README for details).
 
-For Tier 1 reproducibility (skip Bayesian fit), download only the `models_list_*_spline.Rds` files and `posteriors_list_spline.Rds` from the Dataverse archive into `Results/DAG/`, then run scripts 06-08 only. Loading the model lists and producing all summary plots takes a few minutes on typical hardware.
+**Revision note (2026-11).** The reported analysis is now the piecewise SEM in `R/05b_SEM_piecewise_brms.R` (run with `--variant=revised2 --island-re`). It needs only `NFF_data/ch4_reef_wide_df2.RData` from this archive plus the DAG files in `R/dags/`. Its fitted models and summary tables (`Results/SEM/`) are not yet in the Dataverse archive; they will be added with the revised manuscript. The files listed under "Fitted Bayesian models" belong to the per-path LOO-R² analysis of the submitted version.
+
+For Tier 1 reproducibility of the submitted version (skip Bayesian fit), download only the `models_list_*_spline.Rds` files and `posteriors_list_spline.Rds` from the Dataverse archive into `Results/DAG/`, then run scripts 06-08 only. Loading the model lists and producing all summary plots takes a few minutes on typical hardware.
 
 ---
 

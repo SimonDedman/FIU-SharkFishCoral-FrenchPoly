@@ -664,17 +664,11 @@ if (run_brms_linear) {
     geom_pointrange(aes(xmin = lower95, xmax = upper95),
                     position = position_dodge(width = 0.6), size = 0.4) +
     facet_wrap(~geomorphology, ncol = 1, scales = "free_y") + # free_y: each facet shows only its own mean row
-    scale_colour_manual(values = c("Top-down" = "#F8766D", "Bottom-up" = "#00BA38")) +
+    scale_colour_manual(values = c("Top-down" = "#F8766D", "Bottom-up" = "#1b9e77")) + # 2026-11-09: match submitted Fig. 2A (06 L640)
     labs(
       x = "Standardised partial regression coefficient (posterior median, 95% CI)",
-      y = NULL, colour = NULL,
-      caption = paste0(
-        "Bottom-up points are the reversed path (row label read right to left).\n",
-        "Each response has one equation with all DAG parents; slopes by geomorphology from a\n",
-        "predictor x geomorphology interaction model, n = 24 reefs",
-        if (island_re) " on 12 islands (island random intercept).\n" else ".\n",
-        "Mean rows: mean |slope| over the 11 paths, per posterior draw. ", format(Sys.Date())
-      )
+      y = NULL, colour = NULL
+      # 2026-11-09: explanatory caption moved to the manuscript figure caption (Simon); see R/14_fig2A_coefficients.R
     ) +
     theme_minimal(base_size = 13) +
     theme(legend.position = "top", plot.background = element_rect(fill = "white", colour = NA)) +

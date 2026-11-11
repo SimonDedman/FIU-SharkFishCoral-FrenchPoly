@@ -23,6 +23,11 @@
 # pre-fitted model lists from the Dataverse archive into
 # Results/DAG/, then run tar_make(starts_with("dag_results")) or
 # similar to compute only the downstream targets.
+#
+# Revision (2026-11): stages 5-7 (per-path LOO-R2) are the analysis
+# as first submitted, kept for the record. The reported analysis is
+# stage 5b (piecewise SEM with island random intercept) and its
+# figures; run only that branch with tar_make(c(sem_fits, sem_figures)).
 
 library(targets)
 library(here)
@@ -114,10 +119,9 @@ list(
   ),
 
   # === Stage 4: DAG consistency ====================================
-  # 04_DAG_consistency.R runs d-separation tests on five candidate
-  # DAGs (full_TD, full_BU, tophalf_TD, tophalf_BU, bottomhalf_BU)
-  # against ReefWideBRUVUVC.csv. Produces 10 inconsistency CSVs in
-  # Results/DAG/consistency/.
+  # 04_DAG_consistency.R runs d-separation tests on the candidate
+  # DAGs against ReefWideBRUVUVC.csv (tophalf_TD/BU dropped
+  # 2026-10-14). Writes inconsistency CSVs to Results/DAG/consistency/.
   tar_target(
     dag_consistency,
     {
@@ -198,6 +202,64 @@ list(
         here("Results", "DAG"),
         pattern = "DAG_(Atolls|HighIslands)_spline\\.png$",
         full.names = TRUE
+      )
+    },
+    format = "file"
+  ),
+
+  # === Stage 5b: piecewise SEM, the REPORTED analysis (SLOW: ~1.5-2 h) ==
+  # Added 2026-11 for the Science revision (review round 1). One
+  # equation per endogenous node; piecewiseSEM (d-separation, Fisher's
+  # C, generalised BIC for TD vs BU) plus brms slopes by geomorphology
+  # with an island random intercept. Run as its own Rscript process
+  # because 05b takes command-line switches. brms fits are cached per
+  # equation in Results/SEM/variants/revised2_islandRE/brms/, so a
+  # stopped run resumes.
+  tar_target(
+    sem_dag_files,
+    c(
+      here("R", "dags", "FP_DAG_TopDown_2026-10-03_revised2_plus-popdens-temp-to-reefsharks.dag"),
+      here("R", "dags", "overlay_edges_TD-direction.csv"),
+      here("R", "utils", "dag_directions.R"),
+      here("R", "05b_SEM_piecewise_brms.R")
+    ),
+    format = "file"
+  ),
+  tar_target(
+    sem_fits,
+    {
+      reef_data
+      sem_dag_files
+      status <- system2(
+        file.path(R.home("bin"), "Rscript"),
+        c(here("R", "05b_SEM_piecewise_brms.R"), "--variant=revised2", "--island-re")
+      )
+      if (status != 0) stop("05b_SEM_piecewise_brms.R exited with status ", status)
+      d <- here("Results", "SEM", "variants", "revised2_islandRE")
+      file.path(d, c(
+        "fisherC.csv", "loglik_bic_comparison.csv",
+        "coefs_pooled_TD.csv", "coefs_pooled_BU.csv",
+        "brms_slopes_by_geomorphology.csv",
+        "brms_mean_abs_slope_by_geomorphology.csv"
+      ))
+    },
+    format = "file"
+  ),
+
+  # === Stage 5b figures: Fig. 2A, Fig. S40, shark vs piscivore =====
+  tar_target(
+    sem_figures,
+    {
+      sem_fits
+      for (s in c("14_fig2A_coefficients.R", "07b_SEM_network_plots.R", "13_shark_vs_piscivore_plot.R")) {
+        status <- system2(file.path(R.home("bin"), "Rscript"), here("R", s))
+        if (status != 0) stop(s, " exited with status ", status)
+      }
+      d <- here("Results", "SEM", "variants", "revised2_islandRE")
+      c(
+        file.path(d, "Fig2A_SEM_coefficients.png"),
+        list.files(file.path(d, "figS40"), pattern = "\\.png$", full.names = TRUE),
+        list.files(d, pattern = "_shark_vs_piscivore_slopes\\.png$", full.names = TRUE)
       )
     },
     format = "file"

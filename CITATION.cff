@@ -14,9 +14,11 @@ abstract: >-
   changes with habitat-specific predator abundance" (Dedman et al. 2026). Provides
   scripts to reproduce all figures and statistical results: data preparation from
   benthic UVC and BRUV surveys; boosted regression tree (BRT) models of fish biomass
-  and benthic cover; structural causal modelling using Bayesian regression (brms)
-  with cubic shrinkage splines; directed acyclic graph (DAG) consistency testing
-  and visualisation. Tested on R 4.3+; package versions pinned via renv.
+  and benthic cover; directed acyclic graph (DAG) consistency testing; and piecewise
+  structural equation models (piecewiseSEM and brms, island random intercept)
+  comparing top-down and bottom-up versions of one DAG by d-separation, Fisher's C,
+  and generalised BIC. The per-path LOO-R2 analysis of the submitted version is
+  kept for the record. Tested on R 4.5; package versions pinned via renv.
 authors:
   - family-names: Dedman
     given-names: Simon
@@ -69,6 +71,7 @@ keywords:
   - sharks
   - trophic cascades
   - structural causal models
+  - structural equation models
   - Bayesian inference
   - boosted regression trees
   - French Polynesia
@@ -110,7 +113,7 @@ preferred-citation:
       given-names: Michael R.
       orcid: "https://orcid.org/0000-0002-3219-1003"
   year: 2026
-  journal: "Proceedings of the National Academy of Sciences"
+  journal: "Science"
   doi: "TBD"
 references:
   - type: data
